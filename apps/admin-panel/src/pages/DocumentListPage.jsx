@@ -108,18 +108,27 @@ export function DocumentListPage() {
                     <Button
                         type="text"
                         icon={<EyeOutlined />}
-                        onClick={() => handleView(record)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleView(record);
+                        }}
                     />
                     <Button
                         type="text"
                         icon={<EditOutlined />}
-                        onClick={() => handleEdit(record)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(record);
+                        }}
                     />
                     <Button
                         type="text"
                         danger
                         icon={<DeleteOutlined />}
-                        onClick={() => handleDelete(record)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(record);
+                        }}
                     />
                 </Space>
             ),
@@ -182,6 +191,10 @@ export function DocumentListPage() {
                         dataSource={filteredDocuments}
                         loading={loading}
                         rowKey="id"
+                        onRow={(record) => ({
+                            onClick: () => handleView(record),
+                            style: { cursor: 'pointer' },
+                        })}
                         //todo: вынести пагинацию на ответственность бэкенда
                         pagination={{
                             pageSize: 10,
