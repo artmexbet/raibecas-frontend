@@ -2,6 +2,7 @@ export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/',
   DOCUMENTS: '/documents',
+  DOCUMENTS_VIEW: (id: string) => `/documents/${id}`,
   DOCUMENTS_CREATE: '/documents/new',
   DOCUMENTS_EDIT: (id: string) => `/documents/${id}/edit`,
   USERS: '/users',

@@ -1,11 +1,13 @@
 import {documentService} from "@/services/document.service.ts";
 import {useEffect, useState} from "react";
+import { useNavigate } from '@tanstack/react-router';
 import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Search } = Input;
 
 export function DocumentListPage() {
+    const navigate = useNavigate();
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -125,8 +127,7 @@ export function DocumentListPage() {
     ];
 
     const handleView = (record) => {
-        message.info(`Просмотр документа: ${record.title}`);
-        // TODO: Реализовать навигацию к просмотру документа
+        navigate({ to: `/documents/${record.id}` });
     };
 
     const handleEdit = (record) => {

@@ -1,0 +1,30 @@
+/* Переиспользуемый компонент просмотра документа */
+
+.document-viewer {
+  /* Контейнер */
+}
+
+.document-viewer__header-card {
+  margin-bottom: 16px;
+}
+
+.document-viewer__title {
+  margin-bottom: 8px;
+}
+
+.document-viewer__author-section {
+  margin-bottom: 16px;
+}
+
+.document-viewer__tags-section {
+  margin-bottom: 16px;
+}
+
+.document-viewer__content {
+  font-size: 16px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  max-width: 900px;
+  margin: 0 auto;
+}
+

@@ -1,7 +1,8 @@
 import { createRouter, createRoute, createRootRoute, redirect, Outlet } from '@tanstack/react-router';
 import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { DocumentListPage } from '@/pages/DocumentListPage';
+import { DocumentListPage } from '../pages/DocumentListPage';
+import { DocumentViewPage } from '../pages/DocumentViewPage';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
@@ -51,6 +52,24 @@ const documentsRoute = createRoute({
     <ProtectedRoute requireAuth permissions={['view_documents']}>
       <AdminLayout>
         <DocumentListPage />
+      </AdminLayout>
+    </ProtectedRoute>
+  ),
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+// Просмотр документа
+const documentViewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/documents/$id',
+  component: () => (
+    <ProtectedRoute requireAuth permissions={['view_documents']}>
+      <AdminLayout>
+        <DocumentViewPage />
       </AdminLayout>
     </ProtectedRoute>
   ),
@@ -130,6 +149,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   indexRoute,
   documentsRoute,
+  documentViewRoute,
   registrationRequestsRoute,
   usersRoute,
   settingsRoute,
