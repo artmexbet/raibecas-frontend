@@ -29,12 +29,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const routerState = useRouterState();
   const admin = authService.getStoredAdmin();
 
-  const handleLogout = () => {
-    authService.logout();
-    navigate({ to: '/login' });
+  const handleLogout = async () => {
+    await authService.logout();
+    await navigate({ to: '/login' });
   };
 
-  const handleMenuClick = (key: string) => {
+  const handleMenuClick = async (key: string) => {
     const routes: Record<string, string> = {
       dashboard: '/',
       documents: '/documents',
@@ -44,7 +44,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     };
 
     if (routes[key]) {
-      navigate({ to: routes[key] as any });
+      await navigate({ to: routes[key] as any });
     }
   };
 

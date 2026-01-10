@@ -34,8 +34,8 @@ export const LoginPage: React.FC = () => {
       message.success('Вход выполнен успешно!');
 
       // Небольшая задержка перед редиректом для отображения сообщения
-      setTimeout(() => {
-        navigate({ to: '/' });
+      setTimeout(async () => {
+        await navigate({ to: '/' });
       }, 500);
     } catch (error: any) {
       console.error('Login error:', error);
