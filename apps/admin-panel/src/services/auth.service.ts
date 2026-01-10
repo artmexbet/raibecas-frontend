@@ -1,35 +1,24 @@
 import apiClient from './api';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../constants/api';
 import type { LoginCredentials, LoginResponse, Admin } from '../types/auth';
-import {AdminRole} from "@/types/permissions.ts";
+import { isMockEnabled, authMockHandlers } from '@/mocks';
 
 export const authService = {
   // Вход
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
-    // const response = await apiClient.post<LoginResponse>(
-    //   API_ENDPOINTS.AUTH.LOGIN,
-    //   credentials
-    // ); //todo: remove comments and use real api
+    let response: { data: LoginResponse };
 
-    // Заглушка для демонстрации
-    const response = await new Promise<{ data: LoginResponse }>((resolve) =>
-      setTimeout(
-        () =>
-          resolve({
-            data: {
-              token: 'mocked-jwt-token',
-              admin: {
-                id: '1',
-                username: 'Admin User',
-                email: credentials.email,
-                role: AdminRole.SUPER_ADMIN,
-                createdAt: new Date().toISOString(),
-              },
-            },
-          }),
-        1000
-      )
-    );
+    // Используем моки если они включены
+    if (isMockEnabled('auth')) {
+      const mockData = await authMockHandlers.login(credentials);
+      response = { data: mockData };
+    } else {
+      // Реальный API запрос
+      response = await apiClient.post<LoginResponse>(
+        API_ENDPOINTS.AUTH.LOGIN,
+        credentials
+      );
+    }
 
     const { token, admin } = response.data;
 
@@ -43,7 +32,11 @@ export const authService = {
   // Выход
   async logout(): Promise<void> {
     try {
-      // await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);//todo: uncomment when real api will be used
+      if (isMockEnabled('auth')) {
+        await authMockHandlers.logout();
+      } else {
+        await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+      }
     } finally {
       // Очищаем локальное хранилище в любом случае
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -53,8 +46,16 @@ export const authService = {
 
   // Получить текущего администратора
   async getCurrentAdmin(): Promise<Admin> {
-    const response = await apiClient.get<Admin>(API_ENDPOINTS.AUTH.ME);
-    return response.data;
+    if (isMockEnabled('auth')) {
+      const storedAdmin = this.getStoredAdmin();
+      if (storedAdmin) {
+        return authMockHandlers.getCurrentAdmin(storedAdmin.id);
+      }
+      throw new Error('No admin data in storage');
+    } else {
+      const response = await apiClient.get<Admin>(API_ENDPOINTS.AUTH.ME);
+      return response.data;
+    }
   },
 
   // Проверить, авторизован ли пользователь

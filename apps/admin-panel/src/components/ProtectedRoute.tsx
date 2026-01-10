@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 import { Navigate } from '@tanstack/react-router';
 import { authService } from '../services/auth.service';
 import { hasAnyPermission, type Permission } from '../types/permissions';
