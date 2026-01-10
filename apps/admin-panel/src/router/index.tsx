@@ -1,6 +1,7 @@
 import { createRouter, createRoute, createRootRoute, redirect, Outlet } from '@tanstack/react-router';
 import { LoginPage } from '../pages/LoginPage';
-import { DashboardPage } from '../pages/DashboardPage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { DocumentListPage } from '@/pages/DocumentListPage';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
@@ -42,17 +43,14 @@ const indexRoute = createRoute({
   },
 });
 
-// Документы (пока заглушка)
+// Документы
 const documentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/documents',
   component: () => (
     <ProtectedRoute requireAuth permissions={['view_documents']}>
       <AdminLayout>
-        <div>
-          <h1>Документы</h1>
-          <p>Страница в разработке</p>
-        </div>
+        <DocumentListPage />
       </AdminLayout>
     </ProtectedRoute>
   ),

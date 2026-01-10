@@ -14,7 +14,8 @@
     "antd": "^6.1.4",
     "axios": "^1.13.2",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "@react-buddy/ide-toolbox": "^2.4.0"
   },
   "devDependencies": {
     "@types/react": "^19",

@@ -10,6 +10,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@ant-design/icons": "^6.1.0",
+        "@react-buddy/ide-toolbox": "^2.4.0",
         "@tanstack/react-router": "^1.147.0",
         "antd": "^6.1.4",
         "axios": "^1.13.2",
@@ -129,6 +130,8 @@
     "@rc-component/util": ["@rc-component/util@1.7.0", "", { "dependencies": { "is-mobile": "^5.0.0", "react-is": "^18.2.0" }, "peerDependencies": { "react": ">=18.0.0", "react-dom": ">=18.0.0" } }, "sha512-tIvIGj4Vl6fsZFvWSkYw9sAfiCKUXMyhVz6kpKyZbwyZyRPqv2vxYZROdaO1VB4gqTNvUZFXh6i3APUiterw5g=="],
 
     "@rc-component/virtual-list": ["@rc-component/virtual-list@1.0.2", "", { "dependencies": { "@babel/runtime": "^7.20.0", "@rc-component/resize-observer": "^1.0.1", "@rc-component/util": "^1.4.0", "clsx": "^2.1.1" }, "peerDependencies": { "react": ">=16.9.0", "react-dom": ">=16.9.0" } }, "sha512-uvTol/mH74FYsn5loDGJxo+7kjkO4i+y4j87Re1pxJBs0FaeuMuLRzQRGaXwnMcV1CxpZLi2Z56Rerj2M00fjQ=="],
+
+    "@react-buddy/ide-toolbox": ["@react-buddy/ide-toolbox@2.4.0", "", { "peerDependencies": { "react": "^17.0.0 || ^18.0.0" } }, "sha512-TWHX6gwa0Gop7215uHhjFMbYLLdjM/b9rr0wYE3E0m7GNJ56gbPpbZiq86w9uI8zksl827acqGeT437MkuO64w=="],
 
     "@tanstack/history": ["@tanstack/history@1.145.7", "", {}, "sha512-gMo/ReTUp0a3IOcZoI3hH6PLDC2R/5ELQ7P2yu9F6aEkA0wSQh+Q4qzMrtcKvF2ut0oE+16xWCGDo/TdYd6cEQ=="],
 
