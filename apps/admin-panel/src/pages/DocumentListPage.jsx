@@ -1,4 +1,4 @@
-import {documentService} from "@/services/document.service.ts";
+import {documentService} from "@/services/document.service";
 import {useEffect, useState} from "react";
 import { useNavigate } from '@tanstack/react-router';
 import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
@@ -140,8 +140,7 @@ export function DocumentListPage() {
     };
 
     const handleEdit = (record) => {
-        message.info(`Редактирование документа: ${record.title}`);
-        // TODO: Реализовать навигацию к редактированию документа
+        navigate({ to: `/documents/${record.id}/edit` });
     };
 
     const handleDelete = (record) => {

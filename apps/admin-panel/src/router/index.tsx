@@ -3,6 +3,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { DocumentListPage } from '../pages/DocumentListPage';
 import { DocumentViewPage } from '../pages/DocumentViewPage';
+import { DocumentEditPage } from '../pages/DocumentEditPage';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
@@ -70,6 +71,24 @@ const documentViewRoute = createRoute({
     <ProtectedRoute requireAuth permissions={['view_documents']}>
       <AdminLayout>
         <DocumentViewPage />
+      </AdminLayout>
+    </ProtectedRoute>
+  ),
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+// Редактирование документа
+const documentEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/documents/$id/edit',
+  component: () => (
+    <ProtectedRoute requireAuth permissions={['edit_documents']}>
+      <AdminLayout>
+        <DocumentEditPage />
       </AdminLayout>
     </ProtectedRoute>
   ),
@@ -150,6 +169,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   documentsRoute,
   documentViewRoute,
+  documentEditRoute,
   registrationRequestsRoute,
   usersRoute,
   settingsRoute,

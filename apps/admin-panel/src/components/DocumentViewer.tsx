@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Typography, Tag, Space } from 'antd';
 import { CalendarOutlined, UserOutlined, FolderOutlined, EyeOutlined, CommentOutlined } from '@ant-design/icons';
+import { XMarkdown } from '@ant-design/x-markdown';
 import type { Document } from '@/types/document';
 import './DocumentViewer.css';
 
@@ -80,7 +81,7 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
       {/* Содержимое документа */}
       <Card variant='outlined'>
         <div className="document-viewer__content">
-          {document.content}
+          <XMarkdown content={document.content} />
         </div>
       </Card>
     </div>

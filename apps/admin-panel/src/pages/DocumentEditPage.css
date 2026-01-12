@@ -1,0 +1,14 @@
+/* Страница редактирования документа */
+
+.document-edit-page__header {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: 'center';
+}
+
+.document-edit-page__loading {
+  text-align: center;
+  padding: 100px 0;
+}
+
