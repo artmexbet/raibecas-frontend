@@ -2,7 +2,7 @@ import {documentService} from "@/services/document.service";
 import {useEffect, useState} from "react";
 import { useNavigate } from '@tanstack/react-router';
 import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
-import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
 
 const { Search } = Input;
 
@@ -164,6 +164,10 @@ export function DocumentListPage() {
         });
     };
 
+    const handleCreate = () => {
+        navigate({ to: '/documents/new' });
+    };
+
     return (
         <div>
             <h1 style={{ marginBottom: 24 }}>Научные работы философов</h1>
@@ -180,7 +184,12 @@ export function DocumentListPage() {
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                         />
-                        <Button type="primary" size="large">
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<PlusOutlined />}
+                            onClick={handleCreate}
+                        >
                             Добавить документ
                         </Button>
                     </div>

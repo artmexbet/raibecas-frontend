@@ -1,12 +1,13 @@
 import { createRouter, createRoute, createRootRoute, redirect, Outlet } from '@tanstack/react-router';
-import { LoginPage } from '../pages/LoginPage';
+import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
-import { DocumentListPage } from '../pages/DocumentListPage';
+import { DocumentListPage } from '@/pages/DocumentListPage';
 import { DocumentViewPage } from '../pages/DocumentViewPage';
 import { DocumentEditPage } from '../pages/DocumentEditPage';
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
+import {DocumentCreatePage} from "@/pages/DocumentCreatePage.tsx";
 
 // Корневой маршрут
 const rootRoute = createRootRoute({
@@ -53,6 +54,24 @@ const documentsRoute = createRoute({
     <ProtectedRoute requireAuth permissions={['view_documents']}>
       <AdminLayout>
         <DocumentListPage />
+      </AdminLayout>
+    </ProtectedRoute>
+  ),
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+// Создание нового документа
+const documentCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/documents/new',
+  component: () => (
+    <ProtectedRoute requireAuth permissions={['edit_documents']}>
+      <AdminLayout>
+        <DocumentCreatePage />
       </AdminLayout>
     </ProtectedRoute>
   ),
@@ -168,6 +187,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   indexRoute,
   documentsRoute,
+  documentCreateRoute,
   documentViewRoute,
   documentEditRoute,
   registrationRequestsRoute,

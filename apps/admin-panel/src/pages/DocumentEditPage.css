@@ -12,3 +12,37 @@
   padding: 100px 0;
 }
 
+/* Drag & Drop область */
+.ant-upload-drag {
+  background-color: #fafafa;
+  border: 2px dashed var(--ant-color-border);
+  border-radius: var(--ant-border-radius-lg);
+  transition: all 0.3s ease;
+}
+
+.ant-upload-drag:hover {
+  border-color: var(--ant-color-primary);
+  background-color: var(--ant-color-primary-bg);
+}
+
+.ant-upload-drag.ant-upload-drag-hover {
+  border-color: var(--ant-color-primary);
+  background-color: var(--ant-color-primary-bg);
+}
+
+.ant-upload-drag-icon {
+  font-size: 48px;
+  color: var(--ant-color-primary);
+}
+
+.ant-upload-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ant-color-text);
+  margin: 8px 0;
+}
+
+.ant-upload-hint {
+  font-size: 14px;
+  color: var(--ant-color-text-secondary);
+}
