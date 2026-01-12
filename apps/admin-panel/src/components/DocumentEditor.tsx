@@ -7,7 +7,7 @@ const {TextArea} = Input;
 export function DocumentEditor(props: { onChange: (e: string) => void, value?: string }) {
     const [previewContent, setPreviewContent] = useState(props.value);
     return <Splitter>
-        <Splitter.Panel defaultSize="50%" min="20%">
+        <Splitter.Panel defaultSize="50%" min="20%" style={{paddingRight: 5}}>
             <TextArea
                 rows={15}
                 placeholder="Введите содержание документа (поддерживается Markdown) или загрузите файл выше"
@@ -20,7 +20,7 @@ export function DocumentEditor(props: { onChange: (e: string) => void, value?: s
                 style={{minHeight: 400, maxHeight: 600, overflow: "auto"}}
             />
         </Splitter.Panel>
-        <Splitter.Panel defaultSize="50%" min="20%">
+        <Splitter.Panel defaultSize="50%" min="20%" style={{paddingLeft: 5}}>
             <Card
                 variant="outlined"
                 style={{minHeight: 400, maxHeight: 600, overflow: "auto"}}

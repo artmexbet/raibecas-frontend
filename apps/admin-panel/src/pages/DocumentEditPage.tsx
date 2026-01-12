@@ -19,6 +19,7 @@ import {documentService} from '@/services/document.service';
 import type {Document} from '@/types/document';
 import dayjs from 'dayjs';
 import './DocumentEditPage.css';
+import {DocumentEditor, DocumentViewer} from "@/components";
 
 const {TextArea} = Input;
 
@@ -115,6 +116,10 @@ export function DocumentEditPage() {
             </div>
         );
     }
+
+    const handleContentChange = (value: string) => {
+        form.setFieldValue('content', value);
+    };
 
     return (
         <div>
@@ -225,10 +230,7 @@ export function DocumentEditPage() {
                             {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
                         ]}
                     >
-                        <TextArea
-                            rows={15}
-                            placeholder="Введите содержание документа (поддерживается Markdown)"
-                        />
+                        <DocumentEditor onChange={handleContentChange}/>
                     </Form.Item>
 
                     <Form.Item>
