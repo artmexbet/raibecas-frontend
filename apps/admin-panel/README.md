@@ -65,7 +65,7 @@
 ### UI Страницы
 - ✅ `src/pages/LoginPage.tsx` - страница входа
 - ✅ `src/pages/DashboardPage.tsx` - главная страница (dashboard)
-- ✅ `src/pages/DocumentListPage.jsx` - список научных работ
+- ✅ `src/pages/DocumentListPage.tsx` - список научных работ
 - ✅ `src/pages/DocumentViewPage.tsx` - просмотр документа
 - ✅ `src/pages/DocumentEditPage.tsx` - редактирование документа
 - ✅ `src/pages/DocumentCreatePage.tsx` - создание нового документа

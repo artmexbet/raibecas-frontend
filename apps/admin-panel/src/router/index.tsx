@@ -4,6 +4,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { DocumentListPage } from '@/pages/DocumentListPage';
 import { DocumentViewPage } from '../pages/DocumentViewPage';
 import { DocumentEditPage } from '../pages/DocumentEditPage';
+import { UserRequestsListPage } from "@/pages/UserRequestsListPage.tsx";
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
@@ -118,17 +119,14 @@ const documentEditRoute = createRoute({
   },
 });
 
-// Заявки на регистр��цию (пока заглушка)
+// Заявки на регистрацию
 const registrationRequestsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/registration-requests',
   component: () => (
     <ProtectedRoute requireAuth permissions={['view_registration_requests']}>
       <AdminLayout>
-        <div>
-          <h1>Заявки на регистрацию</h1>
-          <p>Страница в разработке</p>
-        </div>
+        <UserRequestsListPage/>
       </AdminLayout>
     </ProtectedRoute>
   ),
