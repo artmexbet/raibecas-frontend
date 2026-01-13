@@ -1,0 +1,35 @@
+/* Страница просмотра документа */
+
+.document-view-page__header {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.document-view-page__loading {
+  text-align: center;
+  padding: 100px 0;
+}
+
+.document-view-page__error-back-button {
+  margin-bottom: 16px;
+}
+
+.document-view-page__stats-card {
+  margin-bottom: 24px;
+}
+
+.document-view-page__stats-section-title {
+  margin-bottom: 16px;
+}
+
+/* Кастомные стили для карточек - используем data-атрибуты для темизации */
+.document-view-page__date-card-label {
+  font-size: 14px;
+}
+
+.document-view-page__date-card-value {
+  font-size: 14px;
+}
+
