@@ -1,12 +1,56 @@
-import { Card, Col, Row, Statistic } from 'antd';
+import { useEffect, useState } from 'react';
+import { Card, Col, Row, Statistic, Spin, message, List, Typography } from 'antd';
 import {
   FileTextOutlined,
   TeamOutlined,
   UserAddOutlined,
   CommentOutlined,
 } from '@ant-design/icons';
+import { statsService } from '../services/stats.service';
+import type { DashboardStats } from '@/mocks';
+
+const { Text } = Typography;
 
 export function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      setLoading(true);
+      const data = await statsService.getDashboardStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Ошибка при загрузке статистики:', error);
+      message.error('Не удалось загрузить статистику');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 0' }}>
+        <Spin size="large" tip="Загрузка статистики..." />
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 style={{ marginBottom: 24 }}>Панель управления</h1>
@@ -16,7 +60,7 @@ export function DashboardPage() {
           <Card>
             <Statistic
               title="Всего документов"
-              value={0}
+              value={stats?.documentsCount ?? 0}
               prefix={<FileTextOutlined />}
             />
           </Card>
@@ -25,7 +69,7 @@ export function DashboardPage() {
           <Card>
             <Statistic
               title="Пользователей"
-              value={0}
+              value={stats?.usersCount ?? 0}
               prefix={<TeamOutlined />}
             />
           </Card>
@@ -34,7 +78,7 @@ export function DashboardPage() {
           <Card>
             <Statistic
               title="Заявок на регистрацию"
-              value={0}
+              value={stats?.pendingRequestsCount ?? 0}
               prefix={<UserAddOutlined />}
             />
           </Card>
@@ -43,8 +87,53 @@ export function DashboardPage() {
           <Card>
             <Statistic
               title="Заметок создано"
-              value={0}
+              value={stats?.totalNotesCount ?? 0}
               prefix={<CommentOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={16} style={{ marginTop: 24 }}>
+        <Col span={12}>
+          <Card title="Последние документы">
+            <List
+              dataSource={stats?.recentDocuments ?? []}
+              renderItem={(doc) => (
+                <List.Item>
+                  <List.Item.Meta
+                    title={doc.title}
+                    description={
+                      <>
+                        <Text type="secondary">{doc.author}</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {formatDate(doc.createdAt)}
+                        </Text>
+                      </>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="Последние пользователи">
+            <List
+              dataSource={stats?.recentUsers ?? []}
+              renderItem={(user) => (
+                <List.Item>
+                  <List.Item.Meta
+                    title={user.username}
+                    description={
+                      <Text type="secondary" style={{ fontSize: '12px' }}>
+                        Регистрация: {formatDate(user.registeredAt)}
+                      </Text>
+                    }
+                  />
+                </List.Item>
+              )}
             />
           </Card>
         </Col>

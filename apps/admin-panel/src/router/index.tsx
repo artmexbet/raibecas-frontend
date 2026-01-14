@@ -10,6 +10,7 @@ import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
 import {DocumentCreatePage} from "@/pages/DocumentCreatePage.tsx";
 import {UsersListPage} from "../pages/UsersListPage.tsx";
+import {SettingsPage} from "../pages/SettingsPage.tsx";
 
 // Корневой маршрут
 const rootRoute = createRootRoute({
@@ -163,11 +164,7 @@ const settingsRoute = createRoute({
   component: () => (
     <ProtectedRoute requireAuth permissions={['manage_settings']}>
       <AdminLayout>
-        <div>
-          <h1>Настройки</h1>
-          <p>Страница в разработке</p>
-          <p>Доступна только для супер-администратора</p>
-        </div>
+        <SettingsPage />
       </AdminLayout>
     </ProtectedRoute>
   ),
