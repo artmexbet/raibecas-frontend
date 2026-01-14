@@ -1,6 +1,6 @@
 import {Card, Input, Splitter} from "antd";
 import {XMarkdown} from "@ant-design/x-markdown";
-import React, {useState} from "react";
+import React from "react";
 
 const {TextArea} = Input;
 
