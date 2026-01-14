@@ -11,21 +11,17 @@ import {
     Space,
     Row,
     Col,
-    Tabs,
     Upload,
     Alert,
-    Collapse, Splitter,
+    Collapse,
 } from 'antd';
 import {
     ArrowLeftOutlined,
     SaveOutlined,
-    EyeOutlined,
-    EditOutlined,
     InboxOutlined,
     InfoCircleOutlined
 } from '@ant-design/icons';
 import {documentService} from '@/services/document.service';
-import {XMarkdown} from '@ant-design/x-markdown';
 import type {Document} from '@/types/document';
 import type {UploadProps} from 'antd';
 import './DocumentEditPage.css';
@@ -70,7 +66,6 @@ export function DocumentCreatePage() {
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState('edit');
     const [previewContent, setContent] = useState<string>('');
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
@@ -197,6 +192,7 @@ export function DocumentCreatePage() {
 
     const handleContentChange = (value: string) => {
         form.setFieldValue('content', value);
+        setContent(value);
     };
 
     const handleClearContent = () => {
