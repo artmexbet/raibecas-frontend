@@ -4,10 +4,12 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { DocumentListPage } from '@/pages/DocumentListPage';
 import { DocumentViewPage } from '../pages/DocumentViewPage';
 import { DocumentEditPage } from '../pages/DocumentEditPage';
+import { UserRequestsListPage } from "@/pages/UserRequestsListPage.tsx";
 import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
 import {DocumentCreatePage} from "@/pages/DocumentCreatePage.tsx";
+import {UsersListPage} from "../pages/UsersListPage.tsx";
 
 // Корневой маршрут
 const rootRoute = createRootRoute({
@@ -118,17 +120,14 @@ const documentEditRoute = createRoute({
   },
 });
 
-// Заявки на регистр��цию (пока заглушка)
+// Заявки на регистрацию
 const registrationRequestsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/registration-requests',
   component: () => (
     <ProtectedRoute requireAuth permissions={['view_registration_requests']}>
       <AdminLayout>
-        <div>
-          <h1>Заявки на регистрацию</h1>
-          <p>Страница в разработке</p>
-        </div>
+        <UserRequestsListPage/>
       </AdminLayout>
     </ProtectedRoute>
   ),
@@ -139,17 +138,14 @@ const registrationRequestsRoute = createRoute({
   },
 });
 
-// Пользователи (пока заглушка)
+// Пользователи
 const usersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/users',
   component: () => (
     <ProtectedRoute requireAuth permissions={['view_users']}>
       <AdminLayout>
-        <div>
-          <h1>Пользователи</h1>
-          <p>Страница в разработке</p>
-        </div>
+        <UsersListPage />
       </AdminLayout>
     </ProtectedRoute>
   ),

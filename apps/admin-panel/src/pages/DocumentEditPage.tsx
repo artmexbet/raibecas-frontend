@@ -19,9 +19,7 @@ import {documentService} from '@/services/document.service';
 import type {Document} from '@/types/document';
 import dayjs from 'dayjs';
 import './DocumentEditPage.css';
-import {DocumentEditor, DocumentViewer} from "@/components";
-
-const {TextArea} = Input;
+import {DocumentEditor} from "@/components";
 
 export function DocumentEditPage() {
     const params = useParams({strict: false});
@@ -230,7 +228,7 @@ export function DocumentEditPage() {
                             {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
                         ]}
                     >
-                        <DocumentEditor onChange={handleContentChange}/>
+                        <DocumentEditor onChange={handleContentChange} value={document.content}/>
                     </Form.Item>
 
                     <Form.Item>

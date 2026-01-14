@@ -28,3 +28,10 @@ export interface AuthState {
   admin: Admin | null;
   token: string | null;
 }
+
+export interface CreateAdminRequest {
+    id: string;
+    email: string;
+    username: string;
+    request: string;
+}

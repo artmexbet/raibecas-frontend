@@ -1,22 +1,21 @@
-import {documentService} from "@/services/document.service";
+﻿import {documentService} from "@/services/document.service";
 import {useEffect, useState} from "react";
 import { useNavigate } from '@tanstack/react-router';
 import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
-
+import type { Document as DocumentType } from '@/types/document';
 const { Search } = Input;
 
 export function DocumentListPage() {
     const navigate = useNavigate();
-    const [documents, setDocuments] = useState([]);
+    const [documents, setDocuments] = useState<DocumentType[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
-
     // Загрузка документов при монтировании компонента
     useEffect(() => {
         loadDocuments();
     }, []);
-
     const loadDocuments = async () => {
         try {
             setLoading(true);
@@ -29,53 +28,51 @@ export function DocumentListPage() {
             setLoading(false);
         }
     };
-
     // Фильтрация документов по поисковому запросу  //todo: вынести фильтрацию на ответственность бэкенда
-    const filteredDocuments = documents.filter(doc => {
+    const filteredDocuments = documents.filter((doc: DocumentType) => {
         const search = searchText.toLowerCase();
         return (
             doc.title?.toLowerCase().includes(search) ||
             doc.author?.toLowerCase().includes(search) ||
             doc.category?.toLowerCase().includes(search) ||
-            doc.tags?.some(tag => tag.toLowerCase().includes(search))
+            doc.tags?.some((tag: string) => tag.toLowerCase().includes(search))
         );
     });
-
     // Колонки таблицы
-    const columns = [
+    const columns: ColumnsType<DocumentType> = [
         {
             title: 'Название',
             dataIndex: 'title',
             key: 'title',
             width: '25%',
-            sorter: (a, b) => a.title.localeCompare(b.title),
+            sorter: (a: DocumentType, b: DocumentType) => a.title.localeCompare(b.title),
         },
         {
             title: 'Автор',
             dataIndex: 'author',
             key: 'author',
             width: '15%',
-            sorter: (a, b) => a.author.localeCompare(b.author),
+            sorter: (a: DocumentType, b: DocumentType) => a.author.localeCompare(b.author),
         },
         {
             title: 'Категория',
             dataIndex: 'category',
             key: 'category',
             width: '15%',
-            filters: [...new Set(documents.map(doc => doc.category))].map(cat => ({
+            filters: [...new Set(documents.map((doc: DocumentType) => doc.category))].map((cat: string) => ({
                 text: cat,
                 value: cat,
             })),
-            onFilter: (value, record) => record.category === value,
+            onFilter: (value: any, record: DocumentType) => record.category === value,
         },
         {
             title: 'Теги',
             dataIndex: 'tags',
             key: 'tags',
             width: '20%',
-            render: (tags) => (
+            render: (tags: string[]) => (
                 <>
-                    {tags?.map(tag => (
+                    {tags?.map((tag: string) => (
                         <Tag color="blue" key={tag}>
                             {tag}
                         </Tag>
@@ -88,22 +85,22 @@ export function DocumentListPage() {
             dataIndex: 'views',
             key: 'views',
             width: '10%',
-            sorter: (a, b) => a.views - b.views,
-            align: 'center',
+            sorter: (a: DocumentType, b: DocumentType) => a.views - b.views,
+            align: 'center' as const,
         },
         {
             title: 'Заметки',
             dataIndex: 'notesCount',
             key: 'notesCount',
             width: '10%',
-            sorter: (a, b) => a.notesCount - b.notesCount,
-            align: 'center',
+            sorter: (a: DocumentType, b: DocumentType) => a.notesCount - b.notesCount,
+            align: 'center' as const,
         },
         {
             title: 'Действия',
             key: 'actions',
             width: '15%',
-            render: (_, record) => (
+            render: (_: any, record: DocumentType) => (
                 <Space size="small">
                     <Button
                         type="text"
@@ -134,16 +131,13 @@ export function DocumentListPage() {
             ),
         },
     ];
-
-    const handleView = (record) => {
+    const handleView = (record: DocumentType) => {
         navigate({ to: `/documents/${record.id}` });
     };
-
-    const handleEdit = (record) => {
+    const handleEdit = (record: DocumentType) => {
         navigate({ to: `/documents/${record.id}/edit` });
     };
-
-    const handleDelete = (record) => {
+    const handleDelete = (record: DocumentType) => {
         Modal.confirm({
             title: 'Подтверждение удаления',
             icon: <ExclamationCircleOutlined />,
@@ -163,15 +157,12 @@ export function DocumentListPage() {
             },
         });
     };
-
     const handleCreate = () => {
         navigate({ to: '/documents/new' });
     };
-
     return (
         <div>
             <h1 style={{ marginBottom: 24 }}>Научные работы философов</h1>
-
             <Card>
                 <Space size="large" style={{ width: '100%' }} orientation="vertical">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -193,13 +184,12 @@ export function DocumentListPage() {
                             Добавить документ
                         </Button>
                     </div>
-
                     <Table
                         columns={columns}
                         dataSource={filteredDocuments}
                         loading={loading}
                         rowKey="id"
-                        onRow={(record) => ({
+                        onRow={(record: DocumentType) => ({
                             onClick: () => handleView(record),
                             style: { cursor: 'pointer' },
                         })}
@@ -207,7 +197,7 @@ export function DocumentListPage() {
                         pagination={{
                             pageSize: 10,
                             showSizeChanger: true,
-                            showTotal: (total) => `Всего документов: ${total}`,
+                            showTotal: (total: number) => `Всего документов: ${total}`,
                         }}
                     />
                 </Space>
