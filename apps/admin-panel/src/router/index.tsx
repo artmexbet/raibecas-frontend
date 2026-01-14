@@ -9,6 +9,7 @@ import { AdminLayout } from '../layouts/AdminLayout';
 import { authService } from '../services/auth.service';
 import { ProtectedRoute } from '@/components';
 import {DocumentCreatePage} from "@/pages/DocumentCreatePage.tsx";
+import {UsersListPage} from "../pages/UsersListPage.tsx";
 
 // Корневой маршрут
 const rootRoute = createRootRoute({
@@ -137,17 +138,14 @@ const registrationRequestsRoute = createRoute({
   },
 });
 
-// Пользователи (пока заглушка)
+// Пользователи
 const usersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/users',
   component: () => (
     <ProtectedRoute requireAuth permissions={['view_users']}>
       <AdminLayout>
-        <div>
-          <h1>Пользователи</h1>
-          <p>Страница в разработке</p>
-        </div>
+        <UsersListPage />
       </AdminLayout>
     </ProtectedRoute>
   ),
