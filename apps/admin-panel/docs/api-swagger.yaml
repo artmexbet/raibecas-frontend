@@ -1,0 +1,979 @@
+openapi: 3.0.3
+info:
+  title: Raibecas Admin Panel API
+  description: |
+    API для административной панели онлайн библиотеки научных работ философа.
+    
+    ## Аутентификация
+    API использует Bearer Token аутентификацию. После успешного логина получите токен
+    и используйте его в заголовке Authorization для всех запросов.
+    
+    ## Роли администраторов
+    - **super_admin** - полный доступ ко всем функциям
+    - **admin** - ограниченный доступ (без управления настройками)
+
+  version: 1.0.0
+  contact:
+    name: Raibecas Team
+    email: support@raibecas.kz
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Операции аутентификации и авторизации
+  - name: Documents
+    description: Управление документами (научными работами)
+  - name: Users
+    description: Управление пользователями
+  - name: Registration Requests
+    description: Управление заявками на регистрацию
+  - name: Statistics
+    description: Статистика для Dashboard
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен для авторизации. Используйте формат "Bearer {token}"
+
+  schemas:
+    # Authentication Schemas
+    Admin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "admin@raibecas.kz"
+        username:
+          type: string
+          example: "admin"
+        role:
+          type: string
+          enum: [admin, super_admin]
+          example: "super_admin"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00.000Z"
+      required:
+        - id
+        - email
+        - username
+        - role
+        - createdAt
+
+    LoginCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@raibecas.kz"
+        password:
+          type: string
+          format: password
+          example: "SecurePassword123!"
+        remember:
+          type: boolean
+          default: false
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        admin:
+          $ref: '#/components/schemas/Admin'
+      required:
+        - token
+        - admin
+
+    # Document Schemas
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "doc-001"
+        title:
+          type: string
+          example: "Критика чистого разума"
+        description:
+          type: string
+          example: "Основополагающий труд Иммануила Канта"
+        content:
+          type: string
+          description: "Содержимое документа в формате Markdown"
+          example: "# Введение\n\nОсновные положения..."
+        author:
+          type: string
+          example: "Иммануил Кант"
+        category:
+          type: string
+          example: "Эпистемология"
+        publicationDate:
+          type: string
+          format: date
+          example: "1781-01-01"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["философия", "кант", "эпистемология"]
+        views:
+          type: integer
+          example: 1234
+        notesCount:
+          type: integer
+          example: 42
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-01-15T10:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-02-20T14:30:00.000Z"
+      required:
+        - id
+        - title
+        - content
+        - author
+        - category
+        - publicationDate
+        - tags
+        - views
+        - notesCount
+        - createdAt
+        - updatedAt
+
+    CreateDocumentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Бытие и время"
+        description:
+          type: string
+          example: "Фундаментальная онтология Мартина Хайдеггера"
+        content:
+          type: string
+          example: "# Введение в онтологию\n\n..."
+        author:
+          type: string
+          example: "Мартин Хайдеггер"
+        category:
+          type: string
+          example: "Онтология"
+        publicationDate:
+          type: string
+          format: date
+          example: "1927-01-01"
+        tags:
+          type: array
+          items:
+            type: string
+          example: ["философия", "хайдеггер", "онтология"]
+      required:
+        - title
+        - content
+        - author
+        - category
+        - publicationDate
+
+    UpdateDocumentRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        content:
+          type: string
+        author:
+          type: string
+        category:
+          type: string
+        publicationDate:
+          type: string
+          format: date
+        tags:
+          type: array
+          items:
+            type: string
+
+    # User Schemas
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "user-001"
+        email:
+          type: string
+          format: email
+          example: "ivan.ivanov@example.com"
+        username:
+          type: string
+          example: "ivan_ivanov"
+        fullName:
+          type: string
+          example: "Иван Иванов"
+        registeredAt:
+          type: string
+          format: date-time
+          example: "2024-01-10T12:00:00.000Z"
+        lastLoginAt:
+          type: string
+          format: date-time
+          example: "2024-04-15T08:30:00.000Z"
+        isActive:
+          type: boolean
+          example: true
+        notesCount:
+          type: integer
+          example: 15
+      required:
+        - id
+        - email
+        - username
+        - fullName
+        - registeredAt
+        - lastLoginAt
+        - isActive
+        - notesCount
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+          description: "Статус активности пользователя"
+
+    # Registration Request Schemas
+    RegistrationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "req-001"
+        email:
+          type: string
+          format: email
+          example: "new.user@example.com"
+        username:
+          type: string
+          example: "new_user"
+        request:
+          type: string
+          description: "Причина/обоснование для регистрации"
+          example: "Интересуюсь философией и хочу изучать труды"
+      required:
+        - id
+        - email
+        - username
+        - request
+
+    # Statistics Schemas
+    DashboardStats:
+      type: object
+      properties:
+        documentsCount:
+          type: integer
+          example: 147
+        usersCount:
+          type: integer
+          example: 89
+        pendingRequestsCount:
+          type: integer
+          example: 5
+        totalNotesCount:
+          type: integer
+          example: 342
+        recentDocuments:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "doc-001"
+              title:
+                type: string
+                example: "Критика чистого разума"
+              author:
+                type: string
+                example: "Иммануил Кант"
+              createdAt:
+                type: string
+                format: date-time
+                example: "2024-01-15T10:00:00.000Z"
+        recentUsers:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: "user-004"
+              username:
+                type: string
+                example: "elena_v"
+              registeredAt:
+                type: string
+                format: date-time
+                example: "2024-04-05T12:30:00.000Z"
+      required:
+        - documentsCount
+        - usersCount
+        - pendingRequestsCount
+        - totalNotesCount
+        - recentDocuments
+        - recentUsers
+
+    # Error Schemas
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Invalid credentials"
+        code:
+          type: string
+          example: "AUTH_001"
+        details:
+          type: object
+          additionalProperties: true
+      required:
+        - message
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Войти в систему
+      description: Аутентификация администратора по email и паролю
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                message: "Invalid email or password"
+                code: "AUTH_001"
+        '422':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Выйти из системы
+      description: Завершение сеанса администратора
+      operationId: logout
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Успешный выход
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Получить текущего администратора
+      description: Возвращает информацию о текущем авторизованном администраторе
+      operationId: getCurrentAdmin
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Информация об администраторе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Admin'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Document Endpoints
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: Получить список документов
+      description: Возвращает список всех документов в библиотеке
+      operationId: getDocuments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          description: Поиск по названию и автору
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Фильтр по категории
+          schema:
+            type: string
+        - name: tag
+          in: query
+          description: Фильтр по тегу
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список документов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Documents
+      summary: Создать новый документ
+      description: Добавление нового документа в библиотеку
+      operationId: createDocument
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '201':
+          description: Документ успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /documents/{id}:
+    get:
+      tags:
+        - Documents
+      summary: Получить документ по ID
+      description: Возвращает полную информацию о документе
+      operationId: getDocumentById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Данные документа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Documents
+      summary: Обновить документ
+      description: Обновление существующего документа
+      operationId: updateDocument
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentRequest'
+      responses:
+        '200':
+          description: Документ успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Documents
+      summary: Удалить документ
+      description: Удаление документа из библиотеки
+      operationId: deleteDocument
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID документа
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Документ успешно удален
+        '404':
+          description: Документ не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # User Endpoints
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Получить список пользователей
+      description: Возвращает список всех зарегистрированных пользователей
+      operationId: getUsers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          description: Поиск по имени пользователя или email
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          description: Фильтр по статусу активности
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    patch:
+      tags:
+        - Users
+      summary: Обновить статус пользователя
+      description: Активация или деактивация пользователя
+      operationId: updateUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Статус пользователя обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Users
+      summary: Удалить пользователя
+      description: Полное удаление пользователя из системы
+      operationId: deleteUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Пользователь успешно удален
+        '404':
+          description: Пользователь не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Registration Request Endpoints
+  /registration-requests:
+    get:
+      tags:
+        - Registration Requests
+      summary: Получить список заявок на регистрацию
+      description: Возвращает список всех ожидающих заявок
+      operationId: getRegistrationRequests
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Количество элементов на странице
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Список заявок
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistrationRequest'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /registration-requests/{id}/approve:
+    post:
+      tags:
+        - Registration Requests
+      summary: Одобрить заявку на регистрацию
+      description: Создает пользователя и отправляет уведомление на email
+      operationId: approveRegistrationRequest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Заявка одобрена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Registration request approved successfully"
+                  userId:
+                    type: string
+                    example: "user-123"
+        '404':
+          description: Заявка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /registration-requests/{id}/reject:
+    post:
+      tags:
+        - Registration Requests
+      summary: Отклонить заявку на регистрацию
+      description: Отклоняет заявку и отправляет уведомление на email
+      operationId: rejectRegistrationRequest
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID заявки
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Причина отклонения (опционально)
+                  example: "Недостаточно информации в заявке"
+      responses:
+        '200':
+          description: Заявка отклонена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Registration request rejected successfully"
+        '404':
+          description: Заявка не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Statistics Endpoints
+  /admin/stats/dashboard:
+    get:
+      tags:
+        - Statistics
+      summary: Получить статистику для Dashboard
+      description: Возвращает общую статистику системы и последние данные
+      operationId: getDashboardStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Статистика Dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

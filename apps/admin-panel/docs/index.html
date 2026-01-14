@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raibecas API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .topbar {
+            display: none;
+        }
+        .swagger-ui .info .title {
+            font-size: 36px;
+        }
+        .swagger-ui .info {
+            margin: 50px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Определяем, какой файл использовать (YAML или JSON)
+            const specUrl = './api-swagger.yaml';
+
+            const ui = SwaggerUIBundle({
+                url: specUrl,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                // Настройки локализации
+                displayRequestDuration: true,
+                filter: true,
+                // Раскрыть все секции по умолчанию
+                docExpansion: 'list',
+                // Показывать модели
+                defaultModelsExpandDepth: 1,
+                // Показывать примеры в теле запроса
+                defaultModelExpandDepth: 1,
+                // Синтаксическая подсветка
+                syntaxHighlight: {
+                    activate: true,
+                    theme: 'monokai'
+                },
+                // Настройки для тестирования API
+                tryItOutEnabled: true,
+                // Поддержка CORS
+                requestInterceptor: (request) => {
+                    // Можно добавить дефолтные заголовки
+                    return request;
+                },
+                // Персистентная авторизация
+                persistAuthorization: true,
+            });
+
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>

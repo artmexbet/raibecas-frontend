@@ -1,0 +1,13 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# YAML files
+*.yml linguist-detectable=true
+*.yaml linguist-detectable=true
+
+# Documentation
+*.md linguist-documentation
+
+# Swagger/OpenAPI
+api-swagger.yaml linguist-language=YAML
+api-swagger.json linguist-language=JSON

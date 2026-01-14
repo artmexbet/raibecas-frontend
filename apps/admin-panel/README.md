@@ -82,6 +82,10 @@
 - ✅ `LOGIN_PAGE.md` - документация страницы входа
 - ✅ `DRAG_AND_DROP.md` - документация по загрузке файлов через Drag & Drop
 - ✅ `TESTING.md` - инструкции по тестированию
+- ✅ `docs/API_DOCUMENTATION.md` - документация API
+- ✅ `docs/api-swagger.yaml` - OpenAPI 3.0.3 спецификация
+- ✅ `docs/api-swagger.json` - JSON версия спецификации
+- ✅ `docs/index.html` - Swagger UI для просмотра документации
 
 ## 📋 Выполнено из чек-листа
 
@@ -176,12 +180,38 @@
 
 ## 🚀 Как запустить
 
+### Запуск приложения
+
 ```bash
 cd apps/admin-panel
 bun dev
 ```
 
 Откройте http://localhost:3000 в браузере.
+
+### Просмотр API документации
+
+#### Локальный Swagger UI
+
+```bash
+bun run docs:serve
+```
+
+Откройте http://localhost:8081 в браузере для просмотра интерактивной документации API.
+
+#### Валидация API спецификации
+
+```bash
+bun run docs:validate
+```
+
+#### Онлайн просмотр
+
+1. Перейдите на https://editor.swagger.io/
+2. Скопируйте содержимое `docs/api-swagger.yaml`
+3. Вставьте в редактор
+
+Подробнее см. `docs/API_DOCUMENTATION.md`
 
 ## 🎨 Особенности UI
 
