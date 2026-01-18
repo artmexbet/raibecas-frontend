@@ -26,7 +26,6 @@ export const LoginPage: React.FC = () => {
       const credentials: LoginCredentials = {
         email: values.email,
         password: values.password,
-        remember: values.remember,
       };
 
       await authService.login(credentials);

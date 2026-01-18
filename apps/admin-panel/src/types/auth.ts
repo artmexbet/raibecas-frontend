@@ -22,7 +22,7 @@ export interface LoginResponse {
   refresh_token: string;  // Refresh token (не используется напрямую)
   token_id: string;       // ID токена для операций
   user_id: string;        // ID пользователя
-  admin: Admin;           // Данные администратора
+  user: Admin;           // Данные администратора
   // fingerprint автоматически в HttpOnly cookie
 }
 

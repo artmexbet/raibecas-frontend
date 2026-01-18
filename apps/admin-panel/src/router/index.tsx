@@ -44,7 +44,7 @@ const indexRoute = createRoute({
   beforeLoad: () => {
     // Если не авторизован, редиректим на логин
     if (!authService.isAuthenticated()) {
-      throw redirect({ to: '/login' });
+      redirect({ to: '/login' });
     }
   },
 });

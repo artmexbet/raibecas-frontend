@@ -38,8 +38,8 @@ export const authService = {
           access_token: mockData.access_token,
           refresh_token: 'mock_refresh_token',
           token_id: 'mock_token_id',
-          user_id: mockData.admin.id,
-          admin: mockData.admin,
+          user_id: mockData.user.id,
+          user: mockData.user,
         },
       };
     } else {
@@ -53,14 +53,14 @@ export const authService = {
       );
     }
 
-    const { access_token, token_id, admin } = response.data;
+    const { access_token, token_id, user } = response.data;
 
     // Сохраняем access token в память (НЕ в localStorage!)
     tokenManager.setAccessToken(access_token);
 
     // Сохраняем token_id для logout и данные администратора
     localStorage.setItem(STORAGE_KEYS.TOKEN_ID, token_id);
-    localStorage.setItem(STORAGE_KEYS.ADMIN_DATA, JSON.stringify(admin));
+    localStorage.setItem(STORAGE_KEYS.ADMIN_DATA, JSON.stringify(user));
 
     return response.data;
   },
