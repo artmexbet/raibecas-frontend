@@ -1,5 +1,6 @@
 import { mockApiCall } from '@/mocks';
-import { MOCK_DOCUMENTS, createMockDocument, type Document } from '@/mocks';
+import { MOCK_DOCUMENTS, createMockDocument, MOCK_AUTHORS, MOCK_CATEGORIES, MOCK_TAGS } from '@/mocks';
+import type { Document } from '@/types/document';
 
 /**
  * Моковые обработчики для документов
@@ -49,14 +50,43 @@ export const documentsMockHandlers = {
     }
 
     const baseDocument = MOCK_DOCUMENTS[index]!;
+
+    // Обрабатываем автора - если пришла строка, ищем в моках или оставляем текущего
+    let author = data.author ?? baseDocument.author;
+    if (typeof (data.author as any) === 'string') {
+      const foundAuthor = MOCK_AUTHORS.find(a => a.name === (data.author as any));
+      author = foundAuthor ?? baseDocument.author;
+    }
+
+    // Обрабатываем категорию - если пришла строка, ищем в моках или оставляем текущую
+    let category = data.category ?? baseDocument.category;
+    if (typeof (data.category as any) === 'string') {
+      const foundCategory = MOCK_CATEGORIES.find(c => c.title === (data.category as any));
+      category = foundCategory ?? baseDocument.category;
+    }
+
+    // Обрабатываем теги - если пришёл массив строк, ищем соответствующие объекты
+    let tags = data.tags ?? baseDocument.tags;
+    if (Array.isArray(data.tags) && data.tags.length > 0 && typeof (data.tags[0] as any) === 'string') {
+      tags = (data.tags as unknown as string[])
+        .map(tagTitle => MOCK_TAGS.find(t => t.title === tagTitle))
+        .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+
+      // Если не нашли теги, оставляем текущие
+      if (tags.length === 0) {
+        tags = baseDocument.tags;
+      }
+    }
+
     const updatedDocument: Document = {
       id: baseDocument.id,
       title: data.title ?? baseDocument.title,
-      author: data.author ?? baseDocument.author,
-      category: data.category ?? baseDocument.category,
+      description: data.description ?? baseDocument.description,
+      author: author as any,
+      category: category as any,
       publicationDate: data.publicationDate ?? baseDocument.publicationDate,
       content: data.content ?? baseDocument.content,
-      tags: data.tags ?? baseDocument.tags,
+      tags: tags as any,
       views: data.views ?? baseDocument.views,
       notesCount: data.notesCount ?? baseDocument.notesCount,
       createdAt: baseDocument.createdAt,

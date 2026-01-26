@@ -1,10 +1,11 @@
 // API endpoints
-export const API_BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
     LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh',
     ME: '/auth/me',
   },
   DOCUMENTS: {
@@ -25,9 +26,10 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-// Storage keys
+// Storage keys (только для admin данных, токены в памяти и HttpOnly cookies)
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'admin_auth_token',
-  ADMIN_DATA: 'admin_data',
+  ADMIN_DATA: 'admin_data', // Публичная информация о пользователе
 } as const;
+
+
 

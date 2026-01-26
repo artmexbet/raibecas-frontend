@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
-import type { Document as DocumentType } from '@/types/document';
+import type { Document as DocumentType, Tag as TagType } from '@/types/document';
 const { Search } = Input;
 
 export function DocumentListPage() {
@@ -33,9 +33,9 @@ export function DocumentListPage() {
         const search = searchText.toLowerCase();
         return (
             doc.title?.toLowerCase().includes(search) ||
-            doc.author?.toLowerCase().includes(search) ||
-            doc.category?.toLowerCase().includes(search) ||
-            doc.tags?.some((tag: string) => tag.toLowerCase().includes(search))
+            doc.author?.name.toLowerCase().includes(search) ||
+            doc.category?.title.toLowerCase().includes(search) ||
+            doc.tags?.some((tag: TagType) => tag.title.toLowerCase().includes(search))
         );
     });
     // Колонки таблицы
@@ -49,53 +49,54 @@ export function DocumentListPage() {
         },
         {
             title: 'Автор',
-            dataIndex: 'author',
+            dataIndex: ['author', 'name'],
             key: 'author',
             width: '15%',
-            sorter: (a: DocumentType, b: DocumentType) => a.author.localeCompare(b.author),
+            sorter: (a: DocumentType, b: DocumentType) => a.author.name.localeCompare(b.author.name),
         },
         {
             title: 'Категория',
-            dataIndex: 'category',
+            dataIndex: ['category', 'title'],
             key: 'category',
             width: '15%',
-            filters: [...new Set(documents.map((doc: DocumentType) => doc.category))].map((cat: string) => ({
-                text: cat,
-                value: cat,
+            filters: [...new Set(documents.map((doc: DocumentType) => doc.category.title))].
+            map((title: string) => ({
+                text: title,
+                value: title,
             })),
-            onFilter: (value: any, record: DocumentType) => record.category === value,
+            onFilter: (value: any, record: DocumentType) => record.category.title === value,
         },
         {
             title: 'Теги',
             dataIndex: 'tags',
             key: 'tags',
             width: '20%',
-            render: (tags: string[]) => (
+            render: (tags: TagType[]) => (
                 <>
-                    {tags?.map((tag: string) => (
-                        <Tag color="blue" key={tag}>
-                            {tag}
+                    {tags?.map((tag: TagType) => (
+                        <Tag color="blue" key={tag.id}>
+                            {tag.title}
                         </Tag>
                     ))}
                 </>
             ),
         },
-        {
-            title: 'Просмотры',
-            dataIndex: 'views',
-            key: 'views',
-            width: '10%',
-            sorter: (a: DocumentType, b: DocumentType) => a.views - b.views,
-            align: 'center' as const,
-        },
-        {
-            title: 'Заметки',
-            dataIndex: 'notesCount',
-            key: 'notesCount',
-            width: '10%',
-            sorter: (a: DocumentType, b: DocumentType) => a.notesCount - b.notesCount,
-            align: 'center' as const,
-        },
+        // {
+        //     title: 'Просмотры',
+        //     dataIndex: 'views',
+        //     key: 'views',
+        //     width: '10%',
+        //     sorter: (a: DocumentType, b: DocumentType) => a.views - b.views,
+        //     align: 'center' as const,
+        // },
+        // {
+        //     title: 'Заметки',
+        //     dataIndex: 'notesCount',
+        //     key: 'notesCount',
+        //     width: '10%',
+        //     sorter: (a: DocumentType, b: DocumentType) => a.notesCount - b.notesCount,
+        //     align: 'center' as const,
+        // },
         {
             title: 'Действия',
             key: 'actions',

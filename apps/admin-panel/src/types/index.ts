@@ -9,5 +9,4 @@ export interface User {
   registeredAt: string;
   lastLoginAt: string;
   isActive: boolean;
-  notesCount: number;
 }

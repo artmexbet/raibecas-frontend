@@ -1,4 +1,5 @@
-import { mockApiCall, MOCK_USERS, type User } from '@/mocks';
+import { mockApiCall, MOCK_USERS } from '@/mocks';
+import type {User} from "@/types";
 
 /**
  * Моковые обработчики для пользователей
@@ -45,7 +46,6 @@ export const usersMockHandlers = {
       registeredAt: baseUser.registeredAt,
       lastLoginAt: data.lastLoginAt ?? baseUser.lastLoginAt,
       isActive: data.isActive ?? baseUser.isActive,
-      notesCount: data.notesCount ?? baseUser.notesCount,
     };
 
     MOCK_USERS[index] = updatedUser;
