@@ -1,83 +1,107 @@
-/**
- * Типы для документов
- */
+import type {Author, Category, Document, Tag} from '@/types/document.ts';
 
-export interface Document {
-  id: string;
-  title: string;
-  author: string;
-  category: string;
-  publicationDate: string;
-  content: string; // Markdown содержимое
-  tags: string[];
-  views: number;
-  notesCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
+/**
+ * Моковые авторы
+ */
+export const MOCK_AUTHORS: Author[] = [
+    {id: '550e8400-e29b-41d4-a716-446655440001', name: 'Иммануил Кант'},
+    {id: '550e8400-e29b-41d4-a716-446655440002', name: 'Мартин Хайдеггер'},
+    {id: '550e8400-e29b-41d4-a716-446655440003', name: 'Георг Вильгельм Фридрих Гегель'},
+];
+
+/**
+ * Моковые категории
+ */
+export const MOCK_CATEGORIES: Category[] = [
+    {id: 1, title: 'Эпистемология'},
+    {id: 2, title: 'Онтология'},
+    {id: 3, title: 'Феноменология'},
+    {id: 4, title: 'Этика'},
+    {id: 5, title: 'Метафизика'},
+];
+
+/**
+ * Моковые теги
+ */
+export const MOCK_TAGS: Tag[] = [
+    {id: 1, title: 'философия'},
+    {id: 2, title: 'эпистемология'},
+    {id: 3, title: 'кант'},
+    {id: 4, title: 'метафизика'},
+    {id: 5, title: 'онтология'},
+    {id: 6, title: 'хайдеггер'},
+    {id: 7, title: 'экзистенциализм'},
+    {id: 8, title: 'феноменология'},
+    {id: 9, title: 'гегель'},
+    {id: 10, title: 'диалектика'},
+];
 
 /**
  * Моковые данные документов
  */
 export const MOCK_DOCUMENTS: Document[] = [
-  {
-    id: '1',
-    title: 'Критика чистого разума',
-    author: 'Иммануил Кант',
-    category: 'Эпистемология',
-    publicationDate: '1781-01-01',
-    content: '# Критика чистого разума\n\n## Введение\n\nЭто моковый контент документа...',
-    tags: ['философия', 'эпистемология', 'кант', 'метафизика'],
-    views: 1523,
-    notesCount: 47,
-    createdAt: '2024-01-15T10:00:00.000Z',
-    updatedAt: '2024-01-15T10:00:00.000Z',
-  },
-  {
-    id: '2',
-    title: 'Бытие и время',
-    author: 'Мартин Хайдеггер',
-    category: 'Онтология',
-    publicationDate: '1927-01-01',
-    content: '# Бытие и время\n\n## О смысле бытия\n\nМоковое содержание...',
-    tags: ['философия', 'онтология', 'хайдеггер', 'экзистенциализм'],
-    views: 892,
-    notesCount: 31,
-    createdAt: '2024-02-20T14:30:00.000Z',
-    updatedAt: '2024-03-10T09:15:00.000Z',
-  },
-  {
-    id: '3',
-    title: 'Феноменология духа',
-    author: 'Георг Вильгельм Фридрих Гегель',
-    category: 'Феноменология',
-    publicationDate: '1807-01-01',
-    content: '# Феноменология духа\n\n## Предисловие\n\nМоковый текст работы...',
-    tags: ['философия', 'феноменология', 'гегель', 'диалектика'],
-    views: 654,
-    notesCount: 22,
-    createdAt: '2024-03-05T11:20:00.000Z',
-    updatedAt: '2024-03-05T11:20:00.000Z',
-  },
+    {
+        id: '550e8400-e29b-41d4-a716-446655440101',
+        title: 'Критика чистого разума',
+        description: 'Важнейший труд Иммануила Канта по теории познания',
+        author: MOCK_AUTHORS[0]!,
+        category: MOCK_CATEGORIES[0]!,
+        publicationDate: '1781-01-01T00:00:00Z',
+        tags: [MOCK_TAGS[0]!, MOCK_TAGS[1]!, MOCK_TAGS[2]!, MOCK_TAGS[3]!],
+        content: '# Критика чистого разума\n\nОсновополагающий философский труд...',
+        views: 1542,
+        notesCount: 87,
+        createdAt: '2024-01-15T10:00:00Z',
+        updatedAt: '2024-01-15T10:00:00Z',
+    },
+    {
+        id: '550e8400-e29b-41d4-a716-446655440102',
+        title: 'Бытие и время',
+        description: 'Фундаментальная работа Мартина Хайдеггера по онтологии',
+        author: MOCK_AUTHORS[1]!,
+        category: MOCK_CATEGORIES[1]!,
+        publicationDate: '1927-01-01T00:00:00Z',
+        tags: [MOCK_TAGS[0]!, MOCK_TAGS[4]!, MOCK_TAGS[5]!, MOCK_TAGS[6]!],
+        content: '# Бытие и время\n\nФундаментальная онтология Dasein...',
+        views: 2134,
+        notesCount: 156,
+        createdAt: '2024-02-20T14:30:00Z',
+        updatedAt: '2024-03-10T09:15:00Z',
+    },
+    {
+        id: '550e8400-e29b-41d4-a716-446655440103',
+        title: 'Феноменология духа',
+        description: 'Классическое произведение Гегеля по феноменологии и диалектике',
+        author: MOCK_AUTHORS[2]!,
+        category: MOCK_CATEGORIES[2]!,
+        publicationDate: '1807-01-01T00:00:00Z',
+        tags: [MOCK_TAGS[0]!, MOCK_TAGS[7]!, MOCK_TAGS[8]!, MOCK_TAGS[9]!],
+        content: '# Феноменология духа\n\nДиалектическое развитие сознания...',
+        views: 987,
+        notesCount: 64,
+        createdAt: '2024-03-05T11:20:00Z',
+        updatedAt: '2024-03-05T11:20:00Z',
+    },
 ];
 
 /**
  * Создает новый моковый документ
  */
 export function createMockDocument(data: Partial<Document>): Document {
-  const now = new Date().toISOString();
-  return {
-    id: String(MOCK_DOCUMENTS.length + 1),
-    title: data.title || 'Новый документ',
-    author: data.author || 'Неизвестный автор',
-    category: data.category || 'Разное',
-    publicationDate: data.publicationDate || new Date().toISOString().split('T')[0] || '2024-01-01',
-    content: data.content || '# Новый документ\n\nСодержимое...',
-    tags: data.tags || [],
-    views: 0,
-    notesCount: 0,
-    createdAt: now,
-    updatedAt: now,
-  };
+    const now = new Date().toISOString();
+    return {
+        id: `550e8400-e29b-41d4-a716-4466554401${String(MOCK_DOCUMENTS.length + 1).padStart(2, '0')}`,
+        title: data.title || 'Новый документ',
+        description: data.description,
+        author: data.author || MOCK_AUTHORS[0]!,
+        category: data.category || MOCK_CATEGORIES[0]!,
+        publicationDate: data.publicationDate || new Date().toISOString(),
+        tags: data.tags || [],
+        content: data.content || '# Новый документ\n\nСодержание документа...',
+        views: data.views || 0,
+        notesCount: data.notesCount || 0,
+        createdAt: now,
+        updatedAt: now,
+    };
 }
 

@@ -47,11 +47,11 @@ export function DocumentEditPage() {
             // Заполняем форму данными документа
             form.setFieldsValue({
                 title: data.title,
-                author: data.author,
-                category: data.category,
+                author: data.author.name,
+                category: data.category.title,
                 publicationDate: data.publicationDate ? dayjs(data.publicationDate) : null,
                 content: data.content,
-                tags: data.tags,
+                tags: data.tags.map(tag => tag.title),
             });
         } catch (err) {
             setError('Не удалось загрузить документ');

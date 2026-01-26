@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
       // Если уже идёт процесс обновления токена
       if (tokenManager.getIsRefreshing()) {
         // Добавляем запрос в очередь и ждём новый токен
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           tokenManager.addRefreshSubscriber((token: string) => {
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -61,10 +61,13 @@ apiClient.interceptors.response.use(
       tokenManager.setIsRefreshing(true);
 
       try {
+        // Получаем device_id
+        const deviceId = localStorage.getItem('device_id') || '';
+
         // Пытаемся обновить токен
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          {},
+          { device_id: deviceId },
           {
             withCredentials: true, // Отправляем fingerprint cookie
           }

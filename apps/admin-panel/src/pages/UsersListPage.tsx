@@ -110,14 +110,14 @@ export function UsersListPage() {
             ],
             onFilter: (value, record) => record.isActive === value,
         },
-        {
-            title: 'Заметок',
-            dataIndex: 'notesCount',
-            key: 'notesCount',
-            width: '10%',
-            align: 'center',
-            sorter: (a, b) => a.notesCount - b.notesCount,
-        },
+        // {
+        //     title: 'Заметок',
+        //     dataIndex: 'notesCount',
+        //     key: 'notesCount',
+        //     width: '10%',
+        //     align: 'center',
+        //     sorter: (a, b) => a.notesCount - b.notesCount,
+        // },
         {
             title: 'Дата регистрации',
             dataIndex: 'registeredAt',

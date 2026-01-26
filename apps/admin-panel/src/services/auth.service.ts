@@ -1,6 +1,7 @@
 import apiClient from './api';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../constants/api';
-import type { LoginCredentials, LoginResponse, Admin } from '../types/auth';
+import type { LoginCredentials, LoginResponse, Admin, RefreshResponse } from '../types/auth';
+import type { AdminRole } from '../types/permissions';
 import { isMockEnabled, authMockHandlers } from '@/mocks';
 import { tokenManager } from './tokenManager';
 
@@ -36,9 +37,8 @@ export const authService = {
       response = {
         data: {
           access_token: mockData.access_token,
-          refresh_token: 'mock_refresh_token',
-          token_id: 'mock_token_id',
-          user_id: mockData.user.id,
+          expires_in: 900, // 15 минут
+          token_type: 'Bearer',
           user: mockData.user,
         },
       };
@@ -53,14 +53,24 @@ export const authService = {
       );
     }
 
-    const { access_token, token_id, user } = response.data;
+    const { access_token, user } = response.data;
 
     // Сохраняем access token в память (НЕ в localStorage!)
     tokenManager.setAccessToken(access_token);
 
-    // Сохраняем token_id для logout и данные администратора
-    localStorage.setItem(STORAGE_KEYS.TOKEN_ID, token_id);
-    localStorage.setItem(STORAGE_KEYS.ADMIN_DATA, JSON.stringify(user));
+    // Сохраняем данные администратора, если они есть
+    if (user) {
+      // Преобразуем в формат Admin для совместимости
+      const email = user.email || credentials.email;
+      const adminData: Admin = {
+        id: user.id,
+        email: email,
+        username: email.split('@')[0] || 'Unknown',
+        role: user.role as AdminRole,
+        created_at: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEYS.ADMIN_DATA, JSON.stringify(adminData));
+    }
 
     return response.data;
   },
@@ -70,15 +80,15 @@ export const authService = {
    */
   async logout(): Promise<void> {
     try {
-      const tokenId = localStorage.getItem(STORAGE_KEYS.TOKEN_ID);
+      const accessToken = tokenManager.getAccessToken();
 
       if (isMockEnabled('auth')) {
         await authMockHandlers.logout();
       } else {
-        // Отправляем token_id для отзыва refresh токена
+        // Отправляем access token для выхода
         await apiClient.post(
           API_ENDPOINTS.AUTH.LOGOUT,
-          { token_id: tokenId },
+          { token: accessToken },
           {
             withCredentials: true, // Удаляем fingerprint cookie
           }
@@ -86,30 +96,7 @@ export const authService = {
       }
     } finally {
       // Очищаем всё локальное хранилище и память
-      tokenManager.clearAccessToken();
-      localStorage.removeItem(STORAGE_KEYS.TOKEN_ID);
-      localStorage.removeItem(STORAGE_KEYS.ADMIN_DATA);
-    }
-  },
-
-  /**
-   * Получить текущего администратора
-   */
-  async getCurrentAdmin(): Promise<Admin> {
-    if (isMockEnabled('auth')) {
-      const storedAdmin = this.getStoredAdmin();
-      if (storedAdmin) {
-        return authMockHandlers.getCurrentAdmin(storedAdmin.id);
-      }
-      throw new Error('No admin data in storage');
-    } else {
-      const response = await apiClient.get<Admin>(
-        API_ENDPOINTS.AUTH.ME,
-        {
-          withCredentials: true,
-        }
-      );
-      return response.data;
+      this.clearAuthData();
     }
   },
 
@@ -149,19 +136,23 @@ export const authService = {
       }
 
       // Пытаемся обновить токен через refresh
-      const response = await apiClient.post(
+      const response = await apiClient.post<RefreshResponse>(
         API_ENDPOINTS.AUTH.REFRESH,
-        {},
+        { device_id: getDeviceId() },
         {
           withCredentials: true, // Отправляем fingerprint cookie
         }
       );
 
-      const { access_token, token_id } = response.data;
+      const { access_token, user } = response.data;
 
       // Сохраняем новый access token в память
       tokenManager.setAccessToken(access_token);
-      localStorage.setItem(STORAGE_KEYS.TOKEN_ID, token_id);
+
+      // Обновляем данные пользователя, если пришли
+      if (user) {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_DATA, JSON.stringify(user));
+      }
 
       return true;
     } catch (error) {
@@ -176,7 +167,6 @@ export const authService = {
    */
   clearAuthData(): void {
     tokenManager.clearAccessToken();
-    localStorage.removeItem(STORAGE_KEYS.TOKEN_ID);
     localStorage.removeItem(STORAGE_KEYS.ADMIN_DATA);
   },
 };

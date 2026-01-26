@@ -1,33 +1,52 @@
-# API Documentation - Сводка
+# API Documentation
 
-Создана полная Swagger/OpenAPI 3.0.3 документация для Raibecas Admin Panel API.
+## 🎉 Последнее обновление (26 января 2026)
 
-## 📁 Созданные файлы
+Документация полностью обновлена в соответствии с реальной реализацией Gateway API сервиса.
 
-1. **api-swagger.yaml** (основной файл)
+## 📁 Основные файлы
+
+1. **api-swagger.yaml** (★ Основной файл)
    - Полная спецификация OpenAPI 3.0.3
-   - Все эндпоинты с описаниями
-   - Схемы данных
-   - Примеры запросов и ответов
+   - Все endpoints с описаниями и примерами
+   - Схемы данных с валидацией
+   - Коды ошибок и responses
+   - Поддержка cookie-based refresh tokens
 
-2. **api-swagger.json**
-   - JSON версия спецификации
-   - Для совместимости с инструментами
+## 📚 Дополнительная документация
 
-3. **index.html**
-   - Локальный Swagger UI
-   - Интерактивная документация
-   - Возможность тестировать API
+В папке `/md/` доступны следующие руководства:
 
-4. **API_DOCUMENTATION.md**
-   - Руководство по работе с API
-   - Инструкции по просмотру документации
-   - Коды ошибок
-   - Примеры использования cURL
+- **api-update-summary.md** - Детальное описание всех изменений API
+- **api-quick-reference.md** - Быстрый справочник с примерами всех запросов
 
-5. **API_EXAMPLES.md**
-   - Практические примеры на TypeScript
-   - Примеры cURL команд
+## 🚀 Использование документации
+
+### Импорт в инструменты
+
+#### Swagger UI (онлайн)
+1. Откройте https://editor.swagger.io/
+2. File → Import File
+3. Выберите `api-swagger.yaml`
+
+#### Postman
+1. Откройте Postman
+2. Import → File → Upload Files
+3. Выберите `api-swagger.yaml`
+
+#### Insomnia
+1. Откройте Insomnia
+2. Application → Import/Export → Import Data
+3. Выберите `api-swagger.yaml`
+
+### Локальный Swagger UI
+
+С помощью Docker:
+```bash
+docker run -p 8081:8080 -e SWAGGER_JSON=/docs/api-swagger.yaml -v ${PWD}:/docs swaggerapi/swagger-ui
+```
+
+Откройте: http://localhost:8081
    - Обработка ошибок
    - Интеграция с React
 

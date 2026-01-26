@@ -26,10 +26,9 @@ export const API_ENDPOINTS = {
   },
 } as const;
 
-// Storage keys (только для admin данных, токены в памяти)
+// Storage keys (только для admin данных, токены в памяти и HttpOnly cookies)
 export const STORAGE_KEYS = {
-  ADMIN_DATA: 'admin_data',
-  TOKEN_ID: 'token_id', // Храним token_id для logout
+  ADMIN_DATA: 'admin_data', // Публичная информация о пользователе
 } as const;
 
 

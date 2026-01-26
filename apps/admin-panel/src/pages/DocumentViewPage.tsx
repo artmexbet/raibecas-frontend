@@ -112,20 +112,22 @@ export function DocumentViewPage() {
       >
         <Row gutter={16}>
           <Col span={6}>
-            <Statistic
-              title="Всего просмотров"
-              value={document.views}
-              prefix={<EyeOutlined />}
-              valueStyle={{ color: statisticColors.views }}
-            />
+            <div style={{ color: statisticColors.views }}>
+              <Statistic
+                title="Всего просмотров"
+                value={document.views ?? 0}
+                prefix={<EyeOutlined />}
+              />
+            </div>
           </Col>
           <Col span={6}>
-            <Statistic
-              title="Количество заметок"
-              value={document.notesCount}
-              prefix={<CommentOutlined />}
-              valueStyle={{ color: statisticColors.notes }}
-            />
+            <div style={{ color: statisticColors.notes }}>
+              <Statistic
+                title="Количество заметок"
+                value={document.notesCount ?? 0}
+                prefix={<CommentOutlined />}
+              />
+            </div>
           </Col>
           <Col span={6}>
             <Card
@@ -172,12 +174,13 @@ export function DocumentViewPage() {
                 variant='outlined'
                 style={{ background: statisticCardColors.time.background }}
               >
-                <Statistic
-                  title="Среднее время чтения"
-                  value={12}
-                  suffix="мин"
-                  valueStyle={{ fontSize: '24px', color: statisticCardColors.time.color }}
-                />
+                <div style={{ fontSize: '24px', color: statisticCardColors.time.color }}>
+                  <Statistic
+                    title="Среднее время чтения"
+                    value={12}
+                    suffix="мин"
+                  />
+                </div>
               </Card>
             </Col>
             <Col span={8}>
@@ -185,11 +188,12 @@ export function DocumentViewPage() {
                 variant='outlined'
                 style={{ background: statisticCardColors.users.background }}
               >
-                <Statistic
-                  title="Уникальные пользователи"
-                  value={Math.floor(document.views * 0.7)}
-                  valueStyle={{ fontSize: '24px', color: statisticCardColors.users.color }}
-                />
+                <div style={{ fontSize: '24px', color: statisticCardColors.users.color }}>
+                  <Statistic
+                    title="Уникальные пользователи"
+                    value={Math.floor((document.views ?? 0) * 0.7)}
+                  />
+                </div>
               </Card>
             </Col>
             <Col span={8}>
@@ -197,11 +201,12 @@ export function DocumentViewPage() {
                 variant='outlined'
                 style={{ background: statisticCardColors.repeats.background }}
               >
-                <Statistic
-                  title="Повторные просмотры"
-                  value={Math.floor(document.views * 0.3)}
-                  valueStyle={{ fontSize: '24px', color: statisticCardColors.repeats.color }}
-                />
+                <div style={{ fontSize: '24px', color: statisticCardColors.repeats.color }}>
+                  <Statistic
+                    title="Повторные просмотры"
+                    value={Math.floor((document.views ?? 0) * 0.3)}
+                  />
+                </div>
               </Card>
             </Col>
           </Row>

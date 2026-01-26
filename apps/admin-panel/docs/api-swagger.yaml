@@ -5,8 +5,10 @@ info:
     API для административной панели онлайн библиотеки научных работ философа.
     
     ## Аутентификация
-    API использует Bearer Token аутентификацию. После успешного логина получите токен
-    и используйте его в заголовке Authorization для всех запросов.
+    API использует Bearer Token аутентификацию с cookie-based refresh tokens. 
+    После успешного логина:
+    - Получите access_token и используйте его в заголовке Authorization
+    - Refresh token сохраняется в HttpOnly cookie автоматически
     
     ## Роли администраторов
     - **super_admin** - полный доступ ко всем функциям
@@ -30,8 +32,6 @@ tags:
     description: Управление пользователями
   - name: Registration Requests
     description: Управление заявками на регистрацию
-  - name: Statistics
-    description: Статистика для Dashboard
 
 components:
   securitySchemes:
@@ -39,11 +39,51 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT токен для авторизации. Используйте формат "Bearer {token}"
+      description: JWT access токен для авторизации. Используйте формат "Bearer {token}"
 
   schemas:
     # Authentication Schemas
-    Admin:
+    LoginCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: "admin@raibecas.kz"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "SecurePassword123!"
+        deviceId:
+          type: string
+          description: "Идентификатор устройства (опционально)"
+          example: "device-12345"
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        expires_in:
+          type: integer
+          description: "Время жизни access токена в секундах"
+          example: 3600
+        token_type:
+          type: string
+          example: "Bearer"
+        user:
+          $ref: '#/components/schemas/UserInfo'
+      required:
+        - access_token
+        - expires_in
+        - token_type
+
+    UserInfo:
       type: object
       properties:
         id:
@@ -59,48 +99,87 @@ components:
           example: "admin"
         role:
           type: string
-          enum: [admin, super_admin]
+          enum: [super_admin, admin]
           example: "super_admin"
-        createdAt:
+        created_at:
           type: string
           format: date-time
-          example: "2024-01-15T10:00:00.000Z"
+          example: "2024-01-15T10:00:00Z"
       required:
         - id
         - email
         - username
         - role
-        - createdAt
+        - created_at
 
-    LoginCredentials:
+    RefreshTokenRequest:
       type: object
       properties:
-        email:
+        deviceId:
           type: string
-          format: email
-          example: "admin@raibecas.kz"
-        password:
-          type: string
-          format: password
-          example: "SecurePassword123!"
-        remember:
-          type: boolean
-          default: false
-      required:
-        - email
-        - password
+          description: "Идентификатор устройства (опционально)"
+          example: "device-12345"
 
-    LoginResponse:
+    ValidateTokenRequest:
       type: object
       properties:
         token:
           type: string
+          description: "JWT токен для валидации"
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-        admin:
-          $ref: '#/components/schemas/Admin'
       required:
         - token
-        - admin
+
+    ValidateTokenResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          example: true
+        userId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        role:
+          type: string
+          example: "super_admin"
+        jti:
+          type: string
+          example: "token-id-123"
+      required:
+        - valid
+
+    LogoutRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "Access токен"
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      required:
+        - token
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          description: "Access токен"
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        oldPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "OldPassword123!"
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+          example: "NewPassword123!"
+      required:
+        - token
+        - oldPassword
+        - newPassword
 
     # Document Schemas
     Document:
@@ -109,91 +188,145 @@ components:
         id:
           type: string
           format: uuid
-          example: "doc-001"
+          example: "550e8400-e29b-41d4-a716-446655440000"
         title:
           type: string
           example: "Критика чистого разума"
         description:
           type: string
-          example: "Основополагающий труд Иммануила Канта"
-        content:
-          type: string
-          description: "Содержимое документа в формате Markdown"
-          example: "# Введение\n\nОсновные положения..."
+          nullable: true
+          example: "Важнейший труд Иммануила Канта по теории познания"
         author:
-          type: string
-          example: "Иммануил Кант"
+          $ref: '#/components/schemas/Author'
         category:
-          type: string
-          example: "Эпистемология"
+          $ref: '#/components/schemas/Category'
         publicationDate:
           type: string
-          format: date
-          example: "1781-01-01"
+          format: date-time
+          example: "1781-01-01T00:00:00Z"
         tags:
           type: array
           items:
-            type: string
-          example: ["философия", "кант", "эпистемология"]
-        views:
-          type: integer
-          example: 1234
-        notesCount:
-          type: integer
-          example: 42
+            $ref: '#/components/schemas/Tag'
         createdAt:
           type: string
           format: date-time
-          example: "2024-01-15T10:00:00.000Z"
+          example: "2024-01-15T10:00:00Z"
         updatedAt:
           type: string
           format: date-time
-          example: "2024-02-20T14:30:00.000Z"
+          example: "2024-01-20T14:30:00Z"
       required:
         - id
         - title
-        - content
         - author
         - category
         - publicationDate
         - tags
-        - views
-        - notesCount
         - createdAt
         - updatedAt
+
+    Author:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "Иммануил Кант"
+      required:
+        - id
+        - name
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Метафизика"
+      required:
+        - id
+        - title
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "философия"
+      required:
+        - id
+        - title
+
+    ListDocumentsResponse:
+      type: object
+      properties:
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+        total:
+          type: integer
+          example: 147
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        totalPages:
+          type: integer
+          example: 8
+      required:
+        - documents
+        - total
+        - page
+        - limit
+        - totalPages
 
     CreateDocumentRequest:
       type: object
       properties:
         title:
           type: string
-          example: "Бытие и время"
+          minLength: 1
+          maxLength: 255
+          example: "Критика чистого разума"
         description:
           type: string
-          example: "Фундаментальная онтология Мартина Хайдеггера"
-        content:
+          nullable: true
+          maxLength: 1000
+          example: "Важнейший труд Иммануила Канта"
+        authorId:
           type: string
-          example: "# Введение в онтологию\n\n..."
-        author:
-          type: string
-          example: "Мартин Хайдеггер"
-        category:
-          type: string
-          example: "Онтология"
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        categoryId:
+          type: integer
+          minimum: 1
+          example: 1
         publicationDate:
           type: string
-          format: date
-          example: "1927-01-01"
-        tags:
+          format: date-time
+          example: "1781-01-01T00:00:00Z"
+        tagIds:
           type: array
           items:
-            type: string
-          example: ["философия", "хайдеггер", "онтология"]
+            type: integer
+            minimum: 1
+          example: [1, 2, 3]
       required:
         - title
-        - content
-        - author
-        - category
+        - authorId
+        - categoryId
         - publicationDate
 
     UpdateDocumentRequest:
@@ -201,21 +334,36 @@ components:
       properties:
         title:
           type: string
+          minLength: 1
+          maxLength: 255
+          nullable: true
+          example: "Критика чистого разума"
         description:
           type: string
-        content:
+          nullable: true
+          maxLength: 1000
+          example: "Важнейший труд Иммануила Канта"
+        authorId:
           type: string
-        author:
-          type: string
-        category:
-          type: string
+          format: uuid
+          nullable: true
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        categoryId:
+          type: integer
+          minimum: 1
+          nullable: true
+          example: 1
         publicationDate:
           type: string
-          format: date
-        tags:
+          format: date-time
+          nullable: true
+          example: "1781-01-01T00:00:00Z"
+        tagIds:
           type: array
           items:
-            type: string
+            type: integer
+            minimum: 1
+          example: [1, 2, 3]
 
     # User Schemas
     User:
@@ -224,7 +372,7 @@ components:
         id:
           type: string
           format: uuid
-          example: "user-001"
+          example: "550e8400-e29b-41d4-a716-446655440000"
         email:
           type: string
           format: email
@@ -238,17 +386,14 @@ components:
         registeredAt:
           type: string
           format: date-time
-          example: "2024-01-10T12:00:00.000Z"
+          example: "2024-01-10T12:00:00Z"
         lastLoginAt:
           type: string
           format: date-time
-          example: "2024-04-15T08:30:00.000Z"
+          example: "2024-04-15T08:30:00Z"
         isActive:
           type: boolean
           example: true
-        notesCount:
-          type: integer
-          example: 15
       required:
         - id
         - email
@@ -257,14 +402,54 @@ components:
         - registeredAt
         - lastLoginAt
         - isActive
-        - notesCount
+
+    ListUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        total_count:
+          type: integer
+          example: 89
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 10
+      required:
+        - users
+        - total_count
+        - page
+        - page_size
 
     UpdateUserRequest:
       type: object
       properties:
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "new.email@example.com"
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          nullable: true
+          example: "new_username"
+        fullName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+          example: "Новое Имя"
         isActive:
           type: boolean
+          nullable: true
           description: "Статус активности пользователя"
+          example: false
 
     # Registration Request Schemas
     RegistrationRequest:
@@ -273,95 +458,162 @@ components:
         id:
           type: string
           format: uuid
-          example: "req-001"
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          example: "new_user"
         email:
           type: string
           format: email
           example: "new.user@example.com"
-        username:
+        status:
           type: string
-          example: "new_user"
-        request:
-          type: string
-          description: "Причина/обоснование для регистрации"
-          example: "Интересуюсь философией и хочу изучать труды"
-      required:
-        - id
-        - email
-        - username
-        - request
-
-    # Statistics Schemas
-    DashboardStats:
-      type: object
-      properties:
-        documentsCount:
-          type: integer
-          example: 147
-        usersCount:
-          type: integer
-          example: 89
-        pendingRequestsCount:
-          type: integer
-          example: 5
-        totalNotesCount:
-          type: integer
-          example: 342
-        recentDocuments:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                example: "doc-001"
-              title:
-                type: string
-                example: "Критика чистого разума"
-              author:
-                type: string
-                example: "Иммануил Кант"
-              createdAt:
-                type: string
-                format: date-time
-                example: "2024-01-15T10:00:00.000Z"
-        recentUsers:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-                example: "user-004"
-              username:
-                type: string
-                example: "elena_v"
-              registeredAt:
-                type: string
-                format: date-time
-                example: "2024-04-05T12:30:00.000Z"
-      required:
-        - documentsCount
-        - usersCount
-        - pendingRequestsCount
-        - totalNotesCount
-        - recentDocuments
-        - recentUsers
-
-    # Error Schemas
-    Error:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Invalid credentials"
-        code:
-          type: string
-          example: "AUTH_001"
-        details:
+          enum: [pending, approved, rejected]
+          example: "pending"
+        metadata:
           type: object
           additionalProperties: true
+          example:
+            reason: "Интересуюсь философией"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-04-01T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-04-01T10:00:00Z"
+        approved_by:
+          type: string
+          format: uuid
+          nullable: true
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        approved_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-04-02T14:30:00Z"
       required:
+        - id
+        - username
+        - email
+        - status
+        - created_at
+        - updated_at
+
+    CreateRegistrationRequestRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          example: "new_user"
+        email:
+          type: string
+          format: email
+          example: "new.user@example.com"
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: "SecurePassword123!"
+        metadata:
+          type: object
+          additionalProperties: true
+          example:
+            reason: "Интересуюсь философией"
+      required:
+        - username
+        - email
+        - password
+
+    CreateRegistrationRequestResponse:
+      type: object
+      properties:
+        request_id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        status:
+          type: string
+          example: "pending"
+        message:
+          type: string
+          example: "Registration request created successfully"
+      required:
+        - request_id
+        - status
+        - message
+
+    ListRegistrationRequestsResponse:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegistrationRequest'
+        total_count:
+          type: integer
+          example: 5
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 10
+      required:
+        - requests
+        - total_count
+        - page
+        - page_size
+
+    ApproveRegistrationRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Registration request approved successfully"
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+        - success
+        - message
+
+    RejectRegistrationRequestResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Registration request rejected successfully"
+      required:
+        - success
+        - message
+
+    # Error Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "validation_error"
+        message:
+          type: string
+          example: "Invalid request data"
+        details:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            email: "invalid email format"
+      required:
+        - error
         - message
 
 paths:
@@ -371,7 +623,9 @@ paths:
       tags:
         - Authentication
       summary: Войти в систему
-      description: Аутентификация администратора по email и паролю
+      description: |
+        Аутентификация администратора по email и паролю.
+        Refresh token сохраняется в HttpOnly cookie автоматически.
       operationId: login
       requestBody:
         required: true
@@ -382,67 +636,212 @@ paths:
       responses:
         '200':
           description: Успешная аутентификация
+          headers:
+            Set-Cookie:
+              description: "HttpOnly cookies с refresh token, token_id и fingerprint"
+              schema:
+                type: string
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Неверные учетные данные
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
               example:
-                message: "Invalid email or password"
-                code: "AUTH_001"
-        '422':
+                error: "unauthorized"
+                message: "Invalid credentials"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Обновить access token
+      description: |
+        Обновление access token используя refresh token из cookie.
+        Требуется наличие refresh_token, token_id и fingerprint в cookies.
+      operationId: refreshToken
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Токен успешно обновлен
+          headers:
+            Set-Cookie:
+              description: "Обновленные HttpOnly cookies"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Недействительный или истекший refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "unauthorized"
+                message: "Invalid or expired refresh token"
+
+  /auth/validate:
+    post:
+      tags:
+        - Authentication
+      summary: Валидировать access token
+      description: Проверка действительности access token
+      operationId: validateToken
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateTokenRequest'
+      responses:
+        '200':
+          description: Результат валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateTokenResponse'
+        '400':
           description: Ошибка валидации
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /auth/logout:
     post:
       tags:
         - Authentication
-      summary: Выйти из системы
-      description: Завершение сеанса администратора
+      summary: Выйти из системы (текущее устройство)
+      description: Завершение сеанса на текущем устройстве. Cookies очищаются.
       operationId: logout
       security:
         - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
       responses:
         '200':
           description: Успешный выход
+          headers:
+            Set-Cookie:
+              description: "Cookies очищены"
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
-  /auth/me:
-    get:
+  /auth/logout-all:
+    post:
       tags:
         - Authentication
-      summary: Получить текущего администратора
-      description: Возвращает информацию о текущем авторизованном администраторе
-      operationId: getCurrentAdmin
+      summary: Выйти из всех устройств
+      description: Завершение всех активных сеансов пользователя на всех устройствах
+      operationId: logoutAll
       security:
         - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
       responses:
         '200':
-          description: Информация об администраторе
+          description: Успешный выход из всех устройств
+          headers:
+            Set-Cookie:
+              description: "Cookies очищены"
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Admin'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out from all devices successfully"
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Изменить пароль
+      description: Смена пароля текущего администратора
+      operationId: changePassword
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Пароль успешно изменен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password changed successfully"
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Неверный старый пароль
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Document Endpoints
   /documents:
@@ -450,8 +849,8 @@ paths:
       tags:
         - Documents
       summary: Получить список документов
-      description: Возвращает список всех документов в библиотеке
-      operationId: getDocuments
+      description: Возвращает список документов с пагинацией и фильтрацией
+      operationId: listDocuments
       security:
         - BearerAuth: []
       parameters:
@@ -460,43 +859,59 @@ paths:
           description: Номер страницы
           schema:
             type: integer
+            minimum: 1
             default: 1
         - name: limit
           in: query
           description: Количество элементов на странице
           schema:
             type: integer
+            minimum: 1
+            maximum: 100
             default: 20
         - name: search
           in: query
-          description: Поиск по названию и автору
+          description: Поиск по названию
           schema:
             type: string
-        - name: category
+            maxLength: 255
+        - name: authorId
+          in: query
+          description: Фильтр по автору (UUID)
+          schema:
+            type: string
+            format: uuid
+        - name: categoryId
           in: query
           description: Фильтр по категории
           schema:
-            type: string
-        - name: tag
+            type: integer
+            minimum: 1
+        - name: tagId
           in: query
           description: Фильтр по тегу
           schema:
-            type: string
+            type: integer
+            minimum: 1
       responses:
         '200':
           description: Список документов
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Document'
+                $ref: '#/components/schemas/ListDocumentsResponse'
+        '400':
+          description: Ошибка валидации параметров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
     post:
       tags:
@@ -518,25 +933,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Document'
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
         '400':
           description: Ошибка валидации
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /documents/{id}:
     get:
@@ -544,41 +962,51 @@ paths:
         - Documents
       summary: Получить документ по ID
       description: Возвращает полную информацию о документе
-      operationId: getDocumentById
+      operationId: getDocument
       security:
         - BearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          description: ID документа
+          description: UUID документа
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Данные документа
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Document'
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
+        '400':
+          description: Неверный формат ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Документ не найден
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
-    put:
+    patch:
       tags:
         - Documents
       summary: Обновить документ
-      description: Обновление существующего документа
+      description: Частичное обновление документа (все поля опциональны)
       operationId: updateDocument
       security:
         - BearerAuth: []
@@ -586,9 +1014,10 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID документа
+          description: UUID документа
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -601,31 +1030,34 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Document'
+                type: object
+                properties:
+                  document:
+                    $ref: '#/components/schemas/Document'
         '400':
           description: Ошибка валидации
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Документ не найден
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Документ не найден
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       tags:
@@ -639,30 +1071,31 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID документа
+          description: UUID документа
           schema:
             type: string
+            format: uuid
       responses:
         '204':
           description: Документ успешно удален
-        '404':
-          description: Документ не найден
+        '400':
+          description: Неверный формат ID
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   # User Endpoints
   /users:
@@ -670,8 +1103,8 @@ paths:
       tags:
         - Users
       summary: Получить список пользователей
-      description: Возвращает список всех зарегистрированных пользователей
-      operationId: getUsers
+      description: Возвращает список пользователей с пагинацией и фильтрацией
+      operationId: listUsers
       security:
         - BearerAuth: []
       parameters:
@@ -680,19 +1113,22 @@ paths:
           description: Номер страницы
           schema:
             type: integer
+            minimum: 1
             default: 1
-        - name: limit
+        - name: page_size
           in: query
           description: Количество элементов на странице
           schema:
             type: integer
-            default: 20
+            minimum: 1
+            maximum: 100
+            default: 10
         - name: search
           in: query
           description: Поиск по имени пользователя или email
           schema:
             type: string
-        - name: isActive
+        - name: is_active
           in: query
           description: Фильтр по статусу активности
           schema:
@@ -703,28 +1139,77 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                $ref: '#/components/schemas/ListUsersResponse'
+        '400':
+          description: Ошибка валидации параметров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Получить пользователя по ID
+      description: Возвращает информацию о конкретном пользователе
+      operationId: getUser
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: UUID пользователя
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Данные пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Неверный формат ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Не авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     patch:
       tags:
         - Users
-      summary: Обновить статус пользователя
-      description: Активация или деактивация пользователя
+      summary: Обновить пользователя
+      description: Частичное обновление информации о пользователе
       operationId: updateUser
       security:
         - BearerAuth: []
@@ -732,9 +1217,10 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID пользователя
+          description: UUID пользователя
           schema:
             type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -743,29 +1229,32 @@ paths:
               $ref: '#/components/schemas/UpdateUserRequest'
       responses:
         '200':
-          description: Статус пользователя обновлен
+          description: Пользователь успешно обновлен
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
-          description: Пользователь не найден
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Ошибка валидации
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
     delete:
       tags:
@@ -779,39 +1268,83 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID пользователя
+          description: UUID пользователя
           schema:
             type: string
+            format: uuid
       responses:
-        '204':
+        '200':
           description: Пользователь успешно удален
-        '404':
-          description: Пользователь не найден
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "User deleted successfully"
+        '400':
+          description: Неверный формат ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   # Registration Request Endpoints
   /registration-requests:
+    post:
+      tags:
+        - Registration Requests
+      summary: Создать заявку на регистрацию
+      description: Публичный endpoint для создания новой заявки на регистрацию (не требует аутентификации)
+      operationId: createRegistrationRequest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRegistrationRequestRequest'
+      responses:
+        '201':
+          description: Заявка успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRegistrationRequestResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     get:
       tags:
         - Registration Requests
       summary: Получить список заявок на регистрацию
-      description: Возвращает список всех ожидающих заявок
-      operationId: getRegistrationRequests
+      description: Возвращает список заявок с пагинацией и фильтрацией
+      operationId: listRegistrationRequests
       security:
         - BearerAuth: []
       parameters:
@@ -820,41 +1353,56 @@ paths:
           description: Номер страницы
           schema:
             type: integer
+            minimum: 1
             default: 1
-        - name: limit
+        - name: page_size
           in: query
           description: Количество элементов на странице
           schema:
             type: integer
-            default: 20
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: status
+          in: query
+          description: Фильтр по статусу
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
       responses:
         '200':
           description: Список заявок
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistrationRequest'
+                $ref: '#/components/schemas/ListRegistrationRequestsResponse'
+        '400':
+          description: Ошибка валидации параметров
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /registration-requests/{id}/approve:
     post:
       tags:
         - Registration Requests
       summary: Одобрить заявку на регистрацию
-      description: Создает пользователя и отправляет уведомление на email
+      description: |
+        Одобрение заявки и создание нового пользователя.
+        Отправляется уведомление на email пользователя.
       operationId: approveRegistrationRequest
       security:
         - BearerAuth: []
@@ -862,48 +1410,44 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID заявки
+          description: UUID заявки
           schema:
             type: string
+            format: uuid
       responses:
         '200':
           description: Заявка одобрена
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Registration request approved successfully"
-                  userId:
-                    type: string
-                    example: "user-123"
-        '404':
-          description: Заявка не найдена
+                $ref: '#/components/schemas/ApproveRegistrationRequestResponse'
+        '400':
+          description: Неверный формат ID
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /registration-requests/{id}/reject:
     post:
       tags:
         - Registration Requests
       summary: Отклонить заявку на регистрацию
-      description: Отклоняет заявку и отправляет уведомление на email
+      description: |
+        Отклонение заявки с опциональной причиной.
+        Отправляется уведомление на email пользователя.
       operationId: rejectRegistrationRequest
       security:
         - BearerAuth: []
@@ -911,9 +1455,10 @@ paths:
         - name: id
           in: path
           required: true
-          description: ID заявки
+          description: UUID заявки
           schema:
             type: string
+            format: uuid
       requestBody:
         content:
           application/json:
@@ -930,50 +1475,22 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Registration request rejected successfully"
-        '404':
-          description: Заявка не найдена
+                $ref: '#/components/schemas/RejectRegistrationRequestResponse'
+        '400':
+          description: Неверный формат ID
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Не авторизован
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: Недостаточно прав
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-
-  # Statistics Endpoints
-  /admin/stats/dashboard:
-    get:
-      tags:
-        - Statistics
-      summary: Получить статистику для Dashboard
-      description: Возвращает общую статистику системы и последние данные
-      operationId: getDashboardStats
-      security:
-        - BearerAuth: []
-      responses:
-        '200':
-          description: Статистика Dashboard
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DashboardStats'
-        '401':
-          description: Не авторизован
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'

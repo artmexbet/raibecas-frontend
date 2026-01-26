@@ -10,21 +10,21 @@ export const MOCK_ADMINS: Admin[] = [
     username: 'Super Admin',
     email: 'superadmin@example.com',
     role: AdminRole.SUPER_ADMIN,
-    createdAt: '2024-01-01T00:00:00.000Z',
+    created_at: '2024-01-01T00:00:00.000Z',
   },
   {
     id: '2',
     username: 'Admin User',
     email: 'admin@example.com',
     role: AdminRole.ADMIN,
-    createdAt: '2024-06-15T10:30:00.000Z',
+    created_at: '2024-06-15T10:30:00.000Z',
   },
   {
     id: '3',
     username: 'John Admin',
     email: 'john@example.com',
     role: AdminRole.ADMIN,
-    createdAt: '2024-09-20T14:15:00.000Z',
+    created_at: '2024-09-20T14:15:00.000Z',
   },
 ];
 
@@ -42,13 +42,15 @@ export function createMockLoginResponse(email: string): LoginResponse {
       username: email.split('@')[0] || 'new_admin',
       email: email,
       role: AdminRole.SUPER_ADMIN,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
   }
 
   return {
-    token: `mock-jwt-token-${admin.id}-${Date.now()}`,
-    admin,
+    access_token: `mock-jwt-token-${admin.id}-${Date.now()}`,
+    user: admin,
+    expires_in: 900, // 15 минут
+    token_type: 'Bearer',
   };
 }
 

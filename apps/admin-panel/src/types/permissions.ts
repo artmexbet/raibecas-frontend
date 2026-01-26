@@ -3,8 +3,8 @@
  */
 
 export enum AdminRole {
-  ADMIN = 'admin',
-  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'Admin',
+  SUPER_ADMIN = 'SuperAdmin',
 }
 
 export type Permission = 

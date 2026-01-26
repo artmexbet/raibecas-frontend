@@ -6,7 +6,7 @@ export interface Admin {
   email: string;
   username: string;
   role: AdminRole;
-  createdAt: string;
+  created_at: string;
 }
 
 // Данные для логина
@@ -19,24 +19,17 @@ export interface LoginCredentials {
 // Ответ от API при логине (новая JWT система)
 export interface LoginResponse {
   access_token: string;   // Access token для Authorization header
-  refresh_token: string;  // Refresh token (не используется напрямую)
-  token_id: string;       // ID токена для операций
-  user_id: string;        // ID пользователя
-  user: Admin;           // Данные администратора
-  // fingerprint автоматически в HttpOnly cookie
+  expires_in: number;     // Время жизни access token в секундах
+  token_type: string;     // Тип токена (обычно "Bearer")
+  user: Admin;
 }
 
-// Ответ от API при refresh
+// Ответ от API при refresh (аналогичен LoginResponse)
 export interface RefreshResponse {
   access_token: string;
-  refresh_token: string;
-  token_id: string;
-}
-
-// Состояние аутентификации
-export interface AuthState {
-  isAuthenticated: boolean;
-  admin: Admin | null;
+  expires_in: number;
+  token_type: string;
+  user: Admin;
 }
 
 export interface CreateAdminRequest {

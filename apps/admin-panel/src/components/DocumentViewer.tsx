@@ -37,7 +37,7 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
         <Space size="large" wrap className="document-viewer__author-section">
           <Text strong>
             <UserOutlined style={{ marginRight: 8 }} />
-            {document.author}
+            {document.author.name}
           </Text>
           <Text type="secondary">
             <CalendarOutlined style={{ marginRight: 8 }} />
@@ -49,14 +49,14 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
         <Space size="middle" wrap className="document-viewer__tags-section">
           <Space>
             <FolderOutlined />
-            <Tag color="blue">{document.category}</Tag>
+            <Tag color="blue">{document.category.title}</Tag>
           </Space>
 
           {document.tags && document.tags.length > 0 && (
             <Space size="small" wrap>
               {document.tags.map(tag => (
-                <Tag key={tag} color="default">
-                  {tag}
+                <Tag key={tag.id} color="default">
+                  {tag.title}
                 </Tag>
               ))}
             </Space>
@@ -68,11 +68,11 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
           <Space size="large">
             <Space size="small">
               <EyeOutlined />
-              <Text type="secondary">{document.views} просмотров</Text>
+              <Text type="secondary">{document.views ?? 0} просмотров</Text>
             </Space>
             <Space size="small">
               <CommentOutlined />
-              <Text type="secondary">{document.notesCount} заметок</Text>
+              <Text type="secondary">{document.notesCount ?? 0} заметок</Text>
             </Space>
           </Space>
         )}
