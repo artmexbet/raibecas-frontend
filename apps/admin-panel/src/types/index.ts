@@ -5,8 +5,9 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  fullName: string;
-  registeredAt: string;
-  lastLoginAt: string;
-  isActive: boolean;
+  full_name: string;
+  registered_at: string;
+  last_login_at: string;
+  is_active: boolean;
+  role?: string;
 }

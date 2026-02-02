@@ -6,20 +6,18 @@ import {isMockEnabled, registrationRequestsMockHandlers, usersMockHandlers} from
 
 export const usersService = {
     async fetchRegistrationRequests() {
-        let response: { data: CreateAdminRequest[] };
-
         // Используем моки если они включены
         if (isMockEnabled('registrationRequests')) {
-            const mockData = await registrationRequestsMockHandlers.getAll();
-            response = {data: mockData as unknown as CreateAdminRequest[]};
+            return await registrationRequestsMockHandlers.getAll() as unknown as CreateAdminRequest[];
         } else {
             // Реальный API запрос
-            response = await apiClient.get<CreateAdminRequest[]>(
+            const response = await apiClient.get<{ requests: CreateAdminRequest[], total_count: number, page: number, page_size: number }>(
                 API_ENDPOINTS.REGISTRATION_REQUESTS.LIST
             );
+            // Сервер возвращает {requests: [], total_count: 0, page: 1, page_size: 10}
+            // Axios оборачивает это в response.data
+            return response.data.requests;
         }
-
-        return response.data;
     },
 
     async approve(requestId: string) {
@@ -45,20 +43,18 @@ export const usersService = {
     },
 
     async fetchUsers() {
-        let response: { data: User[] };
-
         // Используем моки если они включены
         if (isMockEnabled('users')) {
-            const mockData = await usersMockHandlers.getAll();
-            response = {data: mockData};
+            return await usersMockHandlers.getAll();
         } else {
             // Реальный API запрос
-            response = await apiClient.get<User[]>(
+            const response = await apiClient.get<{ users: User[], total_count: number, page: number, page_size: number }>(
                 API_ENDPOINTS.USERS.LIST
             );
+            // Сервер возвращает {users: [], total_count: 0, page: 1, page_size: 10}
+            // Axios оборачивает это в response.data
+            return response.data.users;
         }
-
-        return response.data;
     },
 
     async toggleUserStatus(userId: string, isActive: boolean) {
@@ -71,7 +67,7 @@ export const usersService = {
         } else {
             const response = await apiClient.patch<User>(
                 API_ENDPOINTS.USERS.UPDATE(userId),
-                { isActive }
+                { is_active: isActive }
             );
             return response.data;
         }

@@ -28,12 +28,12 @@ export function UsersListPage() {
     };
 
     const handleToggleStatus = async (user: User) => {
-        const newStatus = !user.isActive;
+        const newStatus = !user.is_active;
         const actionText = newStatus ? 'активировать' : 'деактивировать';
 
         Modal.confirm({
             title: `Подтверждение действия`,
-            content: `Вы уверены, что хотите ${actionText} пользователя ${user.fullName}?`,
+            content: `Вы уверены, что хотите ${actionText} пользователя ${user.full_name}?`,
             okText: 'Да',
             cancelText: 'Отмена',
             onOk: async () => {
@@ -44,7 +44,7 @@ export function UsersListPage() {
                     // Обновляем локальное состояние
                     setUsers(prevUsers =>
                         prevUsers.map(u =>
-                            u.id === user.id ? { ...u, isActive: newStatus } : u
+                            u.id === user.id ? { ...u, is_active: newStatus } : u
                         )
                     );
 
@@ -82,10 +82,10 @@ export function UsersListPage() {
         },
         {
             title: 'Полное имя',
-            dataIndex: 'fullName',
-            key: 'fullName',
+            dataIndex: 'full_name',
+            key: 'full_name',
             width: '20%',
-            sorter: (a, b) => a.fullName.localeCompare(b.fullName),
+            sorter: (a, b) => a.full_name.localeCompare(b.full_name),
         },
         {
             title: 'Email',
@@ -96,19 +96,19 @@ export function UsersListPage() {
         },
         {
             title: 'Статус',
-            dataIndex: 'isActive',
-            key: 'isActive',
+            dataIndex: 'is_active',
+            key: 'is_active',
             width: '10%',
-            render: (isActive: boolean) => (
-                <Tag color={isActive ? 'green' : 'red'}>
-                    {isActive ? 'Активен' : 'Неактивен'}
+            render: (is_active: boolean) => (
+                <Tag color={is_active ? 'green' : 'red'}>
+                    {is_active ? 'Активен' : 'Неактивен'}
                 </Tag>
             ),
             filters: [
                 { text: 'Активные', value: true },
                 { text: 'Неактивные', value: false },
             ],
-            onFilter: (value, record) => record.isActive === value,
+            onFilter: (value, record) => record.is_active === value,
         },
         // {
         //     title: 'Заметок',
@@ -120,21 +120,21 @@ export function UsersListPage() {
         // },
         {
             title: 'Дата регистрации',
-            dataIndex: 'registeredAt',
-            key: 'registeredAt',
+            dataIndex: 'registered_at',
+            key: 'registered_at',
             width: '15%',
             render: (date: string) => formatDate(date),
             sorter: (a, b) =>
-                new Date(a.registeredAt).getTime() - new Date(b.registeredAt).getTime(),
+                new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime(),
         },
         {
             title: 'Последний вход',
-            dataIndex: 'lastLoginAt',
-            key: 'lastLoginAt',
+            dataIndex: 'last_login_at',
+            key: 'last_login_at',
             width: '15%',
             render: (date: string) => formatDate(date),
             sorter: (a, b) =>
-                new Date(a.lastLoginAt).getTime() - new Date(b.lastLoginAt).getTime(),
+                new Date(a.last_login_at).getTime() - new Date(b.last_login_at).getTime(),
         },
         {
             title: 'Действия',
@@ -146,7 +146,7 @@ export function UsersListPage() {
                     <Button
                         type="text"
                         icon={
-                            record.isActive ? (
+                            record.is_active ? (
                                 <UserDeleteOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
                             ) : (
                                 <CheckCircleOutlined style={{ fontSize: 24, color: '#52c41a' }} />
@@ -157,7 +157,7 @@ export function UsersListPage() {
                             handleToggleStatus(record);
                         }}
                         loading={actionLoading === record.id}
-                        title={record.isActive ? 'Деактивировать' : 'Активировать'}
+                        title={record.is_active ? 'Деактивировать' : 'Активировать'}
                     />
                 </Space>
             ),

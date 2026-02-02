@@ -42,10 +42,11 @@ export const usersMockHandlers = {
       id: baseUser.id,
       email: data.email ?? baseUser.email,
       username: data.username ?? baseUser.username,
-      fullName: data.fullName ?? baseUser.fullName,
-      registeredAt: baseUser.registeredAt,
-      lastLoginAt: data.lastLoginAt ?? baseUser.lastLoginAt,
-      isActive: data.isActive ?? baseUser.isActive,
+      full_name: data.full_name ?? baseUser.full_name,
+      registered_at: baseUser.registered_at,
+      last_login_at: data.last_login_at ?? baseUser.last_login_at,
+      is_active: data.is_active ?? baseUser.is_active,
+      role: data.role ?? baseUser.role,
     };
 
     MOCK_USERS[index] = updatedUser;
@@ -73,14 +74,14 @@ export const usersMockHandlers = {
    * Деактивировать пользователя
    */
   async deactivate(id: string): Promise<User> {
-    return this.update(id, { isActive: false });
+    return this.update(id, { is_active: false });
   },
 
   /**
    * Активировать пользователя
    */
   async activate(id: string): Promise<User> {
-    return this.update(id, { isActive: true });
+    return this.update(id, { is_active: true });
   },
 };
 
