@@ -12,12 +12,12 @@ export interface RegistrationRequest {
   id: string;
   email: string;
   username: string;
-  fullName: string;
-  reason: string; // Причина регистрации
   status: RequestStatus;
+  metadata?: Record<string, any>;
   createdAt: string;
-  reviewedAt?: string;
-  reviewedBy?: string; // ID администратора
+  updatedAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 /**
@@ -28,41 +28,53 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
     id: '1',
     email: 'new.user1@example.com',
     username: 'new_user1',
-    fullName: 'Дмитрий Соколов',
-    reason: 'Аспирант МГУ, изучаю философию науки',
     status: RequestStatus.PENDING,
+    metadata: {
+      fullName: 'Дмитрий Соколов',
+      reason: 'Аспирант МГУ, изучаю философию науки'
+    },
     createdAt: '2026-01-09T10:30:00.000Z',
+    updatedAt: '2026-01-09T10:30:00.000Z',
   },
   {
     id: '2',
     email: 'researcher@university.edu',
     username: 'researcher_42',
-    fullName: 'Анна Козлова',
-    reason: 'Научный сотрудник института философии, исследую феноменологию',
     status: RequestStatus.PENDING,
+    metadata: {
+      fullName: 'Анна Козлова',
+      reason: 'Научный сотрудник института философии, исследую феноменологию'
+    },
     createdAt: '2026-01-08T14:20:00.000Z',
+    updatedAt: '2026-01-08T14:20:00.000Z',
   },
   {
     id: '3',
     email: 'student@philosophy.edu',
     username: 'phil_student',
-    fullName: 'Петр Морозов',
-    reason: 'Студент 4 курса философского факультета',
     status: RequestStatus.APPROVED,
+    metadata: {
+      fullName: 'Петр Морозов',
+      reason: 'Студент 4 курса философского факультета'
+    },
     createdAt: '2026-01-05T09:15:00.000Z',
-    reviewedAt: '2026-01-06T11:30:00.000Z',
-    reviewedBy: '1',
+    updatedAt: '2026-01-06T11:30:00.000Z',
+    approvedAt: '2026-01-06T11:30:00.000Z',
+    approvedBy: '1',
   },
   {
     id: '4',
     email: 'random@mail.com',
     username: 'random123',
-    fullName: 'Test User',
-    reason: 'Just curious',
     status: RequestStatus.REJECTED,
+    metadata: {
+      fullName: 'Test User',
+      rejection_reason: 'Недостаточно информации для проверки'
+    },
     createdAt: '2026-01-04T16:45:00.000Z',
-    reviewedAt: '2026-01-04T18:00:00.000Z',
-    reviewedBy: '1',
+    updatedAt: '2026-01-04T18:00:00.000Z',
+    approvedAt: '2026-01-04T18:00:00.000Z',
+    approvedBy: '1',
   },
 ];
 
@@ -72,14 +84,17 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
 export function createMockRegistrationRequest(
   data: Partial<RegistrationRequest>
 ): RegistrationRequest {
+  const now = new Date().toISOString();
   return {
     id: String(MOCK_REGISTRATION_REQUESTS.length + 1),
     email: data.email || 'user@example.com',
     username: data.username || 'user',
-    fullName: data.fullName || 'User Name',
-    reason: data.reason || 'No reason provided',
-    status: RequestStatus.PENDING,
-    createdAt: new Date().toISOString(),
+    status: data.status || RequestStatus.PENDING,
+    metadata: data.metadata,
+    createdAt: data.createdAt || now,
+    updatedAt: data.updatedAt || now,
+    approvedBy: data.approvedBy,
+    approvedAt: data.approvedAt,
   };
 }
 

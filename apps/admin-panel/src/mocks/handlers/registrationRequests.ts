@@ -11,10 +11,24 @@ import {
  */
 export const registrationRequestsMockHandlers = {
   /**
-   * Получить список всех заявок
+   * Получить список всех заявок с пагинацией и фильтром
    */
-  async getAll(): Promise<RegistrationRequest[]> {
-    const result = await mockApiCall([...MOCK_REGISTRATION_REQUESTS]);
+  async getAll(status?: string, page: number = 1, pageSize: number = 10): Promise<{requests: RegistrationRequest[], total_count: number, page: number, page_size: number}> {
+    let filtered = [...MOCK_REGISTRATION_REQUESTS];
+    if (status && status !== '') {
+      filtered = filtered.filter(r => r.status === status);
+    }
+
+    const total = filtered.length;
+    const offset = (page - 1) * pageSize;
+    const paginated = filtered.slice(offset, offset + pageSize);
+
+    const result = await mockApiCall({
+      requests: paginated,
+      total_count: total,
+      page,
+      page_size: pageSize
+    });
     return result.data;
   },
 
@@ -54,16 +68,17 @@ export const registrationRequestsMockHandlers = {
     }
 
     const baseRequest = MOCK_REGISTRATION_REQUESTS[index]!;
+    const now = new Date().toISOString();
     const updatedRequest: RegistrationRequest = {
       id: baseRequest.id,
       email: baseRequest.email,
       username: baseRequest.username,
-      fullName: baseRequest.fullName,
-      reason: baseRequest.reason,
+      metadata: baseRequest.metadata,
       status: RequestStatus.APPROVED,
       createdAt: baseRequest.createdAt,
-      reviewedAt: new Date().toISOString(),
-      reviewedBy,
+      updatedAt: now,
+      approvedAt: now,
+      approvedBy: reviewedBy,
     };
 
     MOCK_REGISTRATION_REQUESTS[index] = updatedRequest;
@@ -83,16 +98,20 @@ export const registrationRequestsMockHandlers = {
     }
 
     const baseRequest = MOCK_REGISTRATION_REQUESTS[index]!;
+    const now = new Date().toISOString();
     const updatedRequest: RegistrationRequest = {
       id: baseRequest.id,
       email: baseRequest.email,
       username: baseRequest.username,
-      fullName: baseRequest.fullName,
-      reason: baseRequest.reason,
+      metadata: {
+        ...baseRequest.metadata,
+        rejection_reason: 'Заявка отклонена администратором'
+      },
       status: RequestStatus.REJECTED,
       createdAt: baseRequest.createdAt,
-      reviewedAt: new Date().toISOString(),
-      reviewedBy,
+      updatedAt: now,
+      approvedAt: now,
+      approvedBy: reviewedBy,
     };
 
     MOCK_REGISTRATION_REQUESTS[index] = updatedRequest;

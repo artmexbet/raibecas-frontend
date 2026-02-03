@@ -5,18 +5,23 @@ import apiClient from "@/services/api.ts";
 import {isMockEnabled, registrationRequestsMockHandlers, usersMockHandlers} from "@/mocks";
 
 export const usersService = {
-    async fetchRegistrationRequests() {
+    async fetchRegistrationRequests(status?: string, page: number = 1, pageSize: number = 10) {
         // Используем моки если они включены
         if (isMockEnabled('registrationRequests')) {
-            return await registrationRequestsMockHandlers.getAll() as unknown as CreateAdminRequest[];
+            return await registrationRequestsMockHandlers.getAll(status, page, pageSize);
         } else {
             // Реальный API запрос
+            const params = new URLSearchParams({
+                page: page.toString(),
+                page_size: pageSize.toString(),
+                ...(status && { status })
+            });
             const response = await apiClient.get<{ requests: CreateAdminRequest[], total_count: number, page: number, page_size: number }>(
-                API_ENDPOINTS.REGISTRATION_REQUESTS.LIST
+                `${API_ENDPOINTS.REGISTRATION_REQUESTS.LIST}?${params.toString()}`
             );
             // Сервер возвращает {requests: [], total_count: 0, page: 1, page_size: 10}
             // Axios оборачивает это в response.data
-            return response.data.requests;
+            return response.data;
         }
     },
 
