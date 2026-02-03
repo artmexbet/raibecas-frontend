@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Button, Card, Space, Table, Tag, Modal, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { UserDeleteOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { UserDeleteOutlined, CheckCircleOutlined, EditOutlined } from '@ant-design/icons';
 import type { User } from '@/types';
 import { usersService } from '../services/users.service';
+import { UserEditModal } from '@/components/UserEditModal';
 
 export function UsersListPage() {
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
     useEffect(() => {
         loadUsers();
@@ -59,6 +62,32 @@ export function UsersListPage() {
                 }
             },
         });
+    };
+
+    const handleEditUser = (user: User) => {
+        setSelectedUser(user);
+        setEditModalVisible(true);
+    };
+
+    const handleSaveUser = async (userId: string, data: Partial<User>) => {
+        try {
+            const updatedUser = await usersService.updateUser(userId, data);
+
+            // Обновляем локальное состояние
+            setUsers(prevUsers =>
+                prevUsers.map(u =>
+                    u.id === userId ? { ...u, ...updatedUser } : u
+                )
+            );
+
+            message.success('Данные пользователя обновлены');
+            setEditModalVisible(false);
+            setSelectedUser(null);
+        } catch (error) {
+            console.error('Ошибка при обновлении пользователя:', error);
+            message.error('Не удалось обновить данные пользователя');
+            throw error;
+        }
     };
 
     const formatDate = (dateString: string) => {
@@ -145,6 +174,15 @@ export function UsersListPage() {
                 <Space size="small">
                     <Button
                         type="text"
+                        icon={<EditOutlined style={{ fontSize: 24, color: '#1890ff' }} />}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditUser(record);
+                        }}
+                        title="Редактировать"
+                    />
+                    <Button
+                        type="text"
                         icon={
                             record.is_active ? (
                                 <UserDeleteOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
@@ -181,6 +219,16 @@ export function UsersListPage() {
                     loading={loading}
                 />
             </Card>
+
+            <UserEditModal
+                visible={editModalVisible}
+                user={selectedUser}
+                onCancel={() => {
+                    setEditModalVisible(false);
+                    setSelectedUser(null);
+                }}
+                onSave={handleSaveUser}
+            />
         </div>
     );
 }

@@ -75,10 +75,10 @@ export const registrationRequestsMockHandlers = {
       username: baseRequest.username,
       metadata: baseRequest.metadata,
       status: RequestStatus.APPROVED,
-      createdAt: baseRequest.createdAt,
-      updatedAt: now,
-      approvedAt: now,
-      approvedBy: reviewedBy,
+      created_at: baseRequest.created_at,
+      updated_at: now,
+      approved_at: now,
+      approved_by: reviewedBy,
     };
 
     MOCK_REGISTRATION_REQUESTS[index] = updatedRequest;
@@ -108,10 +108,10 @@ export const registrationRequestsMockHandlers = {
         rejection_reason: 'Заявка отклонена администратором'
       },
       status: RequestStatus.REJECTED,
-      createdAt: baseRequest.createdAt,
-      updatedAt: now,
-      approvedAt: now,
-      approvedBy: reviewedBy,
+      created_at: baseRequest.created_at,
+      updated_at: now,
+      approved_at: now,
+      approved_by: reviewedBy,
     };
 
     MOCK_REGISTRATION_REQUESTS[index] = updatedRequest;

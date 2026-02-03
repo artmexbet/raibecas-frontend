@@ -2,23 +2,16 @@
  * Типы для заявок на регистрацию
  */
 
+import type { CreateAdminRequest } from '@/types/auth';
+
 export enum RequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
 }
 
-export interface RegistrationRequest {
-  id: string;
-  email: string;
-  username: string;
-  status: RequestStatus;
-  metadata?: Record<string, any>;
-  createdAt: string;
-  updatedAt: string;
-  approvedBy?: string;
-  approvedAt?: string;
-}
+// Используем CreateAdminRequest вместо собственного типа для совместимости
+export type RegistrationRequest = CreateAdminRequest;
 
 /**
  * Моковые данные заявок на регистрацию
@@ -33,8 +26,8 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
       fullName: 'Дмитрий Соколов',
       reason: 'Аспирант МГУ, изучаю философию науки'
     },
-    createdAt: '2026-01-09T10:30:00.000Z',
-    updatedAt: '2026-01-09T10:30:00.000Z',
+    created_at: '2026-01-09T10:30:00.000Z',
+    updated_at: '2026-01-09T10:30:00.000Z',
   },
   {
     id: '2',
@@ -45,8 +38,8 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
       fullName: 'Анна Козлова',
       reason: 'Научный сотрудник института философии, исследую феноменологию'
     },
-    createdAt: '2026-01-08T14:20:00.000Z',
-    updatedAt: '2026-01-08T14:20:00.000Z',
+    created_at: '2026-01-08T14:20:00.000Z',
+    updated_at: '2026-01-08T14:20:00.000Z',
   },
   {
     id: '3',
@@ -57,10 +50,10 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
       fullName: 'Петр Морозов',
       reason: 'Студент 4 курса философского факультета'
     },
-    createdAt: '2026-01-05T09:15:00.000Z',
-    updatedAt: '2026-01-06T11:30:00.000Z',
-    approvedAt: '2026-01-06T11:30:00.000Z',
-    approvedBy: '1',
+    created_at: '2026-01-05T09:15:00.000Z',
+    updated_at: '2026-01-06T11:30:00.000Z',
+    approved_at: '2026-01-06T11:30:00.000Z',
+    approved_by: '1',
   },
   {
     id: '4',
@@ -71,10 +64,10 @@ export const MOCK_REGISTRATION_REQUESTS: RegistrationRequest[] = [
       fullName: 'Test User',
       rejection_reason: 'Недостаточно информации для проверки'
     },
-    createdAt: '2026-01-04T16:45:00.000Z',
-    updatedAt: '2026-01-04T18:00:00.000Z',
-    approvedAt: '2026-01-04T18:00:00.000Z',
-    approvedBy: '1',
+    created_at: '2026-01-04T16:45:00.000Z',
+    updated_at: '2026-01-04T18:00:00.000Z',
+    approved_at: '2026-01-04T18:00:00.000Z',
+    approved_by: '1',
   },
 ];
 
@@ -91,10 +84,10 @@ export function createMockRegistrationRequest(
     username: data.username || 'user',
     status: data.status || RequestStatus.PENDING,
     metadata: data.metadata,
-    createdAt: data.createdAt || now,
-    updatedAt: data.updatedAt || now,
-    approvedBy: data.approvedBy,
-    approvedAt: data.approvedAt,
+    created_at: data.created_at || now,
+    updated_at: data.updated_at || now,
+    approved_by: data.approved_by,
+    approved_at: data.approved_at,
   };
 }
 

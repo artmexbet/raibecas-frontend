@@ -1,9 +1,11 @@
 import {useEffect, useState} from 'react';
-import {Button, Card, Space, Table, Modal, Select, Tag, Empty, message} from "antd";
+import {Button, Card, Space, Table, Select, Tag, Empty, message} from "antd";
 import type {ColumnsType, TablePaginationConfig} from "antd/es/table";
 import {UserDeleteOutlined, UserAddOutlined} from "@ant-design/icons";
 import type {CreateAdminRequest} from "@/types/auth.ts";
 import {usersService} from "../services/users.service.ts";
+import {RoleSelectionModal} from "@/components/RoleSelectionModal.tsx";
+import {AdminRole} from "@/types/permissions.ts";
 
 const STATUS_COLORS = {
     pending: 'blue',
@@ -26,6 +28,8 @@ export function UserRequestsListPage() {
         pageSize: 10,
         total: 0
     });
+    const [roleModalVisible, setRoleModalVisible] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<CreateAdminRequest | null>(null);
 
     // Загрузка списка запросов при монтировании компонента и изменении фильтров
     useEffect(() => {
@@ -87,7 +91,7 @@ export function UserRequestsListPage() {
             width: "15%",
             render: (date: string) => new Date(date).toLocaleDateString('ru-RU'),
             sorter: (a: CreateAdminRequest, b: CreateAdminRequest) =>
-                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
         },
         {
             title: 'Действия',
@@ -101,7 +105,8 @@ export function UserRequestsListPage() {
                             icon={<UserAddOutlined style={{fontSize: 24}} />}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleApprove(record);
+                                setSelectedRequest(record);
+                                setRoleModalVisible(true);
                             }}
                             title="Одобрить"
                         />
@@ -111,7 +116,7 @@ export function UserRequestsListPage() {
                             icon={<UserDeleteOutlined style={{fontSize: 24}}/>}
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleReject(record);
+                                handleReject(record.id);
                             }}
                             title="Отклонить"
                         />
@@ -123,40 +128,17 @@ export function UserRequestsListPage() {
         }
     ];
 
-    const showConfirmModal = (record: CreateAdminRequest) => {
-        Modal.confirm({
-            title: "Действия с пользователем",
-            content: (
-                <div>
-                    <p><strong>Имя пользователя:</strong> {record.username}</p>
-                    <p><strong>Email:</strong> {record.email}</p>
-                    <p><strong>Статус:</strong> <Tag color={STATUS_COLORS[record.status as keyof typeof STATUS_COLORS]}>
-                        {STATUS_LABELS[record.status as keyof typeof STATUS_LABELS] || record.status}
-                    </Tag></p>
-                    <p><strong>Дата создания:</strong> {new Date(record.createdAt).toLocaleDateString('ru-RU')}</p>
-                </div>
-            ),
-            okText: "Одобрить",
-            okType: "primary",
-            onOk: () => handleApprove(record),
-            cancelText: "Отклонить",
-            footer: (
-                originNode,
-                extra
-            ) => (
-                <Space size="small" style={{float: 'right'}}>
-                    <extra.CancelBtn/>
-                    <Button type="default" danger onClick={() => {handleReject(record)}}>Отклонить</Button>
-                    <extra.OkBtn/>
-                </Space>
-            ),
-        });
+    const showRoleModal = (record: CreateAdminRequest) => {
+        setSelectedRequest(record);
+        setRoleModalVisible(true);
     }
 
-    const handleApprove = async (record: CreateAdminRequest) => {
+    const handleApprove = async (requestId: string, role: AdminRole) => {
         try {
-            await usersService.approve(record.id);
+            await usersService.approve(requestId, role);
             message.success('Заявка одобрена');
+            setRoleModalVisible(false);
+            setSelectedRequest(null);
             loadRequests();
         } catch (error) {
             message.error('Ошибка при одобрении заявки');
@@ -164,10 +146,12 @@ export function UserRequestsListPage() {
         }
     }
 
-    const handleReject = async (record: CreateAdminRequest) => {
+    const handleReject = async (requestId: string) => {
         try {
-            await usersService.reject(record.id);
+            await usersService.reject(requestId);
             message.success('Заявка отклонена');
+            setRoleModalVisible(false);
+            setSelectedRequest(null);
             loadRequests();
         } catch (error) {
             message.error('Ошибка при отклонении заявки');
@@ -217,7 +201,7 @@ export function UserRequestsListPage() {
                     <Table
                         columns={columns}
                         onRow={(record) => ({
-                            onClick: () => record.status === 'pending' && showConfirmModal(record),
+                            onClick: () => record.status === 'pending' && showRoleModal(record),
                         })}
                         rowKey={(record) => record.id}
                         scroll={{y: 600}}
@@ -235,6 +219,17 @@ export function UserRequestsListPage() {
                     />
                 )}
             </Card>
+
+            <RoleSelectionModal
+                visible={roleModalVisible}
+                request={selectedRequest}
+                onCancel={() => {
+                    setRoleModalVisible(false);
+                    setSelectedRequest(null);
+                }}
+                onApprove={handleApprove}
+                onReject={handleReject}
+            />
         </div>
     );
 }
