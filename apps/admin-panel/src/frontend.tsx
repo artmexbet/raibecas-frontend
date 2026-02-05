@@ -5,21 +5,22 @@
  * It is included in `src/index.html`.
  */
 
-import {StrictMode} from "react";
 import {createRoot} from "react-dom/client";
 import {App} from "./App";
 import {DevSupport} from "@react-buddy/ide-toolbox";
 import {ComponentPreviews, useInitial} from "@/dev";
 
 const elem = document.getElementById("root")!;
+
+// Примечание: StrictMode убран, чтобы избежать двойных запросов в dev-режиме.
+// StrictMode в dev-режиме намеренно вызывает useEffect дважды для выявления побочных эффектов.
+// Если нужна дополнительная отладка, можно временно вернуть <StrictMode>.
 const app = (
-    <StrictMode>
-        <DevSupport ComponentPreviews={ComponentPreviews}
-                    useInitialHook={useInitial}
-        >
-            <App/>
-        </DevSupport>
-    </StrictMode>
+    <DevSupport ComponentPreviews={ComponentPreviews}
+                useInitialHook={useInitial}
+    >
+        <App/>
+    </DevSupport>
 );
 
 if (import.meta.hot) {

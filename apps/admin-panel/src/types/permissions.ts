@@ -5,6 +5,7 @@
 export enum AdminRole {
   ADMIN = 'Admin',
   SUPER_ADMIN = 'SuperAdmin',
+  USER = 'User',
 }
 
 export type Permission = 
@@ -23,6 +24,9 @@ export type Permission =
  * Карта прав доступа для ролей
  */
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
+  [AdminRole.USER]: [
+    'view_documents',
+  ],
   [AdminRole.ADMIN]: [
     'view_documents',
     'create_documents',

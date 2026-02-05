@@ -3,32 +3,37 @@ import type {User} from "@/types";
 import {API_ENDPOINTS} from "@/constants/api.ts";
 import apiClient from "@/services/api.ts";
 import {isMockEnabled, registrationRequestsMockHandlers, usersMockHandlers} from "@/mocks";
+import {AdminRole} from "@/types/permissions.ts";
 
 export const usersService = {
-    async fetchRegistrationRequests() {
-        let response: { data: CreateAdminRequest[] };
-
+    async fetchRegistrationRequests(status?: string, page: number = 1, pageSize: number = 10) {
         // Используем моки если они включены
         if (isMockEnabled('registrationRequests')) {
-            const mockData = await registrationRequestsMockHandlers.getAll();
-            response = {data: mockData as unknown as CreateAdminRequest[]};
+            return await registrationRequestsMockHandlers.getAll(status, page, pageSize);
         } else {
             // Реальный API запрос
-            response = await apiClient.get<CreateAdminRequest[]>(
-                API_ENDPOINTS.REGISTRATION_REQUESTS.LIST
+            const params = new URLSearchParams({
+                page: page.toString(),
+                page_size: pageSize.toString(),
+                ...(status && { status })
+            });
+            const response = await apiClient.get<{ requests: CreateAdminRequest[], total_count: number, page: number, page_size: number }>(
+                `${API_ENDPOINTS.REGISTRATION_REQUESTS.LIST}?${params.toString()}`
             );
+            // Сервер возвращает {requests: [], total_count: 0, page: 1, page_size: 10}
+            // Axios оборачивает это в response.data
+            return response.data;
         }
-
-        return response.data;
     },
 
-    async approve(requestId: string) {
+    async approve(requestId: string, role: AdminRole) {
         if (isMockEnabled('registrationRequests')) {
             // Получаем ID текущего администратора (в реальной ситуации из контекста)
             await registrationRequestsMockHandlers.approve(requestId, 'current-admin-id');
         } else {
             await apiClient.post(
-                API_ENDPOINTS.REGISTRATION_REQUESTS.APPROVE(requestId)
+                API_ENDPOINTS.REGISTRATION_REQUESTS.APPROVE(requestId),
+                { role }
             );
         }
     },
@@ -45,20 +50,18 @@ export const usersService = {
     },
 
     async fetchUsers() {
-        let response: { data: User[] };
-
         // Используем моки если они включены
         if (isMockEnabled('users')) {
-            const mockData = await usersMockHandlers.getAll();
-            response = {data: mockData};
+            return await usersMockHandlers.getAll();
         } else {
             // Реальный API запрос
-            response = await apiClient.get<User[]>(
+            const response = await apiClient.get<{ users: User[], total_count: number, page: number, page_size: number }>(
                 API_ENDPOINTS.USERS.LIST
             );
+            // Сервер возвращает {users: [], total_count: 0, page: 1, page_size: 10}
+            // Axios оборачивает это в response.data
+            return response.data.users;
         }
-
-        return response.data;
     },
 
     async toggleUserStatus(userId: string, isActive: boolean) {
@@ -71,7 +74,19 @@ export const usersService = {
         } else {
             const response = await apiClient.patch<User>(
                 API_ENDPOINTS.USERS.UPDATE(userId),
-                { isActive }
+                { is_active: isActive }
+            );
+            return response.data;
+        }
+    },
+
+    async updateUser(userId: string, data: Partial<User>) {
+        if (isMockEnabled('users')) {
+            return await usersMockHandlers.update(userId, data);
+        } else {
+            const response = await apiClient.patch<User>(
+                API_ENDPOINTS.USERS.UPDATE(userId),
+                data
             );
             return response.data;
         }

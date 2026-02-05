@@ -4,25 +4,20 @@ class TokenManager {
   private accessToken: string | null = null;
   private isRefreshing = false;
   private refreshSubscribers: Array<(token: string) => void> = [];
-  private persistToStorage = true; // Сохранять ли токены в localStorage
 
   constructor() {
     // Восстанавливаем токен из localStorage при инициализации
-    if (this.persistToStorage) {
-      this.accessToken = localStorage.getItem(STORAGE_KEY);
-    }
+    this.accessToken = localStorage.getItem(STORAGE_KEY);
   }
 
   setAccessToken(token: string | null): void {
     this.accessToken = token;
 
     // Сохраняем в localStorage для persist между перезагрузками
-    if (this.persistToStorage) {
-      if (token) {
-        localStorage.setItem(STORAGE_KEY, token);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    if (token) {
+      localStorage.setItem(STORAGE_KEY, token);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
     }
   }
 
@@ -54,17 +49,6 @@ class TokenManager {
 
   clearRefreshSubscribers(): void {
     this.refreshSubscribers = [];
-  }
-
-  // Опционально: возможность отключить persist для повышенной безопасности
-  setPersistToStorage(enabled: boolean): void {
-    this.persistToStorage = enabled;
-
-    if (!enabled) {
-      localStorage.removeItem(STORAGE_KEY);
-    } else if (this.accessToken) {
-      localStorage.setItem(STORAGE_KEY, this.accessToken);
-    }
   }
 }
 

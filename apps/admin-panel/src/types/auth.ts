@@ -36,7 +36,12 @@ export interface CreateAdminRequest {
     id: string;
     email: string;
     username: string;
-    request: string;
+    status: 'pending' | 'approved' | 'rejected';
+    metadata?: Record<string, any>;
+    created_at: string;
+    updated_at: string;
+    approved_by?: string;
+    approved_at?: string;
 }
 
 

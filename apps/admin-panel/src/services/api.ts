@@ -43,6 +43,14 @@ apiClient.interceptors.response.use(
     // Если получили 401 и это не повторный запрос
     if (error.response?.status === 401 && !originalRequest._retry) {
 
+      // Не пытаемся refresh для запросов логина или самого refresh
+      const isAuthRequest = originalRequest.url?.includes('/auth/login') ||
+                           originalRequest.url?.includes('/auth/refresh');
+
+      if (isAuthRequest) {
+        return Promise.reject(error);
+      }
+
       // Если уже идёт процесс обновления токена
       if (tokenManager.getIsRefreshing()) {
         // Добавляем запрос в очередь и ждём новый токен

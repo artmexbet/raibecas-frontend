@@ -14,8 +14,8 @@ export const MOCK_CONFIG = {
   modules: {
     auth: false,
     documents: true,
-    users: true,
-    registrationRequests: true,
+    users: false,
+    registrationRequests: false,
   },
 
   /** Вероятность ошибки (0-1, для тестирования обработки ошибок) */
