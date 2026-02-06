@@ -30,6 +30,7 @@ export interface Document {
 
 // Request/Response types синхронизированы с services/gateway/internal/domain/documents.go
 
+// Тип для создания нового документа
 export interface CreateDocumentRequest {
     title: string;
     description?: string | null;
@@ -37,6 +38,7 @@ export interface CreateDocumentRequest {
     categoryId: number;
     publicationDate: string; // ISO 8601 timestamp
     tagIds?: number[];
+    content?: string; // Markdown content
 }
 
 export interface UpdateDocumentRequest {

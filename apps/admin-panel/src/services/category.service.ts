@@ -12,8 +12,8 @@ export const categoryService = {
         if (isMockEnabled('documents')) {
             return Promise.resolve(MOCK_CATEGORIES);
         }
-        const response = await apiClient.get<Category[]>(API_ENDPOINTS.CATEGORIES.LIST);
-        return response.data;
+        const response = await apiClient.get<{ categories: Category[] }>(API_ENDPOINTS.CATEGORIES.LIST);
+        return response.data.categories;
     },
 
     async create(data: CreateCategoryRequest): Promise<Category> {
@@ -25,7 +25,7 @@ export const categoryService = {
             MOCK_CATEGORIES.push(newCategory);
             return Promise.resolve(newCategory);
         }
-        const response = await apiClient.post<Category>(API_ENDPOINTS.CATEGORIES.CREATE, data);
-        return response.data;
+        const response = await apiClient.post<{ category: Category }>(API_ENDPOINTS.CATEGORIES.CREATE, data);
+        return response.data.category;
     },
 };

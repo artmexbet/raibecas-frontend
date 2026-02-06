@@ -12,8 +12,8 @@ export const tagService = {
         if (isMockEnabled('documents')) {
             return Promise.resolve(MOCK_TAGS);
         }
-        const response = await apiClient.get<Tag[]>(API_ENDPOINTS.TAGS.LIST);
-        return response.data;
+        const response = await apiClient.get<{ tags: Tag[] }>(API_ENDPOINTS.TAGS.LIST);
+        return response.data.tags;
     },
 
     async create(data: CreateTagRequest): Promise<Tag> {
@@ -25,7 +25,7 @@ export const tagService = {
             MOCK_TAGS.push(newTag);
             return Promise.resolve(newTag);
         }
-        const response = await apiClient.post<Tag>(API_ENDPOINTS.TAGS.CREATE, data);
-        return response.data;
+        const response = await apiClient.post<{ tag: Tag }>(API_ENDPOINTS.TAGS.CREATE, data);
+        return response.data.tag;
     },
 };

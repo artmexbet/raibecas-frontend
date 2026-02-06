@@ -279,14 +279,15 @@ export function DocumentCreatePage() {
             setSaving(true);
 
             // Формируем запрос в соответствии с CreateDocumentRequest
-            const documentData: CreateDocumentRequest = {
+            const documentData = {
                 title: values.title,
                 authorId: values.authorId, // UUID автора
                 categoryId: values.categoryId, // ID категории
                 publicationDate: values.publicationDate?.toISOString(), // ISO 8601 timestamp
                 tagIds: values.tagIds || [], // Массив ID тегов
                 description: values.description || null,
-            };
+                content: values.content || '', // Содержимое документа в Markdown
+            } as CreateDocumentRequest;
 
             const newDocument = await documentService.create(documentData);
             message.success('Документ успешно создан');

@@ -14,8 +14,8 @@ export const authorService = {
             return Promise.resolve(MOCK_AUTHORS);
         }
 
-        const response = await apiClient.get<Author[]>(API_ENDPOINTS.AUTHORS.LIST);
-        return response.data;
+        const response = await apiClient.get<{ authors: Author[] }>(API_ENDPOINTS.AUTHORS.LIST);
+        return response.data.authors;
     },
 
     // Создать нового автора
@@ -29,8 +29,8 @@ export const authorService = {
             return Promise.resolve(newAuthor);
         }
 
-        const response = await apiClient.post<Author>(API_ENDPOINTS.AUTHORS.CREATE, data);
-        return response.data;
+        const response = await apiClient.post<{ author: Author }>(API_ENDPOINTS.AUTHORS.CREATE, data);
+        return response.data.author;
     },
 
     // Обновить автора

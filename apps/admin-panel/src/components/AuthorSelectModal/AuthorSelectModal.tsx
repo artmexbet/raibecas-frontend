@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button, List, Form, Input, Space, message } from 'antd';
 import { PlusOutlined, UserOutlined } from '@ant-design/icons';
 import type { Author } from '@/types/document';
+import { authorService } from '@/services/author.service';
 
 interface AuthorSelectModalProps {
     visible: boolean;
@@ -20,6 +21,7 @@ export const AuthorSelectModal: React.FC<AuthorSelectModalProps> = ({
 }) => {
     const [addingAuthor, setAddingAuthor] = useState(false);
     const [newAuthorForm] = Form.useForm();
+    const [loading, setLoading] = useState(false);
 
     const handleClose = () => {
         setAddingAuthor(false);
@@ -34,13 +36,12 @@ export const AuthorSelectModal: React.FC<AuthorSelectModalProps> = ({
 
     const handleAddAuthor = async (values: { name: string }) => {
         try {
-            // Создаем временного автора
-            const newAuthor: Author = {
-                id: `temp-${Date.now()}`,
-                name: values.name,
-            };
+            setLoading(true);
 
-            // Вызываем коллбэк для добавления автора
+            // Отправляем запрос на сервер
+            const newAuthor = await authorService.create({ name: values.name });
+
+            // Вызываем коллбэк для добавления автора в локальный список
             if (onAddAuthor) {
                 onAddAuthor(newAuthor);
             }
@@ -53,6 +54,8 @@ export const AuthorSelectModal: React.FC<AuthorSelectModalProps> = ({
         } catch (error) {
             message.error('Ошибка при добавлении автора');
             console.error('Error adding author:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -125,10 +128,10 @@ export const AuthorSelectModal: React.FC<AuthorSelectModalProps> = ({
                     </Form.Item>
                     <Form.Item>
                         <Space>
-                            <Button type="primary" htmlType="submit">
+                            <Button type="primary" htmlType="submit" loading={loading}>
                                 Добавить
                             </Button>
-                            <Button onClick={handleCancelAddingAuthor}>
+                            <Button onClick={handleCancelAddingAuthor} disabled={loading}>
                                 Отмена
                             </Button>
                         </Space>

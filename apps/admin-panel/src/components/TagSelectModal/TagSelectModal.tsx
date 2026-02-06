@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal, Button, Form, Input, Space, message, Checkbox } from 'antd';
 import { PlusOutlined, TagOutlined } from '@ant-design/icons';
 import type { Tag } from '@/types/document';
+import { tagService } from '@/services/tag.service';
 
 interface TagSelectModalProps {
     visible: boolean;
@@ -23,6 +24,7 @@ export const TagSelectModal: React.FC<TagSelectModalProps> = ({
     const [addingTag, setAddingTag] = useState(false);
     const [newTagForm] = Form.useForm();
     const [localSelectedIds, setLocalSelectedIds] = useState<number[]>(selectedTagIds);
+    const [loading, setLoading] = useState(false);
 
     React.useEffect(() => {
         setLocalSelectedIds(selectedTagIds);
@@ -50,10 +52,10 @@ export const TagSelectModal: React.FC<TagSelectModalProps> = ({
 
     const handleAddTag = async (values: { title: string }) => {
         try {
-            const newTag: Tag = {
-                id: Date.now(), // Временный ID
-                title: values.title,
-            };
+            setLoading(true);
+
+            // Отправляем запрос на сервер
+            const newTag = await tagService.create({ title: values.title });
 
             if (onAddTag) {
                 onAddTag(newTag);
@@ -68,6 +70,8 @@ export const TagSelectModal: React.FC<TagSelectModalProps> = ({
         } catch (error) {
             message.error('Ошибка при добавлении тега');
             console.error('Error adding tag:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -140,10 +144,10 @@ export const TagSelectModal: React.FC<TagSelectModalProps> = ({
                     </Form.Item>
                     <Form.Item>
                         <Space>
-                            <Button type="primary" htmlType="submit">
+                            <Button type="primary" htmlType="submit" loading={loading}>
                                 Добавить
                             </Button>
-                            <Button onClick={handleCancelAddingTag}>
+                            <Button onClick={handleCancelAddingTag} disabled={loading}>
                                 Отмена
                             </Button>
                         </Space>
