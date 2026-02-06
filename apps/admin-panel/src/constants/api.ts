@@ -14,6 +14,24 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/documents/${id}`,
     DELETE: (id: string) => `/documents/${id}`,
   },
+  AUTHORS: {
+    LIST: '/authors',
+    CREATE: '/authors',
+    UPDATE: (id: string) => `/authors/${id}`,
+    DELETE: (id: string) => `/authors/${id}`,
+  },
+  CATEGORIES: {
+    LIST: '/categories',
+    CREATE: '/categories',
+    UPDATE: (id: number) => `/categories/${id}`,
+    DELETE: (id: number) => `/categories/${id}`,
+  },
+  TAGS: {
+    LIST: '/tags',
+    CREATE: '/tags',
+    UPDATE: (id: number) => `/tags/${id}`,
+    DELETE: (id: number) => `/tags/${id}`,
+  },
   USERS: {
     LIST: '/users',
     UPDATE: (id: string) => `/users/${id}`,

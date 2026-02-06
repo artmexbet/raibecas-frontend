@@ -38,6 +38,7 @@ export const MOCK_TAGS: Tag[] = [
 
 /**
  * Моковые данные документов
+ * Синхронизировано с services/gateway/internal/domain/models.go
  */
 export const MOCK_DOCUMENTS: Document[] = [
     {
@@ -46,13 +47,11 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Важнейший труд Иммануила Канта по теории познания',
         author: MOCK_AUTHORS[0]!,
         category: MOCK_CATEGORIES[0]!,
-        publicationDate: '1781-01-01T00:00:00Z',
+        publication_date: '1781-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[1]!, MOCK_TAGS[2]!, MOCK_TAGS[3]!],
-        content: '# Критика чистого разума\n\nОсновополагающий философский труд...',
-        views: 1542,
-        notesCount: 87,
-        createdAt: '2024-01-15T10:00:00Z',
-        updatedAt: '2024-01-15T10:00:00Z',
+        content: '# Критика чистого разума\n\nОсновополагающий философский труд по теории познания...',
+        created_at: '2024-01-15T10:00:00Z',
+        updated_at: '2024-01-15T10:00:00Z',
     },
     {
         id: '550e8400-e29b-41d4-a716-446655440102',
@@ -60,13 +59,11 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Фундаментальная работа Мартина Хайдеггера по онтологии',
         author: MOCK_AUTHORS[1]!,
         category: MOCK_CATEGORIES[1]!,
-        publicationDate: '1927-01-01T00:00:00Z',
+        publication_date: '1927-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[4]!, MOCK_TAGS[5]!, MOCK_TAGS[6]!],
         content: '# Бытие и время\n\nФундаментальная онтология Dasein...',
-        views: 2134,
-        notesCount: 156,
-        createdAt: '2024-02-20T14:30:00Z',
-        updatedAt: '2024-03-10T09:15:00Z',
+        created_at: '2024-02-20T14:30:00Z',
+        updated_at: '2024-03-10T09:15:00Z',
     },
     {
         id: '550e8400-e29b-41d4-a716-446655440103',
@@ -74,13 +71,11 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Классическое произведение Гегеля по феноменологии и диалектике',
         author: MOCK_AUTHORS[2]!,
         category: MOCK_CATEGORIES[2]!,
-        publicationDate: '1807-01-01T00:00:00Z',
+        publication_date: '1807-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[7]!, MOCK_TAGS[8]!, MOCK_TAGS[9]!],
         content: '# Феноменология духа\n\nДиалектическое развитие сознания...',
-        views: 987,
-        notesCount: 64,
-        createdAt: '2024-03-05T11:20:00Z',
-        updatedAt: '2024-03-05T11:20:00Z',
+        created_at: '2024-03-05T11:20:00Z',
+        updated_at: '2024-03-05T11:20:00Z',
     },
 ];
 
@@ -95,13 +90,11 @@ export function createMockDocument(data: Partial<Document>): Document {
         description: data.description,
         author: data.author || MOCK_AUTHORS[0]!,
         category: data.category || MOCK_CATEGORIES[0]!,
-        publicationDate: data.publicationDate || new Date().toISOString(),
+        publication_date: data.publication_date || new Date().toISOString(),
         tags: data.tags || [],
         content: data.content || '# Новый документ\n\nСодержание документа...',
-        views: data.views || 0,
-        notesCount: data.notesCount || 0,
-        createdAt: now,
-        updatedAt: now,
+        created_at: now,
+        updated_at: now,
     };
 }
 

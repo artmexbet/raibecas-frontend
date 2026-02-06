@@ -11,7 +11,7 @@ export interface DashboardStats {
     id: string;
     title: string;
     author: string;
-    createdAt: string;
+    created_at: string;
   }>;
   recentUsers: Array<{
     id: string;
@@ -33,19 +33,19 @@ export const MOCK_STATS: DashboardStats = {
       id: '1',
       title: 'Критика чистого разума',
       author: 'Иммануил Кант',
-      createdAt: '2024-01-15T10:00:00.000Z',
+      created_at: '2024-01-15T10:00:00.000Z',
     },
     {
       id: '2',
       title: 'Бытие и время',
       author: 'Мартин Хайдеггер',
-      createdAt: '2024-02-20T14:30:00.000Z',
+      created_at: '2024-02-20T14:30:00.000Z',
     },
     {
       id: '3',
       title: 'Феноменология духа',
       author: 'Г.В.Ф. Гегель',
-      createdAt: '2024-03-05T11:20:00.000Z',
+      created_at: '2024-03-05T11:20:00.000Z',
     },
   ],
   recentUsers: [

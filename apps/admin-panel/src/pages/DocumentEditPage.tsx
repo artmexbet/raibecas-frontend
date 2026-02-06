@@ -49,7 +49,7 @@ export function DocumentEditPage() {
                 title: data.title,
                 author: data.author.name,
                 category: data.category.title,
-                publicationDate: data.publicationDate ? dayjs(data.publicationDate) : null,
+                publicationDate: data.publication_date ? dayjs(data.publication_date) : null,
                 content: data.content,
                 tags: data.tags.map(tag => tag.title),
             });
@@ -73,7 +73,7 @@ export function DocumentEditPage() {
 
             const updatedData = {
                 ...values,
-                publicationDate: values.publicationDate ? values.publicationDate.format('YYYY-MM-DD') : document.publicationDate,
+                publicationDate: values.publicationDate ? values.publicationDate.format('YYYY-MM-DD') : document.publication_date,
             };
 
             await documentService.update(document.id, updatedData);
@@ -228,7 +228,7 @@ export function DocumentEditPage() {
                             {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
                         ]}
                     >
-                        <DocumentEditor onChange={handleContentChange} value={document.content}/>
+                        <DocumentEditor onChange={handleContentChange} value={document.content || ''}/>
                     </Form.Item>
 
                     <Form.Item>

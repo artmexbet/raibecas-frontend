@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {useNavigate} from '@tanstack/react-router';
 import {
     Form,
@@ -14,18 +14,25 @@ import {
     Upload,
     Alert,
     Collapse,
+    Spin,
+    Tag,
 } from 'antd';
 import {
     ArrowLeftOutlined,
     SaveOutlined,
     InboxOutlined,
-    InfoCircleOutlined
+    InfoCircleOutlined,
+    UserOutlined,
+    TagsOutlined,
 } from '@ant-design/icons';
-import {documentService} from '@/services/document.service';
-import type {Document} from '@/types/document';
+import {documentService} from '../services/document.service';
+import {authorService} from '../services/author.service';
+import {categoryService} from '../services/category.service';
+import {tagService} from '../services/tag.service';
+import type {CreateDocumentRequest, Author, Category, Tag as TagType} from '@/types/document';
 import type {UploadProps} from 'antd';
 import './DocumentEditPage.css';
-import {DocumentEditor} from "@/components";
+import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
 
 const {TextArea} = Input;
 const {Dragger} = Upload;
@@ -66,11 +73,90 @@ export function DocumentCreatePage() {
     const navigate = useNavigate();
     const [form] = Form.useForm();
     const [saving, setSaving] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [previewContent, setContent] = useState<string>('');
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
 
+    // Модальные окна
+    const [authorModalVisible, setAuthorModalVisible] = useState(false);
+    const [tagModalVisible, setTagModalVisible] = useState(false);
+
+    // Данные с сервера
+    const [authors, setAuthors] = useState<Author[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [tags, setTags] = useState<TagType[]>([]);
+
+    // Выбранные значения
+    const [selectedAuthorName, setSelectedAuthorName] = useState<string>('');
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+
+    // Загрузка данных при монтировании компонента
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                const [authorsData, categoriesData, tagsData] = await Promise.all([
+                    authorService.getAll(),
+                    categoryService.getAll(),
+                    tagService.getAll(),
+                ]);
+                setAuthors(authorsData);
+                setCategories(categoriesData);
+                setTags(tagsData);
+            } catch (error) {
+                message.error('Ошибка при загрузке данных');
+                console.error('Error loading data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
+
     const handleBack = () => {
         navigate({to: '/documents'});
+    };
+
+    const handleOpenAuthorModal = () => {
+        setAuthorModalVisible(true);
+    };
+
+    const handleCloseAuthorModal = () => {
+        setAuthorModalVisible(false);
+    };
+
+    const handleSelectAuthor = (authorId: string) => {
+        const selectedAuthor = authors.find(a => a.id === authorId);
+        form.setFieldValue('authorId', authorId);
+        if (selectedAuthor) {
+            setSelectedAuthorName(selectedAuthor.name);
+        }
+        message.success('Автор выбран');
+    };
+
+    const handleAddAuthor = (newAuthor: Author) => {
+        const updatedAuthors = [...authors, newAuthor];
+        setAuthors(updatedAuthors);
+        setSelectedAuthorName(newAuthor.name);
+    };
+
+    const handleOpenTagModal = () => {
+        setTagModalVisible(true);
+    };
+
+    const handleCloseTagModal = () => {
+        setTagModalVisible(false);
+    };
+
+    const handleSelectTags = (tagIds: number[]) => {
+        setSelectedTagIds(tagIds);
+        form.setFieldValue('tagIds', tagIds);
+        message.success(`Выбрано тегов: ${tagIds.length}`);
+    };
+
+    const handleAddTag = (newTag: TagType) => {
+        const updatedTags = [...tags, newTag];
+        setTags(updatedTags);
     };
 
     const handleFileUpload = async (file: File) => {
@@ -111,18 +197,41 @@ export function DocumentCreatePage() {
                 if (titleMatch && titleMatch[1] && !form.getFieldValue('title')) {
                     form.setFieldValue('title', titleMatch[1].trim());
                 }
-                if (authorMatch && authorMatch[1] && !form.getFieldValue('author')) {
-                    form.setFieldValue('author', authorMatch[1].trim());
+                if (authorMatch && authorMatch[1] && !form.getFieldValue('authorId')) {
+                    // Пытаемся найти автора по имени
+                    const authorName = authorMatch[1].trim().toLowerCase();
+                    const foundAuthor = authors.find(author =>
+                        author.name.toLowerCase().includes(authorName) ||
+                        authorName.includes(author.name.toLowerCase())
+                    );
+                    if (foundAuthor) {
+                        form.setFieldValue('authorId', foundAuthor.id);
+                        setSelectedAuthorName(foundAuthor.name);
+                    }
                 }
-                if (categoryMatch && categoryMatch[1] && !form.getFieldValue('category')) {
-                    form.setFieldValue('category', categoryMatch[1].trim());
+                if (categoryMatch && categoryMatch[1] && !form.getFieldValue('categoryId')) {
+                    // Пытаемся найти категорию по названию
+                    const categoryName = categoryMatch[1].trim().toLowerCase();
+                    const foundCategory = categories.find(category =>
+                        category.title.toLowerCase() === categoryName
+                    );
+                    if (foundCategory) {
+                        form.setFieldValue('categoryId', foundCategory.id);
+                    }
                 }
                 if (descriptionMatch && descriptionMatch[1] && !form.getFieldValue('description')) {
                     form.setFieldValue('description', descriptionMatch[1].trim());
                 }
-                if (tagsMatch && tagsMatch[1] && !form.getFieldValue('tags')) {
-                    const tags = tagsMatch[1].split(',').map(tag => tag.trim().replace(/["']/g, ''));
-                    form.setFieldValue('tags', tags);
+                if (tagsMatch && tagsMatch[1] && !form.getFieldValue('tagIds')) {
+                    const tagNames = tagsMatch[1].split(',').map(tag => tag.trim().replace(/["']/g, '').toLowerCase());
+                    // Находим ID тегов по именам
+                    const foundTagIds = tags
+                        .filter(tag => tagNames.includes(tag.title.toLowerCase()))
+                        .map(tag => tag.id);
+                    if (foundTagIds.length > 0) {
+                        form.setFieldValue('tagIds', foundTagIds);
+                        setSelectedTagIds(foundTagIds);
+                    }
                 }
 
                 message.success(`Метаданные из файла успешно извлечены`);
@@ -169,14 +278,14 @@ export function DocumentCreatePage() {
         try {
             setSaving(true);
 
-            const documentData: Partial<Document> = {
+            // Формируем запрос в соответствии с CreateDocumentRequest
+            const documentData: CreateDocumentRequest = {
                 title: values.title,
-                author: values.author,
-                category: values.category,
-                publicationDate: values.publicationDate?.format('YYYY-MM-DD'),
-                content: values.content,
-                tags: values.tags || [],
-                description: values.description,
+                authorId: values.authorId, // UUID автора
+                categoryId: values.categoryId, // ID категории
+                publicationDate: values.publicationDate?.toISOString(), // ISO 8601 timestamp
+                tagIds: values.tagIds || [], // Массив ID тегов
+                description: values.description || null,
             };
 
             const newDocument = await documentService.create(documentData);
@@ -216,8 +325,17 @@ export function DocumentCreatePage() {
                 </Button>
             </div>
 
-            {/* Форма создания */}
-            <Card>
+            {/* Индикатор загрузки */}
+            {loading ? (
+                <Card>
+                    <div style={{ textAlign: 'center', padding: '50px 0' }}>
+                        <Spin size="large" tip="Загрузка данных..." />
+                    </div>
+                </Card>
+            ) : (
+                <>
+                    {/* Форма создания */}
+                    <Card>
                 <Form
                     form={form}
                     layout="vertical"
@@ -235,13 +353,28 @@ export function DocumentCreatePage() {
                     </Form.Item>
 
                     <Form.Item
-                        name="author"
+                        name="authorId"
                         label="Автор"
                         rules={[
-                            {required: true, message: 'Пожалуйста, введите автора'},
+                            {required: true, message: 'Пожалуйста, выберите автора'},
                         ]}
                     >
-                        <Input size="large" placeholder="Введите имя автора"/>
+                        <Space.Compact style={{ width: '100%' }}>
+                            <Input
+                                size="large"
+                                placeholder="Нажмите кнопку для выбора автора"
+                                readOnly
+                                value={selectedAuthorName}
+                                style={{ flex: 1 }}
+                            />
+                            <Button
+                                size="large"
+                                icon={<UserOutlined />}
+                                onClick={handleOpenAuthorModal}
+                            >
+                                Выбрать
+                            </Button>
+                        </Space.Compact>
                     </Form.Item>
 
                     <Form.Item
@@ -257,7 +390,7 @@ export function DocumentCreatePage() {
                     <Row gutter={16}>
                         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                             <Form.Item
-                                name="category"
+                                name="categoryId"
                                 label="Категория"
                                 rules={[
                                     {required: true, message: 'Пожалуйста, выберите категорию'},
@@ -266,16 +399,11 @@ export function DocumentCreatePage() {
                                 <Select
                                     size="large"
                                     placeholder="Выберите категорию"
-                                    options={[
-                                        {label: 'Эпистемология', value: 'Эпистемология'},
-                                        {label: 'Онтология', value: 'Онтология'},
-                                        {label: 'Феноменология', value: 'Феноменология'},
-                                        {label: 'Этика', value: 'Этика'},
-                                        {label: 'Логика', value: 'Логика'},
-                                        {label: 'Метафизика', value: 'Метафизика'},
-                                        {label: 'Философия науки', value: 'Философия науки'},
-                                        {label: 'Разное', value: 'Разное'},
-                                    ]}
+                                    loading={loading}
+                                    options={categories.map(category => ({
+                                        label: category.title,
+                                        value: category.id,
+                                    }))}
                                 />
                             </Form.Item>
                         </Col>
@@ -299,18 +427,42 @@ export function DocumentCreatePage() {
                     </Row>
 
                     <Form.Item
-                        name="tags"
+                        name="tagIds"
                         label="Теги"
                         rules={[
                             {required: true, message: 'Пожалуйста, добавьте хотя бы один тег'},
                         ]}
                     >
-                        <Select
-                            mode="tags"
-                            size="large"
-                            placeholder="Введите теги и нажмите Enter"
-                            tokenSeparators={[',']}
-                        />
+                        <div>
+                            <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
+                                <Input
+                                    size="large"
+                                    placeholder="Нажмите кнопку для выбора тегов"
+                                    readOnly
+                                    value={`Выбрано тегов: ${selectedTagIds.length}`}
+                                    style={{ flex: 1 }}
+                                />
+                                <Button
+                                    size="large"
+                                    icon={<TagsOutlined />}
+                                    onClick={handleOpenTagModal}
+                                >
+                                    Выбрать
+                                </Button>
+                            </Space.Compact>
+                            {selectedTagIds.length > 0 && (
+                                <Space size={[0, 8]} wrap>
+                                    {selectedTagIds.map(tagId => {
+                                        const tag = tags.find(t => t.id === tagId);
+                                        return tag ? (
+                                            <Tag key={tagId} color="blue">
+                                                {tag.title}
+                                            </Tag>
+                                        ) : null;
+                                    })}
+                                </Space>
+                            )}
+                        </div>
                     </Form.Item>
 
                     {/* Drag & Drop для загрузки файла */}
@@ -404,6 +556,27 @@ export function DocumentCreatePage() {
                     </Form.Item>
                 </Form>
             </Card>
+                </>
+            )}
+
+            {/* Модальное окно выбора автора */}
+            <AuthorSelectModal
+                visible={authorModalVisible}
+                authors={authors}
+                onClose={handleCloseAuthorModal}
+                onSelect={handleSelectAuthor}
+                onAddAuthor={handleAddAuthor}
+            />
+
+            {/* Модальное окно выбора тегов */}
+            <TagSelectModal
+                visible={tagModalVisible}
+                tags={tags}
+                selectedTagIds={selectedTagIds}
+                onClose={handleCloseTagModal}
+                onSelect={handleSelectTags}
+                onAddTag={handleAddTag}
+            />
         </div>
     );
 }

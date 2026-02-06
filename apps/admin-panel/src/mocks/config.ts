@@ -13,7 +13,7 @@ export const MOCK_CONFIG = {
   /** Моки для конкретных модулей */
   modules: {
     auth: false,
-    documents: true,
+    documents: false,
     users: false,
     registrationRequests: false,
   },

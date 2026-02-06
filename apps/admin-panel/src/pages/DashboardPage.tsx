@@ -108,7 +108,7 @@ export function DashboardPage() {
                         <Text type="secondary">{doc.author}</Text>
                         <br />
                         <Text type="secondary" style={{ fontSize: '12px' }}>
-                          {formatDate(doc.createdAt)}
+                          {formatDate(doc.created_at)}
                         </Text>
                       </>
                     }
