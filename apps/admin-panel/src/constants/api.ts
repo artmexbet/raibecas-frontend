@@ -42,6 +42,9 @@ export const API_ENDPOINTS = {
     APPROVE: (id: string) => `/registration-requests/${id}/approve`,
     REJECT: (id: string) => `/registration-requests/${id}/reject`,
   },
+  CHAT: {
+    SESSIONS: (userID: string) => `/chat/${userID}/sessions`,
+  },
 } as const;
 
 // Storage keys (только для admin данных, токены в памяти и HttpOnly cookies)

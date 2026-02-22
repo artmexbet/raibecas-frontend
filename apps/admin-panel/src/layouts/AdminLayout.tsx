@@ -14,6 +14,7 @@ import {
   LogoutOutlined,
   BellOutlined,
   UserAddOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import { authService } from '../services/auth.service';
 
@@ -41,6 +42,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       'registration-requests': '/registration-requests',
       users: '/users',
       settings: '/settings',
+      chats: '/chats',
     };
 
     if (routes[key]) {
@@ -56,6 +58,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     currentPath.startsWith('/registration-requests') ? 'registration-requests' :
     currentPath.startsWith('/users') ? 'users' :
     currentPath.startsWith('/settings') ? 'settings' :
+    currentPath.startsWith('/chats') ? 'chats' :
     'dashboard';
 
   const menuItems: MenuProps['items'] = [
@@ -78,6 +81,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       key: 'users',
       icon: <TeamOutlined />,
       label: 'Пользователи',
+    },
+    {
+      key: 'chats',
+      icon: <MessageOutlined />,
+      label: 'Чаты',
     },
     {
       key: 'settings',
