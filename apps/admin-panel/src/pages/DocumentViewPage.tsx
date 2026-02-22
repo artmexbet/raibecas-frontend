@@ -106,10 +106,12 @@ export function DocumentViewPage() {
       </div>
 
       {/* Статистика просмотров */}
+      {/*
       <Card
         title="Статистика документа"
         className="document-view-page__stats-card"
       >
+
         <Row gutter={16}>
           <Col span={6}>
             <div style={{ color: statisticColors.views }}>
@@ -140,7 +142,7 @@ export function DocumentViewPage() {
                   Дата создания
                 </div>
                 <div className="document-view-page__date-card-value">
-                  {formatDate(document.createdAt)}
+                  {formatDate(document.created_at)}
                 </div>
               </Space>
             </Card>
@@ -156,16 +158,16 @@ export function DocumentViewPage() {
                   Последнее обновление
                 </div>
                 <div className="document-view-page__date-card-value">
-                  {formatDate(document.updatedAt)}
+                  {formatDate(document.updated_at)}
                 </div>
               </Space>
             </Card>
           </Col>
         </Row>
 
+
         <Divider />
 
-        {/* Дополнительная статистика по просмотрам пользователями */}
         <div>
           <h3 className="document-view-page__stats-section-title">Активность пользователей</h3>
           <Row gutter={16}>
@@ -211,7 +213,7 @@ export function DocumentViewPage() {
             </Col>
           </Row>
         </div>
-      </Card>
+      </Card>*/}
 
       {/* Сам документ */}
       <DocumentViewer document={document} showMetadata={false} />

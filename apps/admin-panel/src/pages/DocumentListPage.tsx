@@ -20,7 +20,7 @@ export function DocumentListPage() {
         try {
             setLoading(true);
             const data = await documentService.getAll();
-            setDocuments(data);
+            setDocuments(data.documents);
         } catch (error) {
             message.error('Ошибка при загрузке документов');
             console.error('Error loading documents:', error);

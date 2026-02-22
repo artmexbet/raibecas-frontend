@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Typography, Tag, Space } from 'antd';
-import { CalendarOutlined, UserOutlined, FolderOutlined, EyeOutlined, CommentOutlined } from '@ant-design/icons';
+import { CalendarOutlined, UserOutlined, FolderOutlined } from '@ant-design/icons';
 import { XMarkdown } from '@ant-design/x-markdown';
 import type { Document } from '@/types/document';
 import './DocumentViewer.css';
@@ -41,7 +41,7 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
           </Text>
           <Text type="secondary">
             <CalendarOutlined style={{ marginRight: 8 }} />
-            {formatDate(document.publicationDate)}
+            {formatDate(document.publication_date)}
           </Text>
         </Space>
 
@@ -62,26 +62,12 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
             </Space>
           )}
         </Space>
-
-        {/* Статистика просмотров и заметок */}
-        {showMetadata && (
-          <Space size="large">
-            <Space size="small">
-              <EyeOutlined />
-              <Text type="secondary">{document.views ?? 0} просмотров</Text>
-            </Space>
-            <Space size="small">
-              <CommentOutlined />
-              <Text type="secondary">{document.notesCount ?? 0} заметок</Text>
-            </Space>
-          </Space>
-        )}
       </Card>
 
       {/* Содержимое документа */}
       <Card variant='outlined'>
         <div className="document-viewer__content">
-          <XMarkdown content={document.content} />
+          <XMarkdown content={document.content || ''} />
         </div>
       </Card>
     </div>

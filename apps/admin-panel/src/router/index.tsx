@@ -11,6 +11,7 @@ import { ProtectedRoute } from '@/components';
 import {DocumentCreatePage} from "@/pages/DocumentCreatePage.tsx";
 import {UsersListPage} from "../pages/UsersListPage.tsx";
 import {SettingsPage} from "../pages/SettingsPage.tsx";
+import {ChatsPage} from "../pages/ChatsPage.tsx";
 
 // Корневой маршрут
 const rootRoute = createRootRoute({
@@ -175,6 +176,24 @@ const settingsRoute = createRoute({
   },
 });
 
+// Чаты (временная вкладка)
+const chatsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/chats',
+  component: () => (
+    <ProtectedRoute requireAuth>
+      <AdminLayout>
+        <ChatsPage />
+      </AdminLayout>
+    </ProtectedRoute>
+  ),
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
 // Создаем дерево маршрутов
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -186,6 +205,7 @@ const routeTree = rootRoute.addChildren([
   registrationRequestsRoute,
   usersRoute,
   settingsRoute,
+  chatsRoute,
 ]);
 
 // Создаем и экспортируем роутер

@@ -4,6 +4,7 @@ import type { Document } from '@/types/document';
 
 /**
  * Моковые обработчики для документов
+ * Синхронизировано с services/gateway/internal/domain/models.go
  */
 export const documentsMockHandlers = {
   /**
@@ -84,13 +85,11 @@ export const documentsMockHandlers = {
       description: data.description ?? baseDocument.description,
       author: author as any,
       category: category as any,
-      publicationDate: data.publicationDate ?? baseDocument.publicationDate,
-      content: data.content ?? baseDocument.content,
+      publication_date: data.publication_date ?? baseDocument.publication_date,
       tags: tags as any,
-      views: data.views ?? baseDocument.views,
-      notesCount: data.notesCount ?? baseDocument.notesCount,
-      createdAt: baseDocument.createdAt,
-      updatedAt: new Date().toISOString(),
+      content: data.content ?? baseDocument.content,
+      created_at: baseDocument.created_at,
+      updated_at: new Date().toISOString(),
     };
 
     MOCK_DOCUMENTS[index] = updatedDocument;

@@ -14,12 +14,15 @@ import {
     Row,
     Col
 } from 'antd';
-import {ArrowLeftOutlined, SaveOutlined} from '@ant-design/icons';
+import {ArrowLeftOutlined, SaveOutlined, UserOutlined, TagsOutlined} from '@ant-design/icons';
 import {documentService} from '@/services/document.service';
-import type {Document} from '@/types/document';
+import {authorService} from '@/services/author.service';
+import {categoryService} from '@/services/category.service';
+import {tagService} from '@/services/tag.service';
+import type {Document, Author, Category, Tag as TagType} from '@/types/document';
 import dayjs from 'dayjs';
 import './DocumentEditPage.css';
-import {DocumentEditor} from "@/components";
+import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
 
 export function DocumentEditPage() {
     const params = useParams({strict: false});
@@ -31,11 +34,45 @@ export function DocumentEditPage() {
     const [error, setError] = useState<string | null>(null);
     const [document, setDocument] = useState<Document | null>(null);
 
+    // Metadata states
+    const [authors, setAuthors] = useState<Author[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [tags, setTags] = useState<TagType[]>([]);
+    const [loadingMetadata, setLoadingMetadata] = useState(false);
+
+    // Modal states
+    const [authorModalVisible, setAuthorModalVisible] = useState(false);
+    const [tagModalVisible, setTagModalVisible] = useState(false);
+
+    // Selected values
+    const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
+    const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+
     useEffect(() => {
+        loadMetadata();
         if (id) {
             loadDocument(id);
         }
     }, [id]);
+
+    const loadMetadata = async () => {
+        try {
+            setLoadingMetadata(true);
+            const [authorsData, categoriesData, tagsData] = await Promise.all([
+                authorService.getAll(),
+                categoryService.getAll(),
+                tagService.getAll(),
+            ]);
+            setAuthors(authorsData);
+            setCategories(categoriesData);
+            setTags(tagsData);
+        } catch (err) {
+            message.error('Не удалось загрузить данные');
+            console.error('Error loading metadata:', err);
+        } finally {
+            setLoadingMetadata(false);
+        }
+    };
 
     const loadDocument = async (documentId: string) => {
         try {
@@ -44,14 +81,18 @@ export function DocumentEditPage() {
             const data = await documentService.getById(documentId);
             setDocument(data);
 
+            // Устанавливаем выбранные значения
+            setSelectedAuthorId(data.author.id);
+            setSelectedTagIds(data.tags.map(tag => tag.id));
+
             // Заполняем форму данными документа
             form.setFieldsValue({
                 title: data.title,
-                author: data.author.name,
-                category: data.category.title,
-                publicationDate: data.publicationDate ? dayjs(data.publicationDate) : null,
+                authorId: data.author.id,
+                categoryId: data.category.id,
+                publicationDate: data.publication_date ? dayjs(data.publication_date) : null,
                 content: data.content,
-                tags: data.tags.map(tag => tag.title),
+                tagIds: data.tags.map(tag => tag.id),
             });
         } catch (err) {
             setError('Не удалось загрузить документ');
@@ -65,6 +106,35 @@ export function DocumentEditPage() {
         navigate({to: '/documents'});
     };
 
+    const handleAuthorSelect = (authorId: string) => {
+        setSelectedAuthorId(authorId);
+        form.setFieldValue('authorId', authorId);
+        setAuthorModalVisible(false);
+    };
+
+    const handleAddAuthor = (author: Author) => {
+        setAuthors(prev => [...prev, author]);
+    };
+
+    const handleTagSelect = (tagIds: number[]) => {
+        setSelectedTagIds(tagIds);
+        form.setFieldValue('tagIds', tagIds);
+        setTagModalVisible(false);
+    };
+
+    const handleAddTag = (tag: TagType) => {
+        setTags(prev => [...prev, tag]);
+    };
+
+    const getSelectedAuthorName = () => {
+        const author = authors.find(a => a.id === selectedAuthorId);
+        return author?.name || 'Не выбран';
+    };
+
+    const getSelectedTagsCount = () => {
+        return selectedTagIds.length;
+    };
+
     const handleSave = async (values: any) => {
         if (!document) return;
 
@@ -72,8 +142,12 @@ export function DocumentEditPage() {
             setSaving(true);
 
             const updatedData = {
-                ...values,
-                publicationDate: values.publicationDate ? values.publicationDate.format('YYYY-MM-DD') : document.publicationDate,
+                title: values.title,
+                authorId: values.authorId,
+                categoryId: values.categoryId,
+                publicationDate: values.publicationDate?.toISOString(),
+                tagIds: values.tagIds || [],
+                content: values.content,
             };
 
             await documentService.update(document.id, updatedData);
@@ -152,19 +226,27 @@ export function DocumentEditPage() {
                     </Form.Item>
 
                     <Form.Item
-                        name="author"
+                        name="authorId"
                         label="Автор"
                         rules={[
-                            {required: true, message: 'Пожалуйста, введите автора'},
+                            {required: true, message: 'Пожалуйста, выберите автора'},
                         ]}
                     >
-                        <Input size="large" placeholder="Введите имя автора"/>
+                        <Button
+                            size="large"
+                            icon={<UserOutlined/>}
+                            onClick={() => setAuthorModalVisible(true)}
+                            block
+                            style={{textAlign: 'left'}}
+                        >
+                            {getSelectedAuthorName()}
+                        </Button>
                     </Form.Item>
 
                     <Row gutter={16}>
                         <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                             <Form.Item
-                                name="category"
+                                name="categoryId"
                                 label="Категория"
                                 rules={[
                                     {required: true, message: 'Пожалуйста, выберите категорию'},
@@ -173,16 +255,11 @@ export function DocumentEditPage() {
                                 <Select
                                     size="large"
                                     placeholder="Выберите категорию"
-                                    options={[
-                                        {label: 'Эпистемология', value: 'Эпистемология'},
-                                        {label: 'Онтология', value: 'Онтология'},
-                                        {label: 'Феноменология', value: 'Феноменология'},
-                                        {label: 'Этика', value: 'Этика'},
-                                        {label: 'Логика', value: 'Логика'},
-                                        {label: 'Метафизика', value: 'Метафизика'},
-                                        {label: 'Философия науки', value: 'Философия науки'},
-                                        {label: 'Разное', value: 'Разное'},
-                                    ]}
+                                    loading={loadingMetadata}
+                                    options={categories.map(cat => ({
+                                        label: cat.title,
+                                        value: cat.id,
+                                    }))}
                                 />
                             </Form.Item>
                         </Col>
@@ -206,18 +283,23 @@ export function DocumentEditPage() {
                     </Row>
 
                     <Form.Item
-                        name="tags"
+                        name="tagIds"
                         label="Теги"
                         rules={[
-                            {required: true, message: 'Пожалуйста, добавьте хотя бы один тег'},
+                            {required: true, message: 'Пожалуйста, выберите хотя бы один тег'},
                         ]}
                     >
-                        <Select
-                            mode="tags"
+                        <Button
                             size="large"
-                            placeholder="Введите теги и нажмите Enter"
-                            tokenSeparators={[',']}
-                        />
+                            icon={<TagsOutlined/>}
+                            onClick={() => setTagModalVisible(true)}
+                            block
+                            style={{textAlign: 'left'}}
+                        >
+                            {getSelectedTagsCount() > 0
+                                ? `Выбрано тегов: ${getSelectedTagsCount()}`
+                                : 'Выберите теги'}
+                        </Button>
                     </Form.Item>
 
                     <Form.Item
@@ -228,7 +310,7 @@ export function DocumentEditPage() {
                             {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
                         ]}
                     >
-                        <DocumentEditor onChange={handleContentChange} value={document.content}/>
+                        <DocumentEditor onChange={handleContentChange} value={document.content || ''}/>
                     </Form.Item>
 
                     <Form.Item>
@@ -252,6 +334,24 @@ export function DocumentEditPage() {
                     </Form.Item>
                 </Form>
             </Card>
+
+            {/* Модальные окна */}
+            <AuthorSelectModal
+                visible={authorModalVisible}
+                authors={authors}
+                onClose={() => setAuthorModalVisible(false)}
+                onSelect={handleAuthorSelect}
+                onAddAuthor={handleAddAuthor}
+            />
+
+            <TagSelectModal
+                visible={tagModalVisible}
+                tags={tags}
+                selectedTagIds={selectedTagIds}
+                onClose={() => setTagModalVisible(false)}
+                onSelect={handleTagSelect}
+                onAddTag={handleAddTag}
+            />
         </div>
     );
 }
