@@ -1,6 +1,14 @@
 import type { ThemeConfig } from 'antd';
 import { theme } from 'antd';
 
+// Расширяем стандартные токены Ant Design собственным токеном
+declare module 'antd/es/theme/interface' {
+  interface AliasToken {
+    /** Фон боковой панели (aside) с прозрачностью — меняется с темой */
+    colorBgSidebar: string;
+  }
+}
+
 export type ThemeMode = 'light' | 'dark';
 
 /**
@@ -30,6 +38,14 @@ export const palette = {
   // Borders
   borderLight: '#DDD8D4',
   borderDark: '#3D2226',
+
+  transparent: 'transparent',
+
+  // UI panels
+  /** Белый 50% прозрачности — фон aside-панелей в светлой теме */
+  sidebarBgLight: '#FFFFFF80',
+  /** Тёмно-бордовый 50% прозрачности — фон aside-панелей в тёмной теме */
+  sidebarBgDark: '#2A151880',
 } as const;
 
 /**
@@ -88,7 +104,7 @@ export const lightTheme: ThemeConfig = {
     ...baseTokens,
     // Backgrounds
     colorBgLayout: palette.lightBg,
-    colorBgContainer: palette.cardLight,
+    colorBgContainer: palette.transparent,
     colorBgElevated: '#FAF7F4',
     colorBgSpotlight: palette.cardLight,
 
@@ -106,6 +122,9 @@ export const lightTheme: ThemeConfig = {
     colorFillSecondary: '#F0EBE7',
     colorFillTertiary: '#E8E4E0',
     colorFillQuaternary: '#DDD8D4',
+
+    // Custom tokens
+    colorBgSidebar: palette.sidebarBgLight,
   },
   components: {
     Layout: {
@@ -190,6 +209,9 @@ export const darkTheme: ThemeConfig = {
     // Primary overrides for dark
     colorPrimary: palette.accent,
     colorPrimaryHover: palette.accentHover,
+
+    // Custom tokens
+    colorBgSidebar: palette.sidebarBgDark,
   },
   components: {
     Layout: {
