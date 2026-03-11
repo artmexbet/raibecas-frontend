@@ -23,6 +23,7 @@ import type {Document, Author, Category, Tag as TagType} from '@/types/document'
 import dayjs from 'dayjs';
 import './DocumentEditPage.css';
 import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
+import {markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
 
 export function DocumentEditPage() {
     const params = useParams({strict: false});
@@ -47,6 +48,8 @@ export function DocumentEditPage() {
     // Selected values
     const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    // EditorJS JSON content (конвертируется из markdown при загрузке)
+    const [editorContent, setEditorContent] = useState<string>('');
 
     useEffect(() => {
         loadMetadata();
@@ -85,13 +88,32 @@ export function DocumentEditPage() {
             setSelectedAuthorId(data.author.id);
             setSelectedTagIds(data.tags.map(tag => tag.id));
 
+            // Конвертируем markdown content в EditorJS JSON для редактора
+            const rawContent = data.content || '';
+            let editorContentValue = rawContent;
+            try {
+                const parsed = JSON.parse(rawContent);
+                // Уже EditorJS JSON — используем как есть
+                if (!Array.isArray(parsed?.blocks)) throw new Error('not editorjs');
+            } catch {
+                // Это markdown — конвертируем
+                const blocks = markdownToEditorjsBlocks(rawContent);
+                editorContentValue = JSON.stringify({
+                    time: Date.now(),
+                    version: "2.31.0",
+                    blocks,
+                });
+            }
+
+            setEditorContent(editorContentValue);
+
             // Заполняем форму данными документа
             form.setFieldsValue({
                 title: data.title,
                 authorId: data.author.id,
                 categoryId: data.category.id,
                 publicationDate: data.publication_date ? dayjs(data.publication_date) : null,
-                content: data.content,
+                content: editorContentValue,
                 tagIds: data.tags.map(tag => tag.id),
             });
         } catch (err) {
@@ -190,6 +212,7 @@ export function DocumentEditPage() {
     }
 
     const handleContentChange = (value: string) => {
+        setEditorContent(value);
         form.setFieldValue('content', value);
     };
 
@@ -310,7 +333,7 @@ export function DocumentEditPage() {
                             {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
                         ]}
                     >
-                        <DocumentEditor onChange={handleContentChange} value={document.content || ''}/>
+                        <DocumentEditor onChange={handleContentChange} value={editorContent}/>
                     </Form.Item>
 
                     <Form.Item>

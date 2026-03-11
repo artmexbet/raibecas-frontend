@@ -1,0 +1,77 @@
+/* ============================================
+   RAIBECAS - Base Styles (Ant Design)
+   ============================================ */
+
+/* Base reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+/* Smooth theme transitions */
+body {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Ant Design Card hover enhancement */
+.ant-card-hoverable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ============================================
+   Auth Pages Responsive
+   ============================================ */
+@media (max-width: 768px) {
+  .auth-split-left {
+    display: none !important;
+  }
+
+  .auth-split-right {
+    width: 100% !important;
+    border-left: none !important;
+    padding: 40px 24px !important;
+  }
+}
+
+/* ============================================
+   Custom Animations
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease forwards;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.25s ease forwards;
+}

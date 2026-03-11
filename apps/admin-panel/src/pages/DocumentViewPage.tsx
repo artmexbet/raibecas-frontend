@@ -216,7 +216,7 @@ export function DocumentViewPage() {
       </Card>*/}
 
       {/* Сам документ */}
-      <DocumentViewer document={document} showMetadata={false} />
+      <DocumentViewer document={document} />
     </div>
   );
 }

@@ -1,354 +1,159 @@
-import {Card, Input, Splitter, Button, Space, Tooltip, Typography} from "antd";
-import {XMarkdown} from "@ant-design/x-markdown";
-import React, {useRef, useMemo, useState, useCallback} from "react";
-import {
-    BoldOutlined,
-    ItalicOutlined,
-    StrikethroughOutlined,
-    CodeOutlined,
-    OrderedListOutlined,
-    UnorderedListOutlined,
-    LinkOutlined,
-    FileImageOutlined,
-    UndoOutlined,
-    RedoOutlined,
-} from "@ant-design/icons";
+import React, {useEffect, useRef} from "react";
+import EditorJS, {type OutputData, type EditorConfig} from "@editorjs/editorjs";
+// @ts-ignore
+import Header from "@editorjs/header";
+// @ts-ignore
+import List from "@editorjs/list";
+// @ts-ignore
+import Checklist from "@editorjs/checklist";
+// @ts-ignore
+import CodeTool from "@editorjs/code";
+// @ts-ignore
+import Quote from "@editorjs/quote";
+// @ts-ignore
+import Delimiter from "@editorjs/delimiter";
+// @ts-ignore
+import InlineCode from "@editorjs/inline-code";
+// @ts-ignore
+import Marker from "@editorjs/marker";
+// @ts-ignore
+import Table from "@editorjs/table";
+// @ts-ignore
+import Underline from "@editorjs/underline";
 
-const {TextArea} = Input;
-const {Text} = Typography;
+const EDITOR_TOOLS = {
+    header: {
+        class: Header,
+        config: {levels: [1, 2, 3, 4, 5, 6], defaultLevel: 2},
+        inlineToolbar: ["bold", "italic", "marker", "inlineCode", "link"],
+        shortcut: "CMD+SHIFT+H",
+    },
+    list: {
+        class: List,
+        inlineToolbar: true,
+        config: {defaultStyle: "unordered"},
+        shortcut: "CMD+SHIFT+L",
+    },
+    checklist: {
+        class: Checklist,
+        inlineToolbar: true,
+    },
+    code: {
+        class: CodeTool,
+        shortcut: "CMD+SHIFT+C",
+    },
+    quote: {
+        class: Quote,
+        inlineToolbar: true,
+        config: {
+            quotePlaceholder: "Введите цитату",
+            captionPlaceholder: "Автор цитаты",
+        },
+        shortcut: "CMD+SHIFT+O",
+    },
+    delimiter: Delimiter,
+    inlineCode: {
+        class: InlineCode,
+        shortcut: "CMD+SHIFT+C",
+    },
+    marker: {
+        class: Marker,
+        shortcut: "CMD+SHIFT+M",
+    },
+    table: {
+        class: Table,
+        inlineToolbar: true,
+        shortcut: "CMD+ALT+T",
+    },
+    underline: Underline,
+} as unknown as EditorConfig["tools"];
 
-interface MarkdownAction {
-    prefix: string;
-    suffix?: string;
-    placeholder?: string;
-}
-
-interface HistoryState {
-    value: string;
-    cursorPos: number;
-}
-
-export function DocumentEditor(props: { onChange: (e: string) => void, value?: string }) {
-    const textAreaRef = useRef<any>(null);
-    const previewRef = useRef<HTMLDivElement>(null);
-    const [history, setHistory] = useState<HistoryState[]>([{value: props.value || "", cursorPos: 0}]);
-    const [historyIndex, setHistoryIndex] = useState(0);
-    const [isUndoRedo, setIsUndoRedo] = useState(false);
-
-    // Подсчет статистики
-    const stats = useMemo(() => {
-        const text = props.value || "";
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        const chars = text.length;
-        const charsNoSpaces = text.replace(/\s/g, "").length;
-        return {words, chars, charsNoSpaces};
-    }, [props.value]);
-
-    // Сохранение в историю
-    const saveToHistory = useCallback((value: string, cursorPos: number) => {
-        if (isUndoRedo) {
-            setIsUndoRedo(false);
-            return;
-        }
-
-        setHistory(prev => {
-            const newHistory = prev.slice(0, historyIndex + 1);
-            newHistory.push({value, cursorPos});
-            // Ограничиваем историю 50 записями
-            if (newHistory.length > 50) {
-                newHistory.shift();
-                return newHistory;
-            }
-            return newHistory;
-        });
-        setHistoryIndex(prev => Math.min(prev + 1, 49));
-    }, [historyIndex, isUndoRedo]);
-
-    // Undo
-    const undo = useCallback(() => {
-        if (historyIndex > 0) {
-            const newIndex = historyIndex - 1;
-            const state = history[newIndex];
-            if (!state) return;
-
-            setHistoryIndex(newIndex);
-            setIsUndoRedo(true);
-            props.onChange(state.value);
-
-            setTimeout(() => {
-                const textarea = textAreaRef.current?.resizableTextArea?.textArea;
-                if (textarea) {
-                    textarea.focus();
-                    textarea.setSelectionRange(state.cursorPos, state.cursorPos);
-                }
-            }, 0);
-        }
-    }, [historyIndex, history, props]);
-
-    // Redo
-    const redo = useCallback(() => {
-        if (historyIndex < history.length - 1) {
-            const newIndex = historyIndex + 1;
-            const state = history[newIndex];
-            if (!state) return;
-
-            setHistoryIndex(newIndex);
-            setIsUndoRedo(true);
-            props.onChange(state.value);
-
-            setTimeout(() => {
-                const textarea = textAreaRef.current?.resizableTextArea?.textArea;
-                if (textarea) {
-                    textarea.focus();
-                    textarea.setSelectionRange(state.cursorPos, state.cursorPos);
-                }
-            }, 0);
-        }
-    }, [historyIndex, history, props]);
-
-    // Вставка Markdown форматирования
-    const insertMarkdown = (action: MarkdownAction) => {
-        const textarea = textAreaRef.current?.resizableTextArea?.textArea;
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const text = props.value || "";
-        const selectedText = text.substring(start, end);
-        const placeholder = action.placeholder || "текст";
-
-        const newText = selectedText || placeholder;
-        const before = text.substring(0, start);
-        const after = text.substring(end);
-
-        const insertion = `${action.prefix}${newText}${action.suffix || ""}`;
-        const result = before + insertion + after;
-
-        props.onChange(result);
-
-        // Устанавливаем курсор
-        setTimeout(() => {
-            const newCursorPos = start + action.prefix.length + (selectedText ? selectedText.length : 0);
-            textarea.focus();
-            textarea.setSelectionRange(newCursorPos, newCursorPos + (selectedText ? 0 : placeholder.length));
-            saveToHistory(result, newCursorPos);
-        }, 0);
+/** Parses stored JSON string into Editor.js OutputData, falls back to empty. */
+function parseEditorData(value?: string): OutputData {
+    if (!value) return {time: Date.now(), version: "2.31.0", blocks: []};
+    try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed?.blocks)) return parsed as OutputData;
+    } catch {
+        // legacy plain text / markdown — wrap into single paragraph
+    }
+    return {
+        time: Date.now(),
+        version: "2.31.0",
+        blocks: [{type: "paragraph", data: {text: value}}],
     };
+}
 
-    // Синхронная прокрутка
-    const handleScroll = useCallback(() => {
-        const textarea = textAreaRef.current?.resizableTextArea?.textArea;
-        const preview = previewRef.current;
+interface DocumentEditorProps {
+    /** Called with serialized Editor.js JSON (OutputData) on every change. */
+    onChange: (json: string) => void;
+    /** Serialized Editor.js JSON (OutputData) or legacy markdown/plain text. */
+    value?: string;
+}
 
-        if (textarea && preview) {
-            const scrollPercentage = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
-            preview.scrollTop = scrollPercentage * (preview.scrollHeight - preview.clientHeight);
-        }
+/**
+ * Block-editor на базе Editor.js.
+ * Режим редактирования — EditorJS. Режим просмотра — editorjs-antd-renderer.
+ * value/onChange оперируют JSON-строкой OutputData.
+ */
+export function DocumentEditor({onChange, value}: DocumentEditorProps) {
+    const holderRef = useRef<HTMLDivElement>(null);
+    const editorRef = useRef<EditorJS | null>(null);
+    // advanced-use-latest: держим onChange актуальным без пересоздания редактора
+    const onChangeRef = useRef(onChange);
+    useEffect(() => { onChangeRef.current = onChange; });
+    // rerender-use-ref-transient-values: последнее значение для определения внешних обновлений
+    const lastValueRef = useRef<string | undefined>(value);
+    // advanced-init-once: guard против Strict Mode двойного вызова
+    const isInitialized = useRef(false);
+
+    useEffect(() => {
+        if (isInitialized.current || !holderRef.current) return;
+        isInitialized.current = true;
+
+        const holder = holderRef.current;
+        const initialData = parseEditorData(value);
+
+        const editor = new EditorJS({
+            holder,
+            tools: EDITOR_TOOLS,
+            data: initialData,
+            placeholder: "Начните вводить содержание документа...",
+            autofocus: false,
+            onChange: async () => {
+                try {
+                    const output = await editor.save();
+                    const json = JSON.stringify(output);
+                    lastValueRef.current = json;
+                    onChangeRef.current(json);
+                } catch {
+                    // editor may be mid-destroy
+                }
+            },
+        });
+
+        editorRef.current = editor;
+
+        return () => {
+            editorRef.current = null;
+            editor.isReady
+                .then(() => editor.destroy())
+                .catch(() => { holder.innerHTML = ""; })
+                .finally(() => { isInitialized.current = false; });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Обработка горячих клавиш
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.ctrlKey || e.metaKey) {
-            switch (e.key) {
-                case "b":
-                    e.preventDefault();
-                    insertMarkdown({prefix: "**", suffix: "**", placeholder: "жирный текст"});
-                    break;
-                case "i":
-                    e.preventDefault();
-                    insertMarkdown({prefix: "_", suffix: "_", placeholder: "курсив"});
-                    break;
-                case "k":
-                    e.preventDefault();
-                    insertMarkdown({prefix: "[", suffix: "](url)", placeholder: "текст ссылки"});
-                    break;
-                case "z":
-                    e.preventDefault();
-                    if (e.shiftKey) {
-                        redo();
-                    } else {
-                        undo();
-                    }
-                    break;
-                case "y":
-                    // Ctrl+Y также работает как redo
-                    e.preventDefault();
-                    redo();
-                    break;
-            }
-        }
-    };
-
-    // Обработка изменений с сохранением в историю
-    const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const textarea = e.target;
-        const value = textarea.value;
-        const cursorPos = textarea.selectionStart;
-
-        props.onChange(value);
-
-        // Сохраняем в историю с дебаунсом
-        const timeoutId = setTimeout(() => {
-            saveToHistory(value, cursorPos);
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [props, saveToHistory]);
+    useEffect(() => {
+        if (value === lastValueRef.current) return;
+        lastValueRef.current = value;
+        const data = parseEditorData(value);
+        editorRef.current?.isReady
+            .then(() => editorRef.current?.render(data))
+            .catch(() => {});
+    }, [value]);
 
     return (
-        <div style={{display: "flex", flexDirection: "column", gap: 8}}>
-            {/* Toolbar */}
-            <Card size="small" style={{padding: "4px 8px"}}>
-                <Space size="small">
-                    <Space size="small">
-                        <Tooltip title="Отменить (Ctrl+Z)">
-                            <Button
-                                size="small"
-                                icon={<UndoOutlined/>}
-                                onClick={undo}
-                                disabled={historyIndex <= 0}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Вернуть (Ctrl+Shift+Z)">
-                            <Button
-                                size="small"
-                                icon={<RedoOutlined/>}
-                                onClick={redo}
-                                disabled={historyIndex >= history.length - 1}
-                            />
-                        </Tooltip>
-                    </Space>
-                    <span style={{
-                        width: 1,
-                        height: 24,
-                        backgroundColor: "#d9d9d9",
-                        display: "inline-block",
-                        margin: "0 8px"
-                    }}/>
-                    <Space size="small">
-                        <Tooltip title="Жирный (Ctrl+B)">
-                            <Button
-                                size="small"
-                                icon={<BoldOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "**", suffix: "**", placeholder: "жирный текст"})}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Курсив (Ctrl+I)">
-                            <Button
-                                size="small"
-                                icon={<ItalicOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "_", suffix: "_", placeholder: "курсив"})}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Зачеркнутый">
-                            <Button
-                                size="small"
-                                icon={<StrikethroughOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "~~", suffix: "~~", placeholder: "зачеркнутый"})}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Код">
-                            <Button
-                                size="small"
-                                icon={<CodeOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "`", suffix: "`", placeholder: "код"})}
-                            />
-                        </Tooltip>
-                    </Space>
-                    <span style={{
-                        width: 1,
-                        height: 24,
-                        backgroundColor: "#d9d9d9",
-                        display: "inline-block",
-                        margin: "0 8px"
-                    }}/>
-                    <Space size="small">
-                        <Tooltip title="Заголовок">
-                            <Button
-                                size="small"
-                                onClick={() => insertMarkdown({prefix: "## ", placeholder: "Заголовок"})}
-                            >
-                                H
-                            </Button>
-                        </Tooltip>
-                        <Tooltip title="Нумерованный список">
-                            <Button
-                                size="small"
-                                icon={<OrderedListOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "1. ", placeholder: "Элемент списка"})}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Маркированный список">
-                            <Button
-                                size="small"
-                                icon={<UnorderedListOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "- ", placeholder: "Элемент списка"})}
-                            />
-                        </Tooltip>
-                    </Space>
-                    <span style={{
-                        width: 1,
-                        height: 24,
-                        backgroundColor: "#d9d9d9",
-                        display: "inline-block",
-                        margin: "0 8px"
-                    }}/>
-                    <Space size="small">
-                        <Tooltip title="Ссылка (Ctrl+K)">
-                            <Button
-                                size="small"
-                                icon={<LinkOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "[", suffix: "](url)", placeholder: "текст ссылки"})}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Изображение">
-                            <Button
-                                size="small"
-                                icon={<FileImageOutlined/>}
-                                onClick={() => insertMarkdown({prefix: "![", suffix: "](image-url)", placeholder: "описание"})}
-                            />
-                        </Tooltip>
-                    </Space>
-                </Space>
-                <div style={{float: "right"}}>
-                    <Text type="secondary" style={{fontSize: 12}}>
-                        Слов: {stats.words} | Символов: {stats.chars} ({stats.charsNoSpaces} без пробелов)
-                    </Text>
-                </div>
-            </Card>
-
-            {/* Editor and Preview */}
-            <Splitter>
-                <Splitter.Panel defaultSize="50%" min="20%" style={{paddingRight: 5}}>
-                    <TextArea
-                        ref={textAreaRef}
-                        rows={15}
-                        placeholder="Введите содержание документа (поддерживается Markdown) или загрузите файл выше"
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                        onScroll={handleScroll}
-                        value={props.value}
-                        style={{minHeight: 400, maxHeight: 600, overflow: "auto", fontFamily: "monospace"}}
-                    />
-                </Splitter.Panel>
-                <Splitter.Panel defaultSize="50%" min="20%" style={{paddingLeft: 5}}>
-                    <Card
-                        variant="outlined"
-                        style={{minHeight: 400, maxHeight: 600, overflow: "auto"}}
-                        title={<Text type="secondary" style={{fontSize: 12}}>Предпросмотр</Text>}
-                        size="small"
-                        ref={previewRef}
-                    >
-                        {props.value ? (
-                            <XMarkdown content={props.value}/>
-                        ) : (
-                            <div style={{color: "#999", padding: 20, textAlign: "center"}}>
-                                Начните вводить текст для предпросмотра
-                            </div>
-                        )}
-                    </Card>
-                </Splitter.Panel>
-            </Splitter>
-        </div>
+        <div ref={holderRef} style={{minHeight: 420, padding: "12px 0"}}/>
     );
 }

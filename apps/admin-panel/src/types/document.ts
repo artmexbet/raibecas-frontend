@@ -23,7 +23,7 @@ export interface Document {
     category: Category;
     publication_date: string; // ISO 8601 timestamp
     tags: Tag[];
-    content?: string | null; // Markdown content
+    content?: string | null; // Editor.js JSON (serialized OutputData). Backend converts to Markdown on save.
     created_at: string; // ISO 8601 timestamp
     updated_at: string; // ISO 8601 timestamp
 }
@@ -38,7 +38,7 @@ export interface CreateDocumentRequest {
     categoryId: number;
     publicationDate: string; // ISO 8601 timestamp
     tagIds?: number[];
-    content?: string; // Markdown content
+    content?: string; // Editor.js JSON (serialized OutputData)
 }
 
 export interface UpdateDocumentRequest {
