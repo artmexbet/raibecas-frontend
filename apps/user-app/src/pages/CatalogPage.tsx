@@ -22,7 +22,8 @@ function estimateCardHeight(doc: Document): number {
     const descLen = doc.description?.length ?? 0;
     const tagsH = doc.tags.length > 0 ? 36 : 0;
     const descH = Math.min(Math.ceil(descLen / 55) * 22, 88);
-    return base + descH + tagsH;
+    const coverH = doc.cover_url ? 160 : 0;
+    return base + descH + tagsH + coverH;
 }
 
 export function CatalogPage() {

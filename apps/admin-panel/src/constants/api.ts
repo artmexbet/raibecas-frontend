@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     CREATE: '/documents',
     UPDATE: (id: string) => `/documents/${id}`,
     DELETE: (id: string) => `/documents/${id}`,
+    COVER: (id: string) => `/documents/${id}/cover`,
   },
   AUTHORS: {
     LIST: '/authors',

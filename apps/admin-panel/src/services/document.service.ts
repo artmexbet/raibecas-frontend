@@ -90,4 +90,16 @@ export const documentService = {
             await apiClient.delete(`${API_ENDPOINTS.DOCUMENTS.LIST}/${id}`);
         }
     },
+
+    // Загрузить обложку документа
+    async uploadCover(id: string, file: File): Promise<string> {
+        const formData = new FormData();
+        formData.append('cover', file);
+        const response = await apiClient.post<{ cover_url: string }>(
+            API_ENDPOINTS.DOCUMENTS.COVER(id),
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+        return response.data.cover_url;
+    },
 }

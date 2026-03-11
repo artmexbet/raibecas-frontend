@@ -1,39 +1,39 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useNavigate} from '@tanstack/react-router';
+import type {UploadProps} from 'antd';
 import {
-    Form,
-    Input,
+    Alert,
     Button,
     Card,
-    DatePicker,
-    Select,
-    message,
-    Space,
-    Row,
     Col,
-    Upload,
-    Alert,
     Collapse,
+    DatePicker,
+    Form,
+    Input,
+    message,
+    Row,
+    Select,
+    Space,
     Spin,
     Tag,
+    Upload,
 } from 'antd';
 import {
     ArrowLeftOutlined,
-    SaveOutlined,
     InboxOutlined,
     InfoCircleOutlined,
-    UserOutlined,
+    SaveOutlined,
     TagsOutlined,
+    UserOutlined,
 } from '@ant-design/icons';
 import {documentService} from '../services/document.service';
 import {authorService} from '../services/author.service';
 import {categoryService} from '../services/category.service';
 import {tagService} from '../services/tag.service';
-import type {CreateDocumentRequest, Author, Category, Tag as TagType} from '@/types/document';
-import type {UploadProps} from 'antd';
+import type {Author, Category, CreateDocumentRequest, Tag as TagType} from '@/types/document';
 import './DocumentEditPage.css';
-import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
-import {markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
+import {AuthorSelectModal, DocumentEditor, TagSelectModal} from "@/components";
+import {editorjsToMarkdown, markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
 
 const {TextArea} = Input;
 const {Dragger} = Upload;
@@ -77,6 +77,8 @@ export function DocumentCreatePage() {
     const [loading, setLoading] = useState(true);
     const [previewContent, setContent] = useState<string>('');
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
     // Модальные окна
     const [authorModalVisible, setAuthorModalVisible] = useState(false);
@@ -287,18 +289,39 @@ export function DocumentCreatePage() {
         try {
             setSaving(true);
 
-            // Формируем запрос в соответствии с CreateDocumentRequest
+            // Конвертируем EditorJS JSON → Markdown перед отправкой на бэкенд
+            const rawContent: string = values.content || '';
+            let markdownContent = rawContent;
+            try {
+                const parsed = JSON.parse(rawContent);
+                if (Array.isArray(parsed?.blocks)) {
+                    markdownContent = editorjsToMarkdown(parsed);
+                }
+            } catch {
+                // уже Markdown — отправляем как есть
+            }
+
             const documentData = {
                 title: values.title,
-                authorId: values.authorId, // UUID автора
-                categoryId: values.categoryId, // ID категории
-                publicationDate: values.publicationDate?.toISOString(), // ISO 8601 timestamp
-                tagIds: values.tagIds || [], // Массив ID тегов
+                authorId: values.authorId,
+                categoryId: values.categoryId,
+                publicationDate: values.publicationDate?.toISOString(),
+                tagIds: values.tagIds || [],
                 description: values.description || null,
-                content: values.content || '', // Editor.js JSON — бэкенд конвертирует в Markdown
+                content: markdownContent,
             } as CreateDocumentRequest;
 
             const newDocument = await documentService.create(documentData);
+
+            // Загружаем обложку, если она выбрана
+            if (coverFile) {
+                try {
+                    await documentService.uploadCover(newDocument.id, coverFile);
+                } catch {
+                    message.warning('Документ создан, но не удалось загрузить обложку');
+                }
+            }
+
             message.success('Документ успешно создан');
             navigate({to: `/documents/${newDocument.id}`});
         } catch (err) {
@@ -338,234 +361,285 @@ export function DocumentCreatePage() {
             {/* Индикатор загрузки */}
             {loading ? (
                 <Card>
-                    <div style={{ textAlign: 'center', padding: '50px 0' }}>
-                        <Spin size="large" tip="Загрузка данных..." />
+                    <div style={{textAlign: 'center', padding: '50px 0'}}>
+                        <Spin size="large" tip="Загрузка данных..."/>
                     </div>
                 </Card>
             ) : (
                 <>
                     {/* Форма создания */}
                     <Card>
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleCreate}
-                >
-                    <Form.Item
-                        name="title"
-                        label="Название"
-                        rules={[
-                            {required: true, message: 'Пожалуйста, введите название документа'},
-                            {min: 3, message: 'Название должно содержать минимум 3 символа'},
-                        ]}
-                    >
-                        <Input size="large" placeholder="Введите название документа"/>
-                    </Form.Item>
-
-                    <Form.Item
-                        name="authorId"
-                        label="Автор"
-                        rules={[
-                            {required: true, message: 'Пожалуйста, выберите автора'},
-                        ]}
-                    >
-                        <Space.Compact style={{ width: '100%' }}>
-                            <Input
-                                size="large"
-                                placeholder="Нажмите кнопку для выбора автора"
-                                readOnly
-                                value={selectedAuthorName}
-                                style={{ flex: 1 }}
-                            />
-                            <Button
-                                size="large"
-                                icon={<UserOutlined />}
-                                onClick={handleOpenAuthorModal}
-                            >
-                                Выбрать
-                            </Button>
-                        </Space.Compact>
-                    </Form.Item>
-
-                    <Form.Item
-                        name="description"
-                        label="Описание/Аннотация"
-                    >
-                        <TextArea
-                            rows={3}
-                            placeholder="Краткое описание документа (опционально)"
-                        />
-                    </Form.Item>
-
-                    <Row gutter={16}>
-                        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                        <Form
+                            form={form}
+                            layout="vertical"
+                            onFinish={handleCreate}
+                        >
                             <Form.Item
-                                name="categoryId"
-                                label="Категория"
+                                name="title"
+                                label="Название"
                                 rules={[
-                                    {required: true, message: 'Пожалуйста, выберите категорию'},
+                                    {required: true, message: 'Пожалуйста, введите название документа'},
+                                    {min: 3, message: 'Название должно содержать минимум 3 символа'},
                                 ]}
                             >
-                                <Select
-                                    size="large"
-                                    placeholder="Выберите категорию"
-                                    loading={loading}
-                                    options={categories.map(category => ({
-                                        label: category.title,
-                                        value: category.id,
-                                    }))}
-                                />
+                                <Input size="large" placeholder="Введите название документа"/>
                             </Form.Item>
-                        </Col>
 
-                        <Col xs={24} sm={24} md={12} lg={12} xl={12}>
                             <Form.Item
-                                name="publicationDate"
-                                label="Дата публикации"
+                                name="authorId"
+                                label="Автор"
                                 rules={[
-                                    {required: true, message: 'Пожалуйста, выберите дату публикации'},
+                                    {required: true, message: 'Пожалуйста, выберите автора'},
                                 ]}
                             >
-                                <DatePicker
-                                    size="large"
-                                    style={{width: '100%'}}
-                                    placeholder="Выберите дату"
-                                    format="DD.MM.YYYY"
+                                <Space.Compact style={{width: '100%'}}>
+                                    <Input
+                                        size="large"
+                                        placeholder="Нажмите кнопку для выбора автора"
+                                        readOnly
+                                        value={selectedAuthorName}
+                                        style={{flex: 1}}
+                                    />
+                                    <Button
+                                        size="large"
+                                        icon={<UserOutlined/>}
+                                        onClick={handleOpenAuthorModal}
+                                    >
+                                        Выбрать
+                                    </Button>
+                                </Space.Compact>
+                            </Form.Item>
+
+                            <Form.Item
+                                name="description"
+                                label="Описание/Аннотация"
+                            >
+                                <TextArea
+                                    rows={3}
+                                    placeholder="Краткое описание документа (опционально)"
                                 />
                             </Form.Item>
-                        </Col>
-                    </Row>
 
-                    <Form.Item
-                        name="tagIds"
-                        label="Теги"
-                        rules={[
-                            {required: true, message: 'Пожалуйста, добавьте хотя бы один тег'},
-                        ]}
-                    >
-                        <div>
-                            <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
-                                <Input
-                                    size="large"
-                                    placeholder="Нажмите кнопку для выбора тегов"
-                                    readOnly
-                                    value={`Выбрано тегов: ${selectedTagIds.length}`}
-                                    style={{ flex: 1 }}
-                                />
-                                <Button
-                                    size="large"
-                                    icon={<TagsOutlined />}
-                                    onClick={handleOpenTagModal}
+                            <Row gutter={16}>
+                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                    <Form.Item
+                                        name="categoryId"
+                                        label="Категория"
+                                        rules={[
+                                            {required: true, message: 'Пожалуйста, выберите категорию'},
+                                        ]}
+                                    >
+                                        <Select
+                                            size="large"
+                                            placeholder="Выберите категорию"
+                                            loading={loading}
+                                            options={categories.map(category => ({
+                                                label: category.title,
+                                                value: category.id,
+                                            }))}
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                    <Form.Item
+                                        name="publicationDate"
+                                        label="Дата публикации"
+                                        rules={[
+                                            {required: true, message: 'Пожалуйста, выберите дату публикации'},
+                                        ]}
+                                    >
+                                        <DatePicker
+                                            size="large"
+                                            style={{width: '100%'}}
+                                            placeholder="Выберите дату"
+                                            format="DD.MM.YYYY"
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            <Form.Item
+                                name="tagIds"
+                                label="Теги"
+                                rules={[
+                                    {required: true, message: 'Пожалуйста, добавьте хотя бы один тег'},
+                                ]}
+                            >
+                                <div>
+                                    <Space.Compact style={{width: '100%', marginBottom: 8}}>
+                                        <Input
+                                            size="large"
+                                            placeholder="Нажмите кнопку для выбора тегов"
+                                            readOnly
+                                            value={`Выбрано тегов: ${selectedTagIds.length}`}
+                                            style={{flex: 1}}
+                                        />
+                                        <Button
+                                            size="large"
+                                            icon={<TagsOutlined/>}
+                                            onClick={handleOpenTagModal}
+                                        >
+                                            Выбрать
+                                        </Button>
+                                    </Space.Compact>
+                                    {selectedTagIds.length > 0 && (
+                                        <Space size={[0, 8]} wrap>
+                                            {selectedTagIds.map(tagId => {
+                                                const tag = tags.find(t => t.id === tagId);
+                                                return tag ? (
+                                                    <Tag key={tagId} color="blue">
+                                                        {tag.title}
+                                                    </Tag>
+                                                ) : null;
+                                            })}
+                                        </Space>
+                                    )}
+                                </div>
+                            </Form.Item>
+
+                            {/* Обложка документа */}
+                            <Form.Item label="Обложка документа">
+                                <Upload
+                                    accept="image/jpeg,image/png,image/webp"
+                                    maxCount={1}
+                                    showUploadList={false}
+                                    beforeUpload={(file) => {
+                                        const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                        if (!allowed.includes(file.type)) {
+                                            message.error('Допустимые форматы: JPEG, PNG, WebP');
+                                            return false;
+                                        }
+                                        if (file.size > 5 * 1024 * 1024) {
+                                            message.error('Файл обложки не должен превышать 5 МБ');
+                                            return false;
+                                        }
+                                        setCoverFile(file);
+                                        setCoverPreview(URL.createObjectURL(file));
+                                        return false;
+                                    }}
                                 >
-                                    Выбрать
-                                </Button>
-                            </Space.Compact>
-                            {selectedTagIds.length > 0 && (
-                                <Space size={[0, 8]} wrap>
-                                    {selectedTagIds.map(tagId => {
-                                        const tag = tags.find(t => t.id === tagId);
-                                        return tag ? (
-                                            <Tag key={tagId} color="blue">
-                                                {tag.title}
-                                            </Tag>
-                                        ) : null;
-                                    })}
-                                </Space>
-                            )}
-                        </div>
-                    </Form.Item>
+                                    <Button icon={<InboxOutlined/>}>Выбрать изображение</Button>
+                                </Upload>
+                                {coverPreview && (
+                                    <div style={{marginTop: 12, position: 'relative', display: 'inline-block'}}>
+                                        <img
+                                            src={coverPreview}
+                                            alt="Превью обложки"
+                                            style={{
+                                                maxWidth: 320,
+                                                maxHeight: 180,
+                                                borderRadius: 8,
+                                                objectFit: 'cover',
+                                                border: '1px solid #d9d9d9'
+                                            }}
+                                        />
+                                        <Button
+                                            size="small"
+                                            danger
+                                            style={{marginLeft: 12, verticalAlign: 'top'}}
+                                            onClick={() => {
+                                                setCoverFile(null);
+                                                setCoverPreview(null);
+                                            }}
+                                        >
+                                            Удалить
+                                        </Button>
+                                    </div>
+                                )}
+                            </Form.Item>
 
-                    {/* Drag & Drop для загрузки файла */}
-                    <Form.Item label="Загрузка Markdown файла">
-                        <Dragger {...uploadProps}>
-                            <p className="ant-upload-drag-icon">
-                                <InboxOutlined/>
-                            </p>
-                            <p className="ant-upload-text">
-                                Нажмите или перетащите Markdown файл в эту область
-                            </p>
-                            <p className="ant-upload-hint">
-                                Поддерживаются файлы форматов .md и .markdown (максимум 5MB)
-                                <br/>
-                                Метаданные из YAML front matter будут автоматически извлечены
-                            </p>
-                            {uploadedFileName && (
-                                <p style={{marginTop: 8, color: '#52c41a', fontWeight: 'bold'}}>
-                                    ✓ Загружен: {uploadedFileName}
-                                </p>
-                            )}
-                        </Dragger>
+                            {/* Drag & Drop для загрузки файла */}
+                            <Form.Item label="Загрузка Markdown файла">
+                                <Dragger {...uploadProps}>
+                                    <p className="ant-upload-drag-icon">
+                                        <InboxOutlined/>
+                                    </p>
+                                    <p className="ant-upload-text">
+                                        Нажмите или перетащите Markdown файл в эту область
+                                    </p>
+                                    <p className="ant-upload-hint">
+                                        Поддерживаются файлы форматов .md и .markdown (максимум 5MB)
+                                        <br/>
+                                        Метаданные из YAML front matter будут автоматически извлечены
+                                    </p>
+                                    {uploadedFileName && (
+                                        <p style={{marginTop: 8, color: '#52c41a', fontWeight: 'bold'}}>
+                                            ✓ Загружен: {uploadedFileName}
+                                        </p>
+                                    )}
+                                </Dragger>
 
-                        <Collapse
-                            ghost
-                            style={{marginTop: 16}}
-                            items={[
-                                {
-                                    key: '1',
-                                    label: (
-                                        <span>
+                                <Collapse
+                                    ghost
+                                    style={{marginTop: 16}}
+                                    items={[
+                                        {
+                                            key: '1',
+                                            label: (
+                                                <span>
                                             <InfoCircleOutlined style={{marginRight: 8}}/>
                                             Как использовать YAML front matter
                                         </span>
-                                    ),
-                                    children: YamlFrontMatterExample,
-                                },
-                            ]}
-                        />
-                    </Form.Item>
+                                            ),
+                                            children: YamlFrontMatterExample,
+                                        },
+                                    ]}
+                                />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="content"
-                        label={
-                            <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                width: '100%'
-                            }}>
-                                <span>Содержание</span>
-                                {previewContent && (
+                            <Form.Item
+                                name="content"
+                                label={
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        width: '100%'
+                                    }}>
+                                        <span>Содержание</span>
+                                        {previewContent && (
+                                            <Button
+                                                type="link"
+                                                danger
+                                                size="small"
+                                                onClick={handleClearContent}
+                                                style={{padding: 0}}
+                                            >
+                                                Очистить
+                                            </Button>
+                                        )}
+                                    </div>
+                                }
+                                rules={[
+                                    {required: true, message: 'Пожалуйста, введите содержание документа'},
+                                    {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
+                                ]}
+                            >
+                                <DocumentEditor onChange={handleContentChange} value={previewContent}/>
+                            </Form.Item>
+
+                            <Form.Item>
+                                <Space size="middle">
                                     <Button
-                                        type="link"
-                                        danger
-                                        size="small"
-                                        onClick={handleClearContent}
-                                        style={{padding: 0}}
+                                        type="primary"
+                                        htmlType="submit"
+                                        icon={<SaveOutlined/>}
+                                        size="large"
+                                        loading={saving}
                                     >
-                                        Очистить
+                                        Создать документ
                                     </Button>
-                                )}
-                            </div>
-                        }
-                        rules={[
-                            {required: true, message: 'Пожалуйста, введите содержание документа'},
-                            {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
-                        ]}
-                    >
-                        <DocumentEditor onChange={handleContentChange} value={previewContent}/>
-                    </Form.Item>
-
-                    <Form.Item>
-                        <Space size="middle">
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                icon={<SaveOutlined/>}
-                                size="large"
-                                loading={saving}
-                            >
-                                Создать документ
-                            </Button>
-                            <Button
-                                size="large"
-                                onClick={handleBack}
-                            >
-                                Отмена
-                            </Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
-            </Card>
+                                    <Button
+                                        size="large"
+                                        onClick={handleBack}
+                                    >
+                                        Отмена
+                                    </Button>
+                                </Space>
+                            </Form.Item>
+                        </Form>
+                    </Card>
                 </>
             )}
 

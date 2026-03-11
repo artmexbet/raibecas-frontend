@@ -24,6 +24,7 @@ export interface Document {
     publication_date: string; // ISO 8601 timestamp
     tags: Tag[];
     content?: string | null; // Editor.js JSON (serialized OutputData). Backend converts to Markdown on save.
+    cover_url?: string | null; // Presigned URL for cover image (24h TTL)
     created_at: string; // ISO 8601 timestamp
     updated_at: string; // ISO 8601 timestamp
 }

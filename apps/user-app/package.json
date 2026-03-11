@@ -15,7 +15,9 @@
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@types/react": "^19",
@@ -23,4 +25,3 @@
     "@types/bun": "latest"
   }
 }
-

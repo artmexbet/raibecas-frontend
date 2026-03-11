@@ -28,6 +28,23 @@ export function DocumentCard({ doc }: DocumentCardProps) {
         }}
         styles={{ body: { padding: '18px 20px' } }}
       >
+        {/* Обложка */}
+        {doc.cover_url ? (
+          <div
+            style={{
+              margin: '-18px -20px 16px',
+              height: 160,
+              overflow: 'hidden',
+              borderRadius: '16px 16px 0 0',
+            }}
+          >
+            <img
+              src={doc.cover_url}
+              alt={doc.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        ) : null}
         {/* Категория */}
         <Tag
           style={{

@@ -12,9 +12,10 @@ import {
     Spin,
     Alert,
     Row,
-    Col
+    Col,
+    Upload,
 } from 'antd';
-import {ArrowLeftOutlined, SaveOutlined, UserOutlined, TagsOutlined} from '@ant-design/icons';
+import {ArrowLeftOutlined, SaveOutlined, UserOutlined, TagsOutlined, InboxOutlined} from '@ant-design/icons';
 import {documentService} from '@/services/document.service';
 import {authorService} from '@/services/author.service';
 import {categoryService} from '@/services/category.service';
@@ -23,7 +24,7 @@ import type {Document, Author, Category, Tag as TagType} from '@/types/document'
 import dayjs from 'dayjs';
 import './DocumentEditPage.css';
 import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
-import {markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
+import {markdownToEditorjsBlocks, editorjsToMarkdown} from "@/utils/editorjsMarkdown";
 
 export function DocumentEditPage() {
     const params = useParams({strict: false});
@@ -50,6 +51,8 @@ export function DocumentEditPage() {
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
     // EditorJS JSON content (конвертируется из markdown при загрузке)
     const [editorContent, setEditorContent] = useState<string>('');
+    const [coverFile, setCoverFile] = useState<File | null>(null);
+    const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
     useEffect(() => {
         loadMetadata();
@@ -87,6 +90,11 @@ export function DocumentEditPage() {
             // Устанавливаем выбранные значения
             setSelectedAuthorId(data.author.id);
             setSelectedTagIds(data.tags.map(tag => tag.id));
+
+            // Показываем текущую обложку если есть
+            if (data.cover_url) {
+                setCoverPreview(data.cover_url);
+            }
 
             // Конвертируем markdown content в EditorJS JSON для редактора
             const rawContent = data.content || '';
@@ -163,16 +171,40 @@ export function DocumentEditPage() {
         try {
             setSaving(true);
 
+            // Конвертируем EditorJS JSON → Markdown перед отправкой на бэкенд
+            const rawContent: string = values.content || '';
+            let markdownContent = rawContent;
+            try {
+                const parsed = JSON.parse(rawContent);
+                if (Array.isArray(parsed?.blocks)) {
+                    markdownContent = editorjsToMarkdown(parsed);
+                }
+            } catch {
+                // уже Markdown — отправляем как есть
+            }
+
             const updatedData = {
                 title: values.title,
                 authorId: values.authorId,
                 categoryId: values.categoryId,
                 publicationDate: values.publicationDate?.toISOString(),
                 tagIds: values.tagIds || [],
-                content: values.content,
+                content: markdownContent,
             };
 
             await documentService.update(document.id, updatedData);
+
+            // Загружаем обложку если выбрана новая
+            if (coverFile) {
+                try {
+                    const url = await documentService.uploadCover(document.id, coverFile);
+                    setCoverPreview(url);
+                    setCoverFile(null);
+                } catch {
+                    message.warning('Документ сохранён, но не удалось загрузить обложку');
+                }
+            }
+
             message.success('Документ успешно сохранен');
             navigate({to: `/documents/${document.id}`});
         } catch (err) {
@@ -323,6 +355,51 @@ export function DocumentEditPage() {
                                 ? `Выбрано тегов: ${getSelectedTagsCount()}`
                                 : 'Выберите теги'}
                         </Button>
+                    </Form.Item>
+
+                    <Form.Item label="Обложка документа">
+                        <Upload
+                            accept="image/jpeg,image/png,image/webp"
+                            maxCount={1}
+                            showUploadList={false}
+                            beforeUpload={(file) => {
+                                const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                if (!allowed.includes(file.type)) {
+                                    message.error('Допустимые форматы: JPEG, PNG, WebP');
+                                    return false;
+                                }
+                                if (file.size > 5 * 1024 * 1024) {
+                                    message.error('Файл обложки не должен превышать 5 МБ');
+                                    return false;
+                                }
+                                setCoverFile(file);
+                                setCoverPreview(URL.createObjectURL(file));
+                                return false;
+                            }}
+                        >
+                            <Button icon={<InboxOutlined/>}>
+                                {coverPreview ? 'Заменить обложку' : 'Выбрать обложку'}
+                            </Button>
+                        </Upload>
+                        {coverPreview && (
+                            <div style={{marginTop: 12, display: 'inline-block'}}>
+                                <img
+                                    src={coverPreview}
+                                    alt="Обложка"
+                                    style={{maxWidth: 320, maxHeight: 180, borderRadius: 8, objectFit: 'cover', border: '1px solid #d9d9d9'}}
+                                />
+                                {coverFile && (
+                                    <Button
+                                        size="small"
+                                        danger
+                                        style={{marginLeft: 12, verticalAlign: 'top'}}
+                                        onClick={() => { setCoverFile(null); setCoverPreview(document?.cover_url || null); }}
+                                    >
+                                        Отменить
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </Form.Item>
 
                     <Form.Item
