@@ -39,11 +39,22 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
+    const accessToken = tokenManager.getAccessToken();
+
+    // Всегда чистим локальные данные
+    this.clearAuthData();
+
+    // Если токена нет — незачем стучаться на сервер
+    if (!accessToken) return;
+
     try {
-      const accessToken = tokenManager.getAccessToken();
-      await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT, { token: accessToken }, { withCredentials: true });
-    } finally {
-      this.clearAuthData();
+      await apiClient.post(
+        API_ENDPOINTS.AUTH.LOGOUT,
+        { token: accessToken },
+        { withCredentials: true },
+      );
+    } catch {
+      // Игнорируем ошибки сети/сервера — локальные данные уже очищены
     }
   },
 

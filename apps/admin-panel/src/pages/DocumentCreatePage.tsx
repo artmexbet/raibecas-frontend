@@ -33,6 +33,7 @@ import type {CreateDocumentRequest, Author, Category, Tag as TagType} from '@/ty
 import type {UploadProps} from 'antd';
 import './DocumentEditPage.css';
 import {DocumentEditor, AuthorSelectModal, TagSelectModal} from "@/components";
+import {markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
 
 const {TextArea} = Input;
 const {Dragger} = Upload;
@@ -237,9 +238,17 @@ export function DocumentCreatePage() {
                 message.success(`Метаданные из файла успешно извлечены`);
             }
 
+            // Конвертируем markdown в EditorJS JSON для редактора
+            const editorBlocks = markdownToEditorjsBlocks(content);
+            const editorJson = JSON.stringify({
+                time: Date.now(),
+                version: "2.31.0",
+                blocks: editorBlocks,
+            });
+
             // Устанавливаем содержимое в форму
-            form.setFieldValue('content', content);
-            setContent(content);
+            form.setFieldValue('content', editorJson);
+            setContent(editorJson);
             setUploadedFileName(file.name);
 
             // Если метаданных не было, пытаемся извлечь заголовок из первой строки
@@ -286,7 +295,7 @@ export function DocumentCreatePage() {
                 publicationDate: values.publicationDate?.toISOString(), // ISO 8601 timestamp
                 tagIds: values.tagIds || [], // Массив ID тегов
                 description: values.description || null,
-                content: values.content || '', // Содержимое документа в Markdown
+                content: values.content || '', // Editor.js JSON — бэкенд конвертирует в Markdown
             } as CreateDocumentRequest;
 
             const newDocument = await documentService.create(documentData);

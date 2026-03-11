@@ -32,7 +32,6 @@ export function CatalogPage() {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [categoryId, setCategoryId] = useState<number | undefined>();
-    const [activeNav, setActiveNav] = useState('catalog');
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const {token} = theme.useToken();
@@ -68,8 +67,6 @@ export function CatalogPage() {
 
             {/* Общий хедер */}
             <AppHeader
-                activeNav={activeNav}
-                onNavChange={setActiveNav}
                 search={search}
                 onSearchChange={setSearch}
                 onSearchSubmit={() => setPage(1)}
@@ -81,7 +78,7 @@ export function CatalogPage() {
                 <aside
                     style={{
                         width: 240,
-                        padding: '24px 16px',
+                        padding: '32px 16px',
                     }}
                 >
                     <div

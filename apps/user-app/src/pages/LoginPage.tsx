@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Typography, message, theme, Tooltip } from 'antd';
 import { EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
-import { authService } from '@/services/auth.service';
-import type { LoginCredentials } from '@/types/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { AuthHeader, AuthFolderCard, PageBackground } from '@/components/common';
 
 const { Text } = Typography;
@@ -19,15 +18,12 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const { login } = useAuth();
 
   const handleLogin = async (values: LoginFormValues) => {
     setLoading(true);
     try {
-      const credentials: LoginCredentials = {
-        email: values.login,
-        password: values.password,
-      };
-      await authService.login(credentials);
+      await login({ email: values.login, password: values.password });
       message.success('Добро пожаловать!');
       setTimeout(() => navigate({ to: '/catalog' }), 400);
     } catch (error: unknown) {

@@ -6,6 +6,7 @@ import 'dayjs/locale/ru';
 import { router } from '@/router';
 import { ThemeProvider, useTheme } from '@/theme/ThemeContext';
 import { getThemeConfig } from '@/theme';
+import { AuthProvider } from '@/contexts/AuthContext';
 import './index.css';
 
 dayjs.locale('ru');
@@ -16,7 +17,9 @@ function ThemedApp() {
 
   return (
     <ConfigProvider theme={themeConfig} locale={ruRU}>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </ConfigProvider>
   );
 }

@@ -3,6 +3,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { CatalogPage } from '@/pages/CatalogPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
+import { SettingsPage } from '../pages/SettingsPage';
 import { authService } from '@/services/auth.service';
 
 const rootRoute = createRootRoute({
@@ -45,12 +46,33 @@ const catalogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/catalog',
   component: CatalogPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 const documentViewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/documents/$id',
   component: DocumentViewPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: SettingsPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
 });
 
 const routeTree = rootRoute.addChildren([
@@ -59,6 +81,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   catalogRoute,
   documentViewRoute,
+  settingsRoute,
 ]);
 
 export const router = createRouter({ routeTree });

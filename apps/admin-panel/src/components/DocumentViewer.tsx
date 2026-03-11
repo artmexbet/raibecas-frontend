@@ -9,31 +9,23 @@ const { Title, Text } = Typography;
 
 interface DocumentViewerProps {
   document: Document;
-  showMetadata?: boolean;
 }
 
-/**
- * Переиспользуемый компонент для отображения документа
- * Может использоваться как в админ-панели, так и в пользовательском интерфейсе
- */
-export function DocumentViewer({ document, showMetadata = true }: DocumentViewerProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
+export function DocumentViewer({ document }: DocumentViewerProps) {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('ru-RU', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
-  };
 
   return (
     <div className="document-viewer">
-      {/* Заголовок документа */}
-      <Card className="document-viewer__header-card" variant='outlined'>
+      <Card className="document-viewer__header-card" variant="outlined">
         <Title level={2} className="document-viewer__title">
           {document.title}
         </Title>
 
-        {/* Автор */}
         <Space size="large" wrap className="document-viewer__author-section">
           <Text strong>
             <UserOutlined style={{ marginRight: 8 }} />
@@ -45,14 +37,12 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
           </Text>
         </Space>
 
-        {/* Категория и теги */}
         <Space size="middle" wrap className="document-viewer__tags-section">
           <Space>
             <FolderOutlined />
             <Tag color="blue">{document.category.title}</Tag>
           </Space>
-
-          {document.tags && document.tags.length > 0 && (
+          {document.tags?.length > 0 && (
             <Space size="small" wrap>
               {document.tags.map(tag => (
                 <Tag key={tag.id} color="default">
@@ -64,8 +54,7 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
         </Space>
       </Card>
 
-      {/* Содержимое документа */}
-      <Card variant='outlined'>
+      <Card variant="outlined">
         <div className="document-viewer__content">
           <XMarkdown content={document.content || ''} />
         </div>
@@ -73,4 +62,3 @@ export function DocumentViewer({ document, showMetadata = true }: DocumentViewer
     </div>
   );
 }
-
