@@ -75,3 +75,112 @@ body {
 .animate-slide-in {
   animation: slideIn 0.25s ease forwards;
 }
+
+/* ============================================
+   Document Content (Markdown render)
+   ============================================ */
+.document-content {
+  font-size: 15px;
+  line-height: 1.85;
+  color: inherit;
+}
+
+.document-content h1,
+.document-content h2,
+.document-content h3,
+.document-content h4,
+.document-content h5,
+.document-content h6 {
+  margin: 1.4em 0 0.6em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.document-content h1 { font-size: 2em; }
+.document-content h2 { font-size: 1.5em; }
+.document-content h3 { font-size: 1.25em; }
+
+.document-content p {
+  margin: 0 0 1em;
+}
+
+.document-content ul,
+.document-content ol {
+  padding-left: 1.6em;
+  margin: 0 0 1em;
+}
+
+.document-content li {
+  margin-bottom: 0.35em;
+}
+
+.document-content blockquote {
+  border-left: 4px solid #d0d0d0;
+  margin: 1em 0;
+  padding: 0.5em 1.2em;
+  color: #666;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 0 6px 6px 0;
+}
+
+.document-content code {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 0.15em 0.4em;
+  font-size: 0.9em;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+.document-content pre {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  padding: 1em 1.2em;
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+
+.document-content pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.document-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.5em 0;
+}
+
+.document-content a {
+  text-decoration: underline;
+}
+
+.document-content hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 1.5em 0;
+}
+
+.document-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.document-content th,
+.document-content td {
+  border: 1px solid #d9d9d9;
+  padding: 0.5em 0.75em;
+  text-align: left;
+}
+
+.document-content th {
+  background: rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+}
+
+/* Checkbox lists (GFM task lists) */
+.document-content input[type='checkbox'] {
+  margin-right: 0.4em;
+}
+

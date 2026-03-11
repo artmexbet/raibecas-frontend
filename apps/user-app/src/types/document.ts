@@ -24,6 +24,7 @@ export interface Document {
   publication_date: string;
   tags: Tag[];
   content?: string | null;
+  cover_url?: string | null; // Presigned URL for cover image (24h TTL)
   created_at: string;
   updated_at: string;
 }

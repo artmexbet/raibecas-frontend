@@ -3,6 +3,8 @@ import { Typography, Tag, Breadcrumb, Spin, Button, Divider, theme } from 'antd'
 import { CalendarOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { Link, useParams } from '@tanstack/react-router';
 import dayjs from 'dayjs';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
@@ -60,6 +62,24 @@ export function DocumentViewPage() {
       />
 
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
+        {/* Hero обложка */}
+        {document.cover_url && (
+          <div
+            style={{
+              width: '100%',
+              height: 320,
+              borderRadius: 16,
+              overflow: 'hidden',
+              marginBottom: 32,
+            }}
+          >
+            <img
+              src={document.cover_url}
+              alt={document.title}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+        )}
         {/* Мета */}
         <div style={{ marginBottom: 12 }}>
           <Tag color="blue">{document.category.title}</Tag>
@@ -105,16 +125,12 @@ export function DocumentViewPage() {
           </Paragraph>
         )}
 
-        {/* Контент (markdown, если есть) */}
+        {/* Контент */}
         {document.content && (
-          <div
-            style={{
-              fontSize: 15,
-              lineHeight: 1.8,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {document.content}
+          <div className="document-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {document.content}
+            </ReactMarkdown>
           </div>
         )}
 
