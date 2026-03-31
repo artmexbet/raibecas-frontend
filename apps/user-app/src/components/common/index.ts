@@ -2,6 +2,8 @@ export { Logo } from './Logo';
 export { NavBar } from './NavBar';
 export type { NavItem } from './NavBar';
 export { DocumentCard } from './DocumentCard';
+export { BookmarkRibbon } from './BookmarkRibbon';
+export { QuoteBookmarkCard } from './QuoteBookmarkCard';
 export { PageBackground } from './PageBackground';
 export { AuthHeader } from './AuthHeader';
 export { AuthFolderCard } from './AuthFolderCard';

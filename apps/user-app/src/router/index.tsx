@@ -2,6 +2,7 @@ import { createRouter, createRoute, createRootRoute, redirect, Outlet } from '@t
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { CatalogPage } from '@/pages/CatalogPage';
+import { BookmarksPage } from '@/pages/BookmarksPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { authService } from '@/services/auth.service';
@@ -64,6 +65,17 @@ const documentViewRoute = createRoute({
   },
 });
 
+const bookmarksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/bookmarks',
+  component: BookmarksPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -80,6 +92,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
   catalogRoute,
+  bookmarksRoute,
   documentViewRoute,
   settingsRoute,
 ]);
