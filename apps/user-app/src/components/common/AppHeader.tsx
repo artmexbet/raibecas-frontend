@@ -21,6 +21,7 @@ const NAV_ROUTES: Record<string, string> = {
     catalog: '/catalog',
     bookmarks: '/bookmarks',
     settings: '/settings',
+    help: '/chat',
 };
 
 const defaultNavItems: NavItem[] = [
