@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Card, Empty, Flex, Masonry, Pagination, Spin, Typography, message, theme } from 'antd';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
+import { Button, Card, Empty, Flex, Masonry, Pagination, Result, Spin, Typography, theme } from 'antd';
 import { BookOutlined, FileTextOutlined, MessageOutlined, ReadOutlined } from '@ant-design/icons';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BookmarkRibbon } from '@/components/common/BookmarkRibbon';
@@ -62,19 +63,31 @@ function getEmptyDescription(filter: BookmarkFilterKey) {
   }
 }
 
+function getBookmarkErrorMessage(error: unknown) {
+  if (axios.isAxiosError<{ message?: string }>(error)) {
+    return error.response?.data?.message ?? 'Не удалось загрузить закладки. Попробуйте ещё раз.';
+  }
+
+  return 'Не удалось загрузить закладки. Попробуйте ещё раз.';
+}
+
 export function BookmarksPage() {
   const [items, setItems] = useState<BookmarkItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [submittedSearch, setSubmittedSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState<BookmarkFilterKey>('all');
+  const requestIdRef = useRef(0);
 
   const { token } = theme.useToken();
 
   const fetchBookmarks = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
+    setErrorMessage(null);
 
     try {
       const result = await bookmarkService.getAll({
@@ -84,14 +97,24 @@ export function BookmarksPage() {
         kind: mapFilterToKind(activeFilter),
       });
 
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
       setItems(result.items);
       setTotal(result.total);
-    } catch {
+    } catch (error) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
       setItems([]);
       setTotal(0);
-      message.error('Не удалось загрузить закладки');
+      setErrorMessage(getBookmarkErrorMessage(error));
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [activeFilter, page, submittedSearch]);
 
@@ -298,6 +321,17 @@ export function BookmarksPage() {
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 100 }}>
             <Spin size="large" />
           </div>
+        ) : errorMessage ? (
+          <Result
+            status="error"
+            title="Не удалось загрузить закладки"
+            subTitle={errorMessage}
+            extra={
+              <Button type="primary" onClick={() => void fetchBookmarks()}>
+                Повторить
+              </Button>
+            }
+          />
         ) : items.length === 0 ? (
           <Empty description={getEmptyDescription(activeFilter)} style={{ paddingTop: 80 }} />
         ) : (

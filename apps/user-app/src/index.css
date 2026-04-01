@@ -85,6 +85,10 @@ body {
   color: inherit;
 }
 
+.document-content ::selection {
+  background: rgba(22, 119, 255, 0.18);
+}
+
 .document-content h1,
 .document-content h2,
 .document-content h3,

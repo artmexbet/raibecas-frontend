@@ -14,7 +14,8 @@ export const API_ENDPOINTS = {
     CONTENT: (id: string) => `/documents/${id}/content`, // TODO: реализовать на бэкенде
   },
   BOOKMARKS: {
-    LIST: '/bookmarks', // TODO: реализовать на бэкенде
+    LIST: '/bookmarks',
+    BY_ID: (id: string) => `/bookmarks/${id}`,
   },
   CATEGORIES: {
     LIST: '/categories',

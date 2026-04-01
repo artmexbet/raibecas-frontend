@@ -37,3 +37,15 @@ export interface ListBookmarksResponse {
   totalPages: number;
 }
 
+export interface CreateBookmarkRequest {
+  documentId: string;
+  kind: BookmarkKind;
+  quoteText?: string;
+  context?: string;
+  pageLabel?: string;
+}
+
+export interface CreateBookmarkResponse {
+  item: BookmarkItem;
+}
+

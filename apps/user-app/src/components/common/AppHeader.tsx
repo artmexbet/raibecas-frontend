@@ -14,7 +14,7 @@ import {useNavigate, useRouterState} from '@tanstack/react-router';
 import {useTheme} from '@/theme/ThemeContext';
 import {NavBar} from './NavBar';
 import type {NavItem} from './NavBar';
-import podpisSvg from '../../podpis.svg';
+import raibLogo from '../../raib_logo.svg';
 
 // Маппинг ключ навбара → путь
 const NAV_ROUTES: Record<string, string> = {
@@ -83,7 +83,7 @@ export function AppHeader({
         >
             {/* Логотип */}
             <div style={{display: 'flex', alignItems: 'center', flexShrink: 0}}>
-                <img src={podpisSvg} alt="Райбекас" style={{height: 32, width: 'auto'}}/>
+                <img src={raibLogo} alt="Райбекас" style={{height: 32, width: 'auto'}}/>
             </div>
 
             {/* Навигация */}
