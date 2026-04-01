@@ -1,5 +1,5 @@
 import React from 'react';
-import podpisSvg from '../../podpis.svg';
+import podpisSvg from '../../wright.svg';
 
 interface PageBackgroundProps {
   opacity?: number;

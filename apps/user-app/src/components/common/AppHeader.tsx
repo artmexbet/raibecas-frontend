@@ -1,30 +1,25 @@
 import React from 'react';
-import {Avatar, Button, Dropdown, Input, Space, theme, Typography} from 'antd';
+import {Button, Input, Space, theme} from 'antd';
 import {
     ArrowRightOutlined,
     BookOutlined,
     EditOutlined,
     FolderOutlined,
-    LogoutOutlined,
     MoonOutlined,
     QuestionCircleOutlined,
     SettingOutlined,
     SunOutlined,
-    UserOutlined,
 } from '@ant-design/icons';
-import {message} from 'antd';
 import {useNavigate, useRouterState} from '@tanstack/react-router';
 import {useTheme} from '@/theme/ThemeContext';
-import {useAuth} from '@/contexts/AuthContext';
 import {NavBar} from './NavBar';
 import type {NavItem} from './NavBar';
-import podpisSvg from '../../podpis.svg';
-
-const {Text} = Typography;
+import raibLogo from '../../raib_logo.svg';
 
 // Маппинг ключ навбара → путь
 const NAV_ROUTES: Record<string, string> = {
     catalog: '/catalog',
+    bookmarks: '/bookmarks',
     settings: '/settings',
 };
 
@@ -57,7 +52,6 @@ export function AppHeader({
                           }: AppHeaderProps) {
     const {token} = theme.useToken();
     const {mode, toggleTheme} = useTheme();
-    const {user, logout} = useAuth();
     const navigate = useNavigate();
     const routerState = useRouterState();
 
@@ -72,38 +66,6 @@ export function AppHeader({
         if (path) navigate({to: path});
     };
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            message.success('Вы вышли из системы');
-            navigate({to: '/login'});
-        } catch {
-            message.error('Ошибка при выходе');
-        }
-    };
-
-    const userMenuItems = [
-        {
-            key: 'username',
-            label: (
-                <div style={{padding: '4px 0'}}>
-                    <Text strong style={{display: 'block'}}>{user?.username ?? user?.email}</Text>
-                    {user?.email && user?.username && (
-                        <Text type="secondary" style={{fontSize: 12}}>{user.email}</Text>
-                    )}
-                </div>
-            ),
-            disabled: true,
-        },
-        {type: 'divider' as const},
-        {
-            key: 'logout',
-            icon: <LogoutOutlined/>,
-            label: 'Выйти',
-            danger: true,
-            onClick: handleLogout,
-        },
-    ];
 
     return (
         <header
@@ -121,7 +83,7 @@ export function AppHeader({
         >
             {/* Логотип */}
             <div style={{display: 'flex', alignItems: 'center', flexShrink: 0}}>
-                <img src={podpisSvg} alt="Райбекас" style={{height: 32, width: 'auto'}}/>
+                <img src={raibLogo} alt="Райбекас" style={{height: 32, width: 'auto'}}/>
             </div>
 
             {/* Навигация */}

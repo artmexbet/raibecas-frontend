@@ -13,6 +13,10 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/documents/${id}`,
     CONTENT: (id: string) => `/documents/${id}/content`, // TODO: реализовать на бэкенде
   },
+  BOOKMARKS: {
+    LIST: '/bookmarks',
+    BY_ID: (id: string) => `/bookmarks/${id}`,
+  },
   CATEGORIES: {
     LIST: '/categories',
   },
