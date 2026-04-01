@@ -45,7 +45,7 @@ export function useChatWebSocket(userID: string | null) {
   }, [connect]);
 
   const sendMessage = useCallback(
-    (input: string, onChunk: (chunk: StreamChunk) => void): Promise<void> => {
+    (input: string, sessionID: string | null, onChunk: (chunk: StreamChunk) => void): Promise<void> => {
       return new Promise((resolve, reject) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -102,7 +102,11 @@ export function useChatWebSocket(userID: string | null) {
         ws.addEventListener('close', handleClose);
         ws.addEventListener('error', handleError);
 
-        ws.send(JSON.stringify({ user_id: userID, input }));
+        ws.send(JSON.stringify({
+          user_id: userID,
+          session_id: sessionID ?? undefined,
+          input,
+        }));
       });
     },
     [userID],

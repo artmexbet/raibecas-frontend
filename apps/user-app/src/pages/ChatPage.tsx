@@ -55,7 +55,6 @@ export function ChatPage() {
   } = useChatSessions({ userID, initialRouteState });
   const { isConnected, isStreaming, sendMessage, reconnect } = useChatWebSocket(userID);
 
-  const isLatestSessionActive = Boolean(activeSessionId && activeSessionId === latestSessionId);
   const canManageSessions = !isStreaming;
   const canCreateSessions = Boolean(userID) && canManageSessions;
   const allMessages = streamingContent
@@ -100,7 +99,7 @@ export function ChatPage() {
 
   const handleSend = useCallback(async () => {
     const text = inputValue.trim();
-    if (!text || !isConnected || isStreaming || !activeSessionId || !isLatestSessionActive) {
+    if (!text || !isConnected || isStreaming || !activeSessionId) {
       return;
     }
 
@@ -115,7 +114,10 @@ export function ChatPage() {
     let accumulated = '';
 
     try {
-      await sendMessage(text, (chunk: { done: boolean; message?: { role: string; content: string } }) => {
+      await sendMessage(
+        text,
+        activeSessionId,
+        (chunk: { done: boolean; message?: { role: string; content: string } }) => {
         if (chunk.message?.content) {
           accumulated += chunk.message.content;
           setStreamingContent(accumulated);
@@ -131,7 +133,8 @@ export function ChatPage() {
           replaceMessages(finalizedMessages, activeSessionId);
           setStreamingContent('');
         }
-      });
+        },
+      );
     } catch (error) {
       setSendError(error instanceof Error ? error.message : 'Не удалось отправить сообщение');
       setStreamingContent('');
@@ -140,7 +143,6 @@ export function ChatPage() {
     activeSessionId,
     inputValue,
     isConnected,
-    isLatestSessionActive,
     isStreaming,
     messages,
     replaceMessages,
@@ -255,8 +257,8 @@ export function ChatPage() {
                       </Text>
                     </div>
 
-                    <Tag color={isLatestSessionActive ? 'success' : 'default'} style={{ marginInlineEnd: 0 }}>
-                      {isLatestSessionActive ? 'можно продолжать' : 'только просмотр'}
+                    <Tag color={latestSessionId === activeSessionId ? 'success' : 'processing'} style={{ marginInlineEnd: 0 }}>
+                      {latestSessionId === activeSessionId ? 'актуальный чат' : 'выбранный чат'}
                     </Tag>
                   </Flex>
 
@@ -264,16 +266,6 @@ export function ChatPage() {
                     <ChatLaunchContextAlert
                       routeState={initialRouteState}
                       onAppendContext={handleAppendLaunchContext}
-                    />
-                  ) : null}
-
-                  {!isLatestSessionActive ? (
-                    <Alert
-                      type="warning"
-                      showIcon
-                      style={{ margin: 16, marginBottom: 0 }}
-                      title="Продолжение этого чата пока недоступно"
-                      description="Сейчас новые сообщения отправляются только в последний активный диалог. Выберите верхний чат в списке или создайте новый."
                     />
                   ) : null}
 
@@ -321,7 +313,6 @@ export function ChatPage() {
                     inputValue={inputValue}
                     isConnected={isConnected}
                     isStreaming={isStreaming}
-                    isLatestSessionActive={isLatestSessionActive}
                     hasActiveSession={Boolean(activeSessionId)}
                     borderColor={token.colorBorderSecondary}
                     onInputChange={setInputValue}

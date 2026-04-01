@@ -152,15 +152,19 @@ export function useChatSessions({ userID, initialRouteState }: UseChatSessionsOp
       }
 
       updateSessions((prev) =>
-        prev.map((session) =>
-          session.id === targetSessionId
-            ? {
-                ...session,
-                messages: nextMessages,
-                updated_at: new Date().toISOString(),
-              }
-            : session,
-        ),
+        prev.reduce<ChatSession[]>((acc, session) => {
+          if (session.id === targetSessionId) {
+            acc.unshift({
+              ...session,
+              messages: nextMessages,
+              updated_at: new Date().toISOString(),
+            });
+            return acc;
+          }
+
+          acc.push(session);
+          return acc;
+        }, []),
       );
     },
     [activeSessionId, updateSessions],

@@ -7,7 +7,6 @@ interface ChatComposerProps {
   inputValue: string;
   isConnected: boolean;
   isStreaming: boolean;
-  isLatestSessionActive: boolean;
   hasActiveSession: boolean;
   borderColor: string;
   onInputChange: (value: string) => void;
@@ -18,7 +17,6 @@ export function ChatComposer({
   inputValue,
   isConnected,
   isStreaming,
-  isLatestSessionActive,
   hasActiveSession,
   borderColor,
   onInputChange,
@@ -43,10 +41,10 @@ export function ChatComposer({
             }
           }}
           autoSize={{ minRows: 2, maxRows: 6 }}
-          disabled={!isConnected || isStreaming || !isLatestSessionActive}
+          disabled={!isConnected || isStreaming || !hasActiveSession}
           placeholder={
-            !isLatestSessionActive
-              ? 'Для продолжения откройте текущий чат или создайте новый'
+            !hasActiveSession
+              ? 'Выберите чат или создайте новый'
               : isConnected
                 ? 'Спросите о работе, идее или фрагменте текста…'
                 : 'Подключаемся к чату…'
@@ -58,7 +56,7 @@ export function ChatComposer({
           type="primary"
           icon={isStreaming ? <LoadingOutlined /> : <SendOutlined />}
           loading={isStreaming}
-          disabled={!inputValue.trim() || !isConnected || !isLatestSessionActive || !hasActiveSession}
+          disabled={!inputValue.trim() || !isConnected || !hasActiveSession}
           onClick={onSend}
         >
           Отправить
