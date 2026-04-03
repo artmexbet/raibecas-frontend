@@ -1,196 +1,198 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { chatService } from '@/services/chat.service';
-import type { ChatMessage, ChatRouteState, ChatSession } from '@/types/chat';
-import { replaceChatRouteState } from '@/types/chat';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {chatService} from '@/services/chat.service';
+import type {ChatMessage, ChatRouteState, ChatSession} from '@/types/chat';
+import {replaceChatRouteState} from '@/types/chat';
 
 type SessionsUpdater = ChatSession[] | ((prev: ChatSession[]) => ChatSession[]);
 
 interface UseChatSessionsOptions {
-  userID: string | null;
-  initialRouteState: ChatRouteState;
+    userID: string | null;
+    initialRouteState: ChatRouteState;
 }
 
 function getSelectedSessionID(
-  sessions: ChatSession[],
-  preferredSessionId?: string,
-  fallbackSessionId?: string,
+    sessions: ChatSession[],
+    preferredSessionId?: string,
+    fallbackSessionId?: string,
 ): string {
-  if (preferredSessionId && sessions.some((session) => session.id === preferredSessionId)) {
-    return preferredSessionId;
-  }
+    if (preferredSessionId && sessions.some((session) => session.id === preferredSessionId)) {
+        return preferredSessionId;
+    }
 
-  if (fallbackSessionId && sessions.some((session) => session.id === fallbackSessionId)) {
-    return fallbackSessionId;
-  }
+    if (fallbackSessionId && sessions.some((session) => session.id === fallbackSessionId)) {
+        return fallbackSessionId;
+    }
 
-  return sessions[0]?.id ?? '';
+    return sessions[0]?.id ?? '';
 }
 
-export function useChatSessions({ userID, initialRouteState }: UseChatSessionsOptions) {
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState(initialRouteState.sessionId ?? '');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
-  const [creatingSession, setCreatingSession] = useState(false);
-  const [sessionsError, setSessionsError] = useState<string | null>(null);
-  const sessionsRef = useRef<ChatSession[]>([]);
-  const activeSessionIdRef = useRef(activeSessionId);
+export function useChatSessions({userID, initialRouteState}: UseChatSessionsOptions) {
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
+    const [activeSessionId, setActiveSessionId] = useState(initialRouteState.sessionId ?? '');
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [loadingSessions, setLoadingSessions] = useState(false);
+    const [creatingSession, setCreatingSession] = useState(false);
+    const [sessionsError, setSessionsError] = useState<string | null>(null);
+    const sessionsRef = useRef<ChatSession[]>([]);
+    const activeSessionIdRef = useRef(activeSessionId);
 
-  useEffect(() => {
-    activeSessionIdRef.current = activeSessionId;
-  }, [activeSessionId]);
+    useEffect(() => {
+        activeSessionIdRef.current = activeSessionId;
+    }, [activeSessionId]);
 
-  const updateSessions = useCallback((updater: SessionsUpdater) => {
-    setSessions((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      sessionsRef.current = next;
-      return next;
-    });
-  }, []);
+    const updateSessions = useCallback((updater: SessionsUpdater) => {
+        setSessions((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            sessionsRef.current = next;
+            return next;
+        });
+    }, []);
 
-  const applySessionSelection = useCallback(
-    (sessionID: string, sourceSessions: ChatSession[]) => {
-      const session = sourceSessions.find((item) => item.id === sessionID) ?? null;
+    const applySessionSelection = useCallback(
+        (sessionID: string, sourceSessions: ChatSession[]) => {
+            const session = sourceSessions.find((item) => item.id === sessionID) ?? null;
 
-      activeSessionIdRef.current = sessionID;
-      setActiveSessionId(sessionID);
-      setMessages(session?.messages ?? []);
-      replaceChatRouteState({ ...initialRouteState, sessionId: sessionID || undefined });
-    },
-    [initialRouteState],
-  );
+            activeSessionIdRef.current = sessionID;
+            setActiveSessionId(sessionID);
+            setMessages(session?.messages ?? []);
+            replaceChatRouteState({...initialRouteState, sessionId: sessionID || undefined});
+        },
+        [initialRouteState],
+    );
 
-  const loadSessions = useCallback(
-    async (preferredSessionId?: string) => {
-      if (!userID) {
-        updateSessions([]);
-        activeSessionIdRef.current = '';
-        setActiveSessionId('');
-        setMessages([]);
-        return;
-      }
+    const loadSessions = useCallback(
+        async (preferredSessionId?: string) => {
+            if (!userID) {
+                updateSessions([]);
+                activeSessionIdRef.current = '';
+                setActiveSessionId('');
+                setMessages([]);
+                return;
+            }
 
-      setLoadingSessions(true);
-      setSessionsError(null);
+            setLoadingSessions(true);
+            setSessionsError(null);
 
-      try {
-        const nextSessions = await chatService.getUserSessions(userID);
-        updateSessions(nextSessions);
+            try {
+                const nextSessions = await chatService.getUserSessions(userID);
+                updateSessions(nextSessions);
 
-        const selectedSessionId = getSelectedSessionID(
-          nextSessions,
-          preferredSessionId,
-          activeSessionIdRef.current,
-        );
+                const selectedSessionId = getSelectedSessionID(
+                    nextSessions,
+                    preferredSessionId,
+                    activeSessionIdRef.current,
+                );
 
-        if (selectedSessionId) {
-          applySessionSelection(selectedSessionId, nextSessions);
-        } else {
-          activeSessionIdRef.current = '';
-          setActiveSessionId('');
-          setMessages([]);
-          replaceChatRouteState({ ...initialRouteState, sessionId: undefined });
+                if (selectedSessionId) {
+                    applySessionSelection(selectedSessionId, nextSessions);
+                } else {
+                    activeSessionIdRef.current = '';
+                    setActiveSessionId('');
+                    setMessages([]);
+                    replaceChatRouteState({...initialRouteState, sessionId: undefined});
+                }
+            } catch (error) {
+                setSessionsError(
+                    error instanceof Error ? error.message : 'Не удалось загрузить список чатов',
+                );
+            } finally {
+                setLoadingSessions(false);
+            }
+        },
+        [applySessionSelection, initialRouteState, updateSessions, userID],
+    );
+
+    useEffect(() => {
+        void loadSessions(initialRouteState.sessionId);
+    }, [initialRouteState.sessionId, loadSessions]);
+
+    const selectSession = useCallback(
+        (sessionID: string) => {
+            applySessionSelection(sessionID, sessionsRef.current);
+        },
+        [applySessionSelection],
+    );
+
+    const createSession = useCallback(async (): Promise<string | null> => {
+        if (!userID || creatingSession) {
+            return null;
         }
-      } catch (error) {
-        setSessionsError(
-          error instanceof Error ? error.message : 'Не удалось загрузить список чатов',
-        );
-      } finally {
-        setLoadingSessions(false);
-      }
-    },
-    [applySessionSelection, initialRouteState, updateSessions, userID],
-  );
 
-  useEffect(() => {
-    void loadSessions(initialRouteState.sessionId);
-  }, [initialRouteState.sessionId, loadSessions]);
+        setCreatingSession(true);
+        setSessionsError(null);
 
-  const selectSession = useCallback(
-    (sessionID: string) => {
-      applySessionSelection(sessionID, sessionsRef.current);
-    },
-    [applySessionSelection],
-  );
+        try {
+            const sessionID = await chatService.createSession(userID, 'Новый чат');
+            const now = new Date().toISOString();
+            const nextSession: ChatSession = {
+                id: sessionID,
+                user_id: userID,
+                title: 'Новый чат',
+                created_at: now,
+                updated_at: now,
+                messages: [],
+            };
+            const nextSessions = [nextSession, ...sessionsRef.current];
 
-  const createSession = useCallback(async () => {
-    if (!userID || creatingSession) {
-      return;
-    }
+            updateSessions(nextSessions);
+            applySessionSelection(sessionID, nextSessions);
+            return sessionID;
+        } catch (error) {
+            setSessionsError(error instanceof Error ? error.message : 'Не удалось создать новый чат');
+            return null;
+        } finally {
+            setCreatingSession(false);
+        }
+    }, [applySessionSelection, creatingSession, updateSessions, userID]);
 
-    setCreatingSession(true);
-    setSessionsError(null);
+    const replaceMessages = useCallback(
+        (nextMessages: ChatMessage[], targetSessionId = activeSessionId) => {
+            setMessages(nextMessages);
 
-    try {
-      const sessionID = await chatService.createSession(userID, 'Новый чат');
-      const now = new Date().toISOString();
-      const nextSession: ChatSession = {
-        id: sessionID,
-        user_id: userID,
-        title: 'Новый чат',
-        created_at: now,
-        updated_at: now,
-        messages: [],
-      };
-      const nextSessions = [nextSession, ...sessionsRef.current];
+            if (!targetSessionId) {
+                return;
+            }
 
-      updateSessions(nextSessions);
-      applySessionSelection(sessionID, nextSessions);
-    } catch (error) {
-      setSessionsError(error instanceof Error ? error.message : 'Не удалось создать новый чат');
-    } finally {
-      setCreatingSession(false);
-    }
-  }, [applySessionSelection, creatingSession, updateSessions, userID]);
+            updateSessions((prev) =>
+                prev.reduce<ChatSession[]>((acc, session) => {
+                    if (session.id === targetSessionId) {
+                        acc.unshift({
+                            ...session,
+                            messages: nextMessages,
+                            updated_at: new Date().toISOString(),
+                        });
+                        return acc;
+                    }
 
-  const replaceMessages = useCallback(
-    (nextMessages: ChatMessage[], targetSessionId = activeSessionId) => {
-      setMessages(nextMessages);
+                    acc.push(session);
+                    return acc;
+                }, []),
+            );
+        },
+        [activeSessionId, updateSessions],
+    );
 
-      if (!targetSessionId) {
-        return;
-      }
+    const activeSession = useMemo(
+        () => sessions.find((session) => session.id === activeSessionId) ?? null,
+        [activeSessionId, sessions],
+    );
 
-      updateSessions((prev) =>
-        prev.reduce<ChatSession[]>((acc, session) => {
-          if (session.id === targetSessionId) {
-            acc.unshift({
-              ...session,
-              messages: nextMessages,
-              updated_at: new Date().toISOString(),
-            });
-            return acc;
-          }
+    const latestSessionId = sessions[0]?.id ?? '';
 
-          acc.push(session);
-          return acc;
-        }, []),
-      );
-    },
-    [activeSessionId, updateSessions],
-  );
-
-  const activeSession = useMemo(
-    () => sessions.find((session) => session.id === activeSessionId) ?? null,
-    [activeSessionId, sessions],
-  );
-
-  const latestSessionId = sessions[0]?.id ?? '';
-
-  return {
-    sessions,
-    activeSessionId,
-    activeSession,
-    latestSessionId,
-    messages,
-    loadingSessions,
-    creatingSession,
-    sessionsError,
-    setSessionsError,
-    selectSession,
-    createSession,
-    replaceMessages,
-  };
+    return {
+        sessions,
+        activeSessionId,
+        activeSession,
+        latestSessionId,
+        messages,
+        loadingSessions,
+        creatingSession,
+        sessionsError,
+        setSessionsError,
+        selectSession,
+        createSession,
+        replaceMessages,
+    };
 }
 
 export default useChatSessions;

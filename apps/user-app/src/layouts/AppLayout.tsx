@@ -2,14 +2,25 @@ import React from 'react';
 import { Layout, theme } from 'antd';
 import { useTheme } from '@/theme/ThemeContext';
 import { AppHeader, PageBackground } from '@/components/common';
+import type { AppHeaderProps } from '@/components/common/AppHeader';
 
 const { Content, Footer } = Layout;
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  hideFooter?: boolean;
+  contentPadding?: React.CSSProperties['padding'];
+  contentMaxWidth?: React.CSSProperties['maxWidth'];
+  headerProps?: AppHeaderProps;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({
+  children,
+  hideFooter = false,
+  contentPadding = '40px 32px',
+  contentMaxWidth = 1440,
+  headerProps,
+}: AppLayoutProps) {
   const { mode } = useTheme();
   const { token } = theme.useToken();
 
@@ -21,12 +32,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       <PageBackground opacity={0.04} />
 
       {/* Общий хедер приложения */}
-      <AppHeader />
+      <AppHeader {...headerProps} />
 
       <Content
         style={{
-          padding: '40px 32px',
-          maxWidth: 1440,
+          padding: contentPadding,
+          maxWidth: contentMaxWidth,
           margin: '0 auto',
           width: '100%',
           position: 'relative',
@@ -36,20 +47,22 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </Content>
 
-      <Footer
-        style={{
-          textAlign: 'center',
-          background: 'transparent',
-          color: token.colorTextTertiary,
-          fontSize: 13,
-          padding: '20px 32px',
-          borderTop: `1px solid ${headerBorder}`,
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        Raibecas © {new Date().getFullYear()} — Библиотека научных работ
-      </Footer>
+      {!hideFooter ? (
+        <Footer
+          style={{
+            textAlign: 'center',
+            background: 'transparent',
+            color: token.colorTextTertiary,
+            fontSize: 13,
+            padding: '20px 32px',
+            borderTop: `1px solid ${headerBorder}`,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
+          Raibecas © {new Date().getFullYear()} — Библиотека научных работ
+        </Footer>
+      ) : null}
     </Layout>
   );
 }

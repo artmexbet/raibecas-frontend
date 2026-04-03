@@ -32,7 +32,7 @@ const defaultNavItems: NavItem[] = [
     {key: 'help', icon: QuestionCircleOutlined, label: 'Вопросы'},
 ];
 
-interface AppHeaderProps {
+export interface AppHeaderProps {
     search?: string;
     onSearchChange?: (value: string) => void;
     onSearchSubmit?: () => void;

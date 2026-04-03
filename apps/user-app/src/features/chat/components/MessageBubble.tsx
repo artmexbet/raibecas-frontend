@@ -1,5 +1,4 @@
-import { Avatar, Flex, Typography } from 'antd';
-import { LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
+import { Typography, theme } from 'antd';
 import type { ChatMessage } from '@/types/chat';
 
 const { Text } = Typography;
@@ -11,56 +10,44 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ msg, streaming = false }: MessageBubbleProps) {
   const isUser = msg.role === 'user';
+  const { token } = theme.useToken();
+
+  const bubbleRadius = token.borderRadiusChatBubble;
 
   return (
-    <Flex
-      gap={10}
-      align="flex-start"
-      justify={isUser ? 'flex-end' : 'flex-start'}
-      style={{ marginBottom: 14 }}
+    <div
+      className={`chat-message ${isUser ? 'chat-message--user' : 'chat-message--assistant'}`}
+      style={{ marginBottom: token.marginSM }}
     >
-      {!isUser ? (
-        <Avatar
-          icon={streaming ? <LoadingOutlined /> : <RobotOutlined />}
-          style={{ background: '#7f56d9', flexShrink: 0 }}
-        />
-      ) : null}
-
       <div
+        className="chat-message__bubble"
         style={{
-          maxWidth: '78%',
-          padding: '10px 14px',
-          borderRadius: isUser ? '18px 6px 18px 18px' : '6px 18px 18px 18px',
-          background: isUser ? '#2f1d1f' : '#ffffff',
-          color: isUser ? '#ffffff' : 'inherit',
-          wordBreak: 'break-word',
-          whiteSpace: 'pre-wrap',
-          boxShadow: '0 12px 32px rgba(31, 24, 20, 0.08)',
-          border: isUser ? 'none' : '1px solid rgba(47, 29, 31, 0.08)',
+          padding: `${token.paddingMD - 6}px ${token.paddingLG - 4}px`,
+          borderRadius: bubbleRadius,
+          borderTopRightRadius: isUser ? token.borderRadiusLG - 2 : bubbleRadius,
+          borderTopLeftRadius: isUser ? bubbleRadius : token.borderRadiusLG - 2,
+          background: isUser ? token.colorBgChatBubbleUser : token.colorBgChatBubbleAssistant,
+          border: isUser ? `1px solid ${token.colorBorderChatBubbleUser}` : 'none',
+          boxShadow: token.boxShadowChatSoft,
+          color: token.colorText,
         }}
       >
-        <Text style={{ color: isUser ? '#ffffff' : 'inherit' }}>{msg.content}</Text>
+        <Text
+          className="chat-message__text"
+          style={{
+            color: 'inherit',
+            fontSize: 20,
+            lineHeight: 1.5,
+          }}
+        >
+          {msg.content}
+        </Text>
 
         {streaming ? (
-          <span
-            style={{
-              display: 'inline-block',
-              width: 8,
-              height: 16,
-              marginLeft: 4,
-              verticalAlign: 'text-bottom',
-              borderRadius: 999,
-              background: '#7f56d9',
-              animation: 'blink 1s step-start infinite',
-            }}
-          />
+          <span className="chat-message__cursor" style={{ color: token.colorPrimary }} />
         ) : null}
       </div>
-
-      {isUser ? (
-        <Avatar icon={<UserOutlined />} style={{ background: '#b67b55', flexShrink: 0 }} />
-      ) : null}
-    </Flex>
+    </div>
   );
 }
 
