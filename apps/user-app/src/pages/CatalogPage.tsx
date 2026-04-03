@@ -1,6 +1,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Button, Empty, Flex, Masonry, Pagination, Spin, theme, Typography} from 'antd';
 import {EditFilled, FileTextOutlined, MessageOutlined, TeamOutlined,} from '@ant-design/icons';
+import {useNavigate} from '@tanstack/react-router';
 import {documentService} from '@/services/document.service';
 import type {Document, ListDocumentsQuery} from '@/types/document';
 import {AppHeader, DocumentCard, PageBackground} from '@/components/common';
@@ -27,12 +28,13 @@ function estimateCardHeight(doc: Document): number {
 }
 
 export function CatalogPage() {
+    const navigate = useNavigate();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
-    const [categoryId, setCategoryId] = useState<number | undefined>();
+    const [categoryId] = useState<number | undefined>();
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
     const {token} = theme.useToken();
@@ -178,6 +180,7 @@ export function CatalogPage() {
                 shape="circle"
                 icon={<MessageOutlined/>}
                 size="large"
+                onClick={() => navigate({to: '/chat'})}
                 style={{
                     position: 'fixed',
                     bottom: 24,

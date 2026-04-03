@@ -21,6 +21,7 @@ const NAV_ROUTES: Record<string, string> = {
     catalog: '/catalog',
     bookmarks: '/bookmarks',
     settings: '/settings',
+    help: '/chat',
 };
 
 const defaultNavItems: NavItem[] = [
@@ -31,7 +32,7 @@ const defaultNavItems: NavItem[] = [
     {key: 'help', icon: QuestionCircleOutlined, label: 'Вопросы'},
 ];
 
-interface AppHeaderProps {
+export interface AppHeaderProps {
     search?: string;
     onSearchChange?: (value: string) => void;
     onSearchSubmit?: () => void;

@@ -1,5 +1,7 @@
 export const API_BASE_URL = 'http://localhost:8080/api/v1';
 
+export const CHAT_WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1$/, '/ws/chat');
+
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -22,6 +24,9 @@ export const API_ENDPOINTS = {
   },
   TAGS: {
     LIST: '/tags',
+  },
+  CHAT: {
+    SESSIONS: (userID: string) => `/chat/${userID}/sessions`,
   },
 } as const;
 

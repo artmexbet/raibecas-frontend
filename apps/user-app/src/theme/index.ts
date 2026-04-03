@@ -6,6 +6,28 @@ declare module 'antd/es/theme/interface' {
   interface AliasToken {
     /** Фон боковой панели (aside) с прозрачностью — меняется с темой */
     colorBgSidebar: string;
+    /** Полупрозрачный фон sidebar чата */
+    colorBgChatSidebar: string;
+    /** Основная подложка карточек чата */
+    colorBgChatSurface: string;
+    /** Фон composer чата */
+    colorBgChatComposer: string;
+    /** Фон чипов в composer/sidebar */
+    colorBgChatChip: string;
+    /** Hover-фон чипов в composer/sidebar */
+    colorBgChatChipHover: string;
+    /** Фон пользовательского сообщения */
+    colorBgChatBubbleUser: string;
+    /** Фон ответа ассистента */
+    colorBgChatBubbleAssistant: string;
+    /** Граница пользовательского пузыря */
+    colorBorderChatBubbleUser: string;
+    /** Тень chat-панелей и bubble */
+    boxShadowChatSoft: string;
+    /** Радиус основных панелей чата */
+    borderRadiusChatPanel: number;
+    /** Радиус пузырей сообщений */
+    borderRadiusChatBubble: number;
   }
 }
 
@@ -125,6 +147,17 @@ export const lightTheme: ThemeConfig = {
 
     // Custom tokens
     colorBgSidebar: palette.sidebarBgLight,
+    colorBgChatSidebar: 'rgba(255, 255, 255, 0.42)',
+    colorBgChatSurface: 'rgba(255, 255, 255, 0.7)',
+    colorBgChatComposer: 'rgba(255, 255, 255, 0.94)',
+    colorBgChatChip: 'rgba(219, 208, 202, 0.9)',
+    colorBgChatChipHover: 'rgba(207, 193, 185, 0.94)',
+    colorBgChatBubbleUser: 'rgba(255, 255, 255, 0.96)',
+    colorBgChatBubbleAssistant: 'rgba(220, 210, 205, 0.9)',
+    colorBorderChatBubbleUser: 'rgba(30, 16, 18, 0.08)',
+    boxShadowChatSoft: '0 18px 44px rgba(31, 24, 20, 0.08)',
+    borderRadiusChatPanel: 28,
+    borderRadiusChatBubble: 30,
   },
   components: {
     Layout: {
@@ -212,6 +245,17 @@ export const darkTheme: ThemeConfig = {
 
     // Custom tokens
     colorBgSidebar: palette.sidebarBgDark,
+    colorBgChatSidebar: 'rgba(42, 21, 24, 0.66)',
+    colorBgChatSurface: 'rgba(50, 26, 29, 0.82)',
+    colorBgChatComposer: 'rgba(34, 17, 17, 0.92)',
+    colorBgChatChip: 'rgba(90, 58, 62, 0.88)',
+    colorBgChatChipHover: 'rgba(106, 74, 78, 0.92)',
+    colorBgChatBubbleUser: 'rgba(50, 26, 29, 0.94)',
+    colorBgChatBubbleAssistant: 'rgba(61, 34, 38, 0.92)',
+    colorBorderChatBubbleUser: 'rgba(255,255,255,0.06)',
+    boxShadowChatSoft: '0 18px 44px rgba(0, 0, 0, 0.34)',
+    borderRadiusChatPanel: 28,
+    borderRadiusChatBubble: 30,
   },
   components: {
     Layout: {

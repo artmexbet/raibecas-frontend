@@ -37,6 +37,8 @@ interface ConversationItem {
 interface StreamChunk {
   done: boolean;
   message?: { role: string; content: string };
+  error?: string;
+  type?: string;
 }
 
 // ---------- local hook: conversation list ----------
@@ -58,7 +60,22 @@ function useConversations() {
     [],
   );
 
-  return { conversations, activeKey, setActiveKey, replaceConversations, addConversation };
+  const promoteConversation = useCallback((key: string, label?: string) => {
+    setConversations((prev) => {
+      const existing = prev.find((item) => item.key === key);
+      const nextItem: ConversationItem = existing ?? { key, label: label ?? 'Чат' };
+      const remaining = prev.filter((item) => item.key !== key);
+      return [
+        {
+          ...nextItem,
+          label: label ?? nextItem.label,
+        },
+        ...remaining,
+      ];
+    });
+  }, []);
+
+  return { conversations, activeKey, setActiveKey, replaceConversations, addConversation, promoteConversation };
 }
 
 // ---------- local hook: WebSocket chat ----------
@@ -100,7 +117,7 @@ function useChatWS(userID: string | null) {
   }, [connect]);
 
   const sendMessage = useCallback(
-    (input: string, onChunk: (chunk: StreamChunk) => void): Promise<void> => {
+    (input: string, sessionID: string | null, onChunk: (chunk: StreamChunk) => void): Promise<void> => {
       return new Promise((resolve, reject) => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -113,6 +130,12 @@ function useChatWS(userID: string | null) {
         const handleMessage = (event: MessageEvent) => {
           try {
             const chunk: StreamChunk = JSON.parse(event.data as string);
+            if (chunk.error || chunk.type === 'error') {
+              ws.removeEventListener('message', handleMessage);
+              setIsStreaming(false);
+              reject(new Error(chunk.error ?? 'Ошибка чата'));
+              return;
+            }
             onChunk(chunk);
             if (chunk.done) {
               ws.removeEventListener('message', handleMessage);
@@ -127,7 +150,7 @@ function useChatWS(userID: string | null) {
         ws.addEventListener('message', handleMessage);
 
         ws.send(
-          JSON.stringify({ user_id: userID, input }),
+          JSON.stringify({ user_id: userID, session_id: sessionID ?? undefined, input }),
         );
       });
     },
@@ -200,7 +223,7 @@ export function ChatsPage() {
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessionsError, setSessionsError] = useState<string | null>(null);
   const [sessionsMap, setSessionsMap] = useState<Record<string, ChatSession>>({});
-  const { conversations, activeKey, setActiveKey, replaceConversations, addConversation } =
+  const { conversations, activeKey, setActiveKey, replaceConversations, addConversation, promoteConversation } =
     useConversations();
 
   // Chat WebSocket
@@ -287,21 +310,42 @@ export function ChatsPage() {
     if (!text || isStreaming || !isConnected) return;
 
     const userMsg: ChatMessage = { role: 'user', content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    const baseMessages = [...messages, userMsg];
+    setMessages(baseMessages);
+    setSessionsMap((prev) => activeKey ? {
+      ...prev,
+      [activeKey]: {
+        ...prev[activeKey]!,
+        messages: baseMessages,
+        updated_at: new Date().toISOString(),
+      },
+    } : prev);
     setInputValue('');
     setStreamingContent('');
     setSendError(null);
 
     let accumulated = '';
     try {
-      await sendMessage(text, (chunk) => {
+      await sendMessage(text, activeKey || null, (chunk) => {
         if (chunk.message?.content) {
           accumulated += chunk.message.content;
           setStreamingContent(accumulated);
         }
         if (chunk.done) {
           const assistantMsg: ChatMessage = { role: 'assistant', content: accumulated };
-          setMessages((prev) => [...prev, assistantMsg]);
+          const finalMessages = [...baseMessages, assistantMsg];
+          setMessages(finalMessages);
+          setSessionsMap((prev) => activeKey ? {
+            ...prev,
+            [activeKey]: {
+              ...prev[activeKey]!,
+              messages: finalMessages,
+              updated_at: new Date().toISOString(),
+            },
+          } : prev);
+          if (activeKey) {
+            promoteConversation(activeKey, sessionsMap[activeKey]?.title || 'Чат');
+          }
           setStreamingContent('');
         }
       });

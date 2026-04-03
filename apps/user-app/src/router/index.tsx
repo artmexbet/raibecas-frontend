@@ -4,6 +4,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { CatalogPage } from '@/pages/CatalogPage';
 import { BookmarksPage } from '@/pages/BookmarksPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
+import { ChatPage } from '../pages/ChatPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { authService } from '@/services/auth.service';
 
@@ -76,6 +77,17 @@ const bookmarksRoute = createRoute({
   },
 });
 
+const chatRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/chat',
+  component: ChatPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/settings',
@@ -93,6 +105,7 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   catalogRoute,
   bookmarksRoute,
+  chatRoute,
   documentViewRoute,
   settingsRoute,
 ]);

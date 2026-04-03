@@ -197,12 +197,14 @@ export function RegisterPage() {
                 centered
                 width={360}
                 styles={{
-                    content: {
-                        background: token.colorBgContainer,
-                        borderRadius: 16,
+                    body: {
                         padding: '32px 24px',
                         textAlign: 'center',
                     },
+                }}
+                style={{
+                    background: token.colorBgContainer,
+                    borderRadius: 16,
                 }}
             >
                 <Title level={4} style={{marginBottom: 16, color: token.colorText, fontSize: 18}}>
