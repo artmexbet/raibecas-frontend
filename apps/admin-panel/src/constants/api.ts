@@ -27,6 +27,12 @@ export const API_ENDPOINTS = {
     UPDATE: (id: number) => `/categories/${id}`,
     DELETE: (id: number) => `/categories/${id}`,
   },
+  DOCUMENT_TYPES: {
+    LIST: '/document-types',
+  },
+  AUTHORSHIP_TYPES: {
+    LIST: '/authorship-types',
+  },
   TAGS: {
     LIST: '/tags',
     CREATE: '/tags',

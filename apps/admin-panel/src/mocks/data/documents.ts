@@ -1,4 +1,4 @@
-import type {Author, Category, Document, Tag} from '@/types/document.ts';
+import type {Author, AuthorshipType, Category, Document, DocumentType, Tag} from '@/types/document.ts';
 
 /**
  * Моковые авторы
@@ -36,6 +36,18 @@ export const MOCK_TAGS: Tag[] = [
     {id: 10, title: 'диалектика'},
 ];
 
+export const MOCK_AUTHORSHIP_TYPES: AuthorshipType[] = [
+    {id: 1, title: 'автор'},
+    {id: 2, title: 'редактор'},
+    {id: 3, title: 'рецензент'},
+];
+
+export const MOCK_DOCUMENT_TYPES: DocumentType[] = [
+    {id: 1, name: 'Статья'},
+    {id: 2, name: 'Монография'},
+    {id: 3, name: 'Сборник'},
+];
+
 /**
  * Моковые данные документов
  * Синхронизировано с services/gateway/internal/domain/models.go
@@ -47,6 +59,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Важнейший труд Иммануила Канта по теории познания',
         author: MOCK_AUTHORS[0]!,
         category: MOCK_CATEGORIES[0]!,
+        documentType: MOCK_DOCUMENT_TYPES[1]!,
+        participants: [{author: MOCK_AUTHORS[0]!, authorshipType: MOCK_AUTHORSHIP_TYPES[0]!}],
         publication_date: '1781-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[1]!, MOCK_TAGS[2]!, MOCK_TAGS[3]!],
         content: '# Критика чистого разума\n\nОсновополагающий философский труд по теории познания...',
@@ -59,6 +73,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Фундаментальная работа Мартина Хайдеггера по онтологии',
         author: MOCK_AUTHORS[1]!,
         category: MOCK_CATEGORIES[1]!,
+        documentType: MOCK_DOCUMENT_TYPES[0]!,
+        participants: [{author: MOCK_AUTHORS[1]!, authorshipType: MOCK_AUTHORSHIP_TYPES[0]!}],
         publication_date: '1927-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[4]!, MOCK_TAGS[5]!, MOCK_TAGS[6]!],
         content: '# Бытие и время\n\nФундаментальная онтология Dasein...',
@@ -71,6 +87,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Классическое произведение Гегеля по феноменологии и диалектике',
         author: MOCK_AUTHORS[2]!,
         category: MOCK_CATEGORIES[2]!,
+        documentType: MOCK_DOCUMENT_TYPES[2]!,
+        participants: [{author: MOCK_AUTHORS[2]!, authorshipType: MOCK_AUTHORSHIP_TYPES[0]!}],
         publication_date: '1807-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[7]!, MOCK_TAGS[8]!, MOCK_TAGS[9]!],
         content: '# Феноменология духа\n\nДиалектическое развитие сознания...',
@@ -90,6 +108,8 @@ export function createMockDocument(data: Partial<Document>): Document {
         description: data.description,
         author: data.author || MOCK_AUTHORS[0]!,
         category: data.category || MOCK_CATEGORIES[0]!,
+        documentType: data.documentType || MOCK_DOCUMENT_TYPES[0]!,
+        participants: data.participants || [{author: data.author || MOCK_AUTHORS[0]!, authorshipType: MOCK_AUTHORSHIP_TYPES[0]!}],
         publication_date: data.publication_date || new Date().toISOString(),
         tags: data.tags || [],
         content: data.content || '# Новый документ\n\nСодержание документа...',

@@ -22,6 +22,9 @@ export const API_ENDPOINTS = {
   CATEGORIES: {
     LIST: '/categories',
   },
+  DOCUMENT_TYPES: {
+    LIST: '/document-types',
+  },
   TAGS: {
     LIST: '/tags',
   },

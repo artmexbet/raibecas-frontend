@@ -27,6 +27,8 @@ function normalizeDocument(document: Document): Document {
     ...document,
     author: document.author ?? { id: '', name: 'Неизвестный автор' },
     category: document.category ?? { id: 0, title: 'Без категории' },
+    documentType: document.documentType ?? null,
+    participants: Array.isArray(document.participants) ? document.participants : [],
     tags: Array.isArray(document.tags) ? document.tags : [],
     description: document.description ?? null,
     content: document.content ?? null,

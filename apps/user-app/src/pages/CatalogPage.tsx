@@ -1,21 +1,15 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Button, Empty, Flex, Masonry, Pagination, Spin, theme, Typography} from 'antd';
-import {EditFilled, FileTextOutlined, MessageOutlined, TeamOutlined,} from '@ant-design/icons';
+import {AppstoreOutlined, MessageOutlined} from '@ant-design/icons';
 import {useNavigate} from '@tanstack/react-router';
 import {documentService} from '@/services/document.service';
-import type {Document, ListDocumentsQuery} from '@/types/document';
+import {documentTypeService} from '@/services/document-type.service';
+import type {Document, DocumentType, ListDocumentsQuery} from '@/types/document';
 import {AppHeader, DocumentCard, PageBackground} from '@/components/common';
 
 const {Text} = Typography;
 
 const PAGE_SIZE = 20;
-
-// Sidebar filters
-const sidebarFilters = [
-    {key: 'author', icon: EditFilled, label: 'Авторские'},
-    {key: 'coauthor', icon: TeamOutlined, label: 'Соавторские'},
-    {key: 'about', icon: FileTextOutlined, label: 'Тексты о Райбекасе'},
-];
 
 /** Высота карточки зависит от длины описания — имитация Masonry-разброса */
 function estimateCardHeight(doc: Document): number {
@@ -30,12 +24,14 @@ function estimateCardHeight(doc: Document): number {
 export function CatalogPage() {
     const navigate = useNavigate();
     const [documents, setDocuments] = useState<Document[]>([]);
+    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingTypes, setLoadingTypes] = useState(true);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [categoryId] = useState<number | undefined>();
-    const [activeFilter, setActiveFilter] = useState<string | null>(null);
+    const [activeDocumentTypeId, setActiveDocumentTypeId] = useState<number | undefined>();
 
     const {token} = theme.useToken();
 
@@ -53,8 +49,28 @@ export function CatalogPage() {
     }, []);
 
     useEffect(() => {
-        fetchDocuments({page, limit: PAGE_SIZE, search: search || undefined, categoryId});
-    }, [page, search, categoryId, fetchDocuments]);
+        const fetchDocumentTypes = async () => {
+            try {
+                setLoadingTypes(true);
+                const types = await documentTypeService.getAll();
+                setDocumentTypes(types);
+            } finally {
+                setLoadingTypes(false);
+            }
+        };
+
+        fetchDocumentTypes();
+    }, []);
+
+    useEffect(() => {
+        fetchDocuments({
+            page,
+            limit: PAGE_SIZE,
+            search: search || undefined,
+            categoryId,
+            documentTypeId: activeDocumentTypeId,
+        });
+    }, [page, search, categoryId, activeDocumentTypeId, fetchDocuments]);
 
     const masonryItems = documents.map((doc) => ({
         key: doc.id,
@@ -108,14 +124,38 @@ export function CatalogPage() {
                         </div>
 
                         <Flex vertical gap={4} style={{width: '100%'}}>
-                            {sidebarFilters.map((filter) => {
-                                const Icon = filter.icon;
-                                const isActive = activeFilter === filter.key;
+                            <Button
+                                type="text"
+                                onClick={() => {
+                                    setActiveDocumentTypeId(undefined);
+                                    setPage(1);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    justifyContent: 'flex-start',
+                                    textAlign: 'left',
+                                    borderRadius: 8,
+                                    padding: '8px 12px',
+                                    background: 'transparent',
+                                    color: activeDocumentTypeId == null ? token.colorPrimary : token.colorText,
+                                    fontWeight: activeDocumentTypeId == null ? 700 : 400,
+                                }}
+                            >
+                                <AppstoreOutlined style={{marginRight: 10, fontSize: 16}}/>
+                                Все типы
+                            </Button>
+                            {loadingTypes ? (
+                                <Spin size="small" style={{margin: '12px auto'}}/>
+                            ) : documentTypes.map((documentType) => {
+                                const isActive = activeDocumentTypeId === documentType.id;
                                 return (
                                     <Button
-                                        key={filter.key}
+                                        key={documentType.id}
                                         type="text"
-                                        onClick={() => setActiveFilter(isActive ? null : filter.key)}
+                                        onClick={() => {
+                                            setActiveDocumentTypeId(isActive ? undefined : documentType.id);
+                                            setPage(1);
+                                        }}
                                         style={{
                                             width: '100%',
                                             justifyContent: 'flex-start',
@@ -127,8 +167,7 @@ export function CatalogPage() {
                                             fontWeight: isActive ? 700 : 400,
                                         }}
                                     >
-                                        <Icon style={{marginRight: 10, fontSize: 16}}/>
-                                        {filter.label}
+                                        {documentType.name}
                                     </Button>
                                 );
                             })}

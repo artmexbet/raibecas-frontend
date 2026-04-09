@@ -28,8 +28,8 @@ export function LoginExample() {
       const response = await authService.login({ email, password });
 
       console.log('Login successful:', {
-        userId: response.user_id,
-        admin: response.admin,
+        userId: response.user.id,
+        admin: response.user,
         // access_token сохранён в памяти
         // fingerprint в HttpOnly cookie
         // token_id в localStorage

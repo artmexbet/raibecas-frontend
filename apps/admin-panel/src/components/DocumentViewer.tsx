@@ -29,18 +29,31 @@ export function DocumentViewer({ document }: DocumentViewerProps) {
         <Space size="large" wrap className="document-viewer__author-section">
           <Text strong>
             <UserOutlined style={{ marginRight: 8 }} />
-            {document.author.name}
+                {document.author?.name || 'Участник не указан'}
           </Text>
           <Text type="secondary">
             <CalendarOutlined style={{ marginRight: 8 }} />
             {formatDate(document.publication_date)}
           </Text>
+            {document.documentType?.name && (
+                <Tag color="purple">{document.documentType.name}</Tag>
+            )}
         </Space>
+
+        {document.participants?.length > 0 && (
+          <Space size="small" wrap style={{ marginBottom: 16 }}>
+            {document.participants.map((participant, index) => (
+              <Tag key={`${participant.author.id}-${participant.authorshipType.id}-${index}`} color="gold">
+                {participant.author.name} · {participant.authorshipType.title}
+              </Tag>
+            ))}
+          </Space>
+        )}
 
         <Space size="middle" wrap className="document-viewer__tags-section">
           <Space>
             <FolderOutlined />
-            <Tag color="blue">{document.category.title}</Tag>
+            <Tag color="blue">{document.category?.title || 'Без категории'}</Tag>
           </Space>
           {document.tags?.length > 0 && (
             <Space size="small" wrap>

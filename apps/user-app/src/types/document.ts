@@ -5,14 +5,29 @@ export interface Author {
   name: string;
 }
 
+export interface AuthorshipType {
+  id: number;
+  title: string;
+}
+
 export interface Category {
   id: number;
   title: string;
 }
 
+export interface DocumentType {
+  id: number;
+  name: string;
+}
+
 export interface Tag {
   id: number;
   title: string;
+}
+
+export interface DocumentParticipant {
+  author: Author;
+  authorshipType: AuthorshipType;
 }
 
 export interface Document {
@@ -21,6 +36,8 @@ export interface Document {
   description?: string | null;
   author: Author;
   category: Category;
+  documentType?: DocumentType | null;
+  participants: DocumentParticipant[];
   publication_date: string;
   tags: Tag[];
   content?: string | null;
@@ -34,6 +51,7 @@ export interface ListDocumentsQuery {
   limit?: number;
   authorId?: string;
   categoryId?: number;
+  documentTypeId?: number;
   tagId?: number;
   search?: string;
 }

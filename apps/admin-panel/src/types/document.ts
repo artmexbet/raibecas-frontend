@@ -5,14 +5,34 @@ export interface Author {
     name: string;
 }
 
+export interface AuthorshipType {
+    id: number;
+    title: string;
+}
+
 export interface Category {
     id: number;
     title: string;
 }
 
+export interface DocumentType {
+    id: number;
+    name: string;
+}
+
 export interface Tag {
     id: number;
     title: string;
+}
+
+export interface DocumentParticipant {
+    author: Author;
+    authorshipType: AuthorshipType;
+}
+
+export interface DocumentParticipantRef {
+    authorId: string;
+    typeId: number;
 }
 
 export interface Document {
@@ -21,6 +41,8 @@ export interface Document {
     description?: string | null;
     author: Author;
     category: Category;
+    documentType?: DocumentType | null;
+    participants: DocumentParticipant[];
     publication_date: string; // ISO 8601 timestamp
     tags: Tag[];
     content?: string | null; // Editor.js JSON (serialized OutputData). Backend converts to Markdown on save.
@@ -35,8 +57,9 @@ export interface Document {
 export interface CreateDocumentRequest {
     title: string;
     description?: string | null;
-    authorId: string;
-    categoryId: number;
+    categoryId?: number;
+    documentTypeId: number;
+    participants: DocumentParticipantRef[];
     publicationDate: string; // ISO 8601 timestamp
     tagIds?: number[];
     content?: string; // Editor.js JSON (serialized OutputData)
@@ -45,10 +68,12 @@ export interface CreateDocumentRequest {
 export interface UpdateDocumentRequest {
     title?: string;
     description?: string | null;
-    authorId?: string;
     categoryId?: number;
+    documentTypeId?: number;
+    participants?: DocumentParticipantRef[];
     publicationDate?: string; // ISO 8601 timestamp
     tagIds?: number[];
+    content?: string;
 }
 
 export interface ListDocumentsQuery {
@@ -56,6 +81,7 @@ export interface ListDocumentsQuery {
     limit?: number;
     authorId?: string;
     categoryId?: number;
+    documentTypeId?: number;
     tagId?: number;
     search?: string;
 }

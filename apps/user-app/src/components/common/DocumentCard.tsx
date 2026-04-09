@@ -57,7 +57,7 @@ export function DocumentCard({ doc }: DocumentCardProps) {
             border: `1px solid ${token.colorPrimary}30`,
           }}
         >
-          {doc.category.title}
+          {doc.documentType?.name || doc.category.title}
         </Tag>
 
         {/* Заголовок */}
@@ -123,6 +123,16 @@ export function DocumentCard({ doc }: DocumentCardProps) {
         )}
 
         {/* Мета */}
+        {doc.participants.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {doc.participants.slice(0, 2).map((participant, index) => (
+              <Tag key={`${participant.author.id}-${participant.authorshipType.id}-${index}`} style={{ margin: 0, borderRadius: 6 }}>
+                {participant.author.name} · {participant.authorshipType.title}
+              </Tag>
+            ))}
+          </div>
+        )}
+
         <div
           style={{
             display: 'flex',

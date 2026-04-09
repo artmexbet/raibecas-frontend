@@ -331,7 +331,7 @@ export function DocumentViewPage() {
         )}
         {/* Мета */}
         <div style={{ marginBottom: 12 }}>
-          <Tag color="blue">{currentDocument.category.title}</Tag>
+          <Tag color="blue">{currentDocument.documentType?.name || currentDocument.category.title}</Tag>
         </div>
 
         <Title level={2} style={{ marginBottom: 16 }}>
@@ -349,6 +349,16 @@ export function DocumentViewPage() {
             {dayjs(currentDocument.publication_date).format('D MMMM YYYY')}
           </Text>
         </div>
+
+        {currentDocument.participants.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+            {currentDocument.participants.map((participant, index) => (
+              <Tag key={`${participant.author.id}-${participant.authorshipType.id}-${index}`} color="gold">
+                {participant.author.name} · {participant.authorshipType.title}
+              </Tag>
+            ))}
+          </div>
+        )}
 
         {currentDocument.tags.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>

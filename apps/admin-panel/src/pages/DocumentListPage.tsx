@@ -1,11 +1,12 @@
 ﻿import {documentService} from "@/services/document.service";
 import {useEffect, useState} from "react";
 import { useNavigate } from '@tanstack/react-router';
-import { Table, Card, Input, Button, Space, Tag, message, Modal } from 'antd';
+import { Table, Card, Input, Button, Space, Tag, Typography, message, Modal } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, ExclamationCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import type { Document as DocumentType, Tag as TagType } from '@/types/document';
 const { Search } = Input;
+const { Paragraph, Text } = Typography;
 
 export function DocumentListPage() {
     const navigate = useNavigate();
@@ -33,8 +34,10 @@ export function DocumentListPage() {
         const search = searchText.toLowerCase();
         return (
             doc.title?.toLowerCase().includes(search) ||
-            doc.author?.name.toLowerCase().includes(search) ||
-            doc.category?.title.toLowerCase().includes(search) ||
+            doc.author?.name?.toLowerCase().includes(search) ||
+            doc.category?.title?.toLowerCase().includes(search) ||
+            doc.documentType?.name?.toLowerCase().includes(search) ||
+            doc.participants?.some((participant) => participant.author.name.toLowerCase().includes(search) || participant.authorshipType.title.toLowerCase().includes(search)) ||
             doc.tags?.some((tag: TagType) => tag.title.toLowerCase().includes(search))
         );
     });
@@ -46,31 +49,53 @@ export function DocumentListPage() {
             key: 'title',
             width: '25%',
             sorter: (a: DocumentType, b: DocumentType) => a.title.localeCompare(b.title),
+            render: (title: string, record: DocumentType) => (
+                <div>
+                    <Text strong>{title}</Text>
+                    {record.description && (
+                        <Paragraph type="secondary" ellipsis={{rows: 2}} style={{marginBottom: 0}}>
+                            {record.description}
+                        </Paragraph>
+                    )}
+                </div>
+            ),
         },
         {
-            title: 'Автор',
-            dataIndex: ['author', 'name'],
-            key: 'author',
-            width: '15%',
-            sorter: (a: DocumentType, b: DocumentType) => a.author.name.localeCompare(b.author.name),
+            title: 'Участники',
+            key: 'participants',
+            width: 260,
+            render: (_: unknown, record: DocumentType) => (
+                <Space direction="vertical" size={2}>
+                    {(record.participants || []).slice(0, 3).map((participant, index) => (
+                        <Text key={`${participant.author.id}-${participant.authorshipType.id}-${index}`}>
+                            {participant.author.name} · {participant.authorshipType.title}
+                        </Text>
+                    ))}
+                    {(record.participants?.length || 0) > 3 && (
+                        <Text type="secondary">+ ещё {record.participants!.length - 3}</Text>
+                    )}
+                </Space>
+            ),
+        },
+        {
+            title: 'Тип',
+            dataIndex: ['documentType', 'name'],
+            key: 'documentType',
+            width: 160,
+            render: (_: unknown, record: DocumentType) => record.documentType?.name || '—',
         },
         {
             title: 'Категория',
             dataIndex: ['category', 'title'],
             key: 'category',
-            width: '15%',
-            filters: [...new Set(documents.map((doc: DocumentType) => doc.category.title))].
-            map((title: string) => ({
-                text: title,
-                value: title,
-            })),
-            onFilter: (value: any, record: DocumentType) => record.category.title === value,
+            width: 180,
+            render: (_: unknown, record: DocumentType) => record.category?.title || '—',
         },
         {
             title: 'Теги',
             dataIndex: 'tags',
             key: 'tags',
-            width: '20%',
+            width: 260,
             render: (tags: TagType[]) => (
                 <>
                     {tags?.map((tag: TagType) => (
@@ -100,7 +125,7 @@ export function DocumentListPage() {
         {
             title: 'Действия',
             key: 'actions',
-            width: '15%',
+            width: 140,
             render: (_: any, record: DocumentType) => (
                 <Space size="small">
                     <Button
@@ -190,6 +215,7 @@ export function DocumentListPage() {
                         dataSource={filteredDocuments}
                         loading={loading}
                         rowKey="id"
+                        scroll={{x: 1180}}
                         onRow={(record: DocumentType) => ({
                             onClick: () => handleView(record),
                             style: { cursor: 'pointer' },

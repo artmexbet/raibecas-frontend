@@ -30,6 +30,13 @@ function createDocument(partial: Partial<Document> & Pick<Document, 'id' | 'titl
     description: partial.description ?? null,
     author: partial.author ?? { id: 'author-1', name: 'Архив Райбекаса' },
     category: partial.category ?? { id: 1, title: 'Философия' },
+    documentType: partial.documentType ?? { id: 1, name: 'Статья' },
+    participants: partial.participants ?? [
+      {
+        author: partial.author ?? { id: 'author-1', name: 'Архив Райбекаса' },
+        authorshipType: { id: 1, title: 'автор' },
+      },
+    ],
     publication_date: partial.publication_date ?? '1987-01-01',
     tags: partial.tags ?? [],
     content: partial.content ?? null,

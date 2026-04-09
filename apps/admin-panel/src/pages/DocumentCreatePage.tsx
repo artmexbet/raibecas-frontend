@@ -22,17 +22,20 @@ import {
     ArrowLeftOutlined,
     InboxOutlined,
     InfoCircleOutlined,
+    MinusCircleOutlined,
+    PlusOutlined,
     SaveOutlined,
     TagsOutlined,
-    UserOutlined,
 } from '@ant-design/icons';
 import {documentService} from '../services/document.service';
 import {authorService} from '../services/author.service';
+import {authorshipTypeService} from '../services/authorship-type.service';
 import {categoryService} from '../services/category.service';
+import {documentTypeService} from '../services/document-type.service';
 import {tagService} from '../services/tag.service';
-import type {Author, Category, CreateDocumentRequest, Tag as TagType} from '@/types/document';
+import type {Author, AuthorshipType, Category, CreateDocumentRequest, DocumentParticipantRef, DocumentType, Tag as TagType} from '@/types/document';
 import './DocumentEditPage.css';
-import {AuthorSelectModal, DocumentEditor, TagSelectModal} from "@/components";
+import {DocumentEditor, TagSelectModal} from "@/components";
 import {editorjsToMarkdown, markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
 
 const {TextArea} = Input;
@@ -80,17 +83,16 @@ export function DocumentCreatePage() {
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
-    // Модальные окна
-    const [authorModalVisible, setAuthorModalVisible] = useState(false);
     const [tagModalVisible, setTagModalVisible] = useState(false);
 
     // Данные с сервера
     const [authors, setAuthors] = useState<Author[]>([]);
+    const [authorshipTypes, setAuthorshipTypes] = useState<AuthorshipType[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
+    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
     const [tags, setTags] = useState<TagType[]>([]);
 
     // Выбранные значения
-    const [selectedAuthorName, setSelectedAuthorName] = useState<string>('');
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
 
     // Загрузка данных при монтировании компонента
@@ -98,14 +100,23 @@ export function DocumentCreatePage() {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [authorsData, categoriesData, tagsData] = await Promise.all([
+                const [authorsData, authorshipTypesData, categoriesData, documentTypesData, tagsData] = await Promise.all([
                     authorService.getAll(),
+                    authorshipTypeService.getAll(),
                     categoryService.getAll(),
+                    documentTypeService.getAll(),
                     tagService.getAll(),
                 ]);
                 setAuthors(authorsData);
+                setAuthorshipTypes(authorshipTypesData);
                 setCategories(categoriesData);
+                setDocumentTypes(documentTypesData);
                 setTags(tagsData);
+
+                const defaultAuthorshipType = authorshipTypesData.find(type => type.title.toLowerCase() === 'автор') ?? authorshipTypesData[0];
+                if (defaultAuthorshipType) {
+                    form.setFieldValue('participants', [{typeId: defaultAuthorshipType.id}]);
+                }
             } catch (error) {
                 message.error('Ошибка при загрузке данных');
                 console.error('Error loading data:', error);
@@ -118,29 +129,6 @@ export function DocumentCreatePage() {
 
     const handleBack = () => {
         navigate({to: '/documents'});
-    };
-
-    const handleOpenAuthorModal = () => {
-        setAuthorModalVisible(true);
-    };
-
-    const handleCloseAuthorModal = () => {
-        setAuthorModalVisible(false);
-    };
-
-    const handleSelectAuthor = (authorId: string) => {
-        const selectedAuthor = authors.find(a => a.id === authorId);
-        form.setFieldValue('authorId', authorId);
-        if (selectedAuthor) {
-            setSelectedAuthorName(selectedAuthor.name);
-        }
-        message.success('Автор выбран');
-    };
-
-    const handleAddAuthor = (newAuthor: Author) => {
-        const updatedAuthors = [...authors, newAuthor];
-        setAuthors(updatedAuthors);
-        setSelectedAuthorName(newAuthor.name);
     };
 
     const handleOpenTagModal = () => {
@@ -161,6 +149,8 @@ export function DocumentCreatePage() {
         const updatedTags = [...tags, newTag];
         setTags(updatedTags);
     };
+
+    const defaultAuthorshipTypeId = authorshipTypes.find(type => type.title.toLowerCase() === 'автор')?.id ?? authorshipTypes[0]?.id;
 
     const handleFileUpload = async (file: File) => {
         // Проверка типа файла
@@ -195,21 +185,20 @@ export function DocumentCreatePage() {
                 const tagsMatch = frontMatter.match(/tags:\s*\[(.+?)]/);
                 const categoryMatch = frontMatter.match(/category:\s*["']?(.+?)["']?\s*$/m);
                 const descriptionMatch = frontMatter.match(/description:\s*["']?(.+?)["']?\s*$/m);
+                const typeMatch = frontMatter.match(/(?:type|document_type):\s*["']?(.+?)["']?\s*$/m);
 
                 // Устанавливаем значения в форму, если они не заполнены
                 if (titleMatch && titleMatch[1] && !form.getFieldValue('title')) {
                     form.setFieldValue('title', titleMatch[1].trim());
                 }
-                if (authorMatch && authorMatch[1] && !form.getFieldValue('authorId')) {
-                    // Пытаемся найти автора по имени
+                if (authorMatch && authorMatch[1] && !(form.getFieldValue('participants') || []).length) {
                     const authorName = authorMatch[1].trim().toLowerCase();
                     const foundAuthor = authors.find(author =>
                         author.name.toLowerCase().includes(authorName) ||
                         authorName.includes(author.name.toLowerCase())
                     );
-                    if (foundAuthor) {
-                        form.setFieldValue('authorId', foundAuthor.id);
-                        setSelectedAuthorName(foundAuthor.name);
+                    if (foundAuthor && defaultAuthorshipTypeId) {
+                        form.setFieldValue('participants', [{authorId: foundAuthor.id, typeId: defaultAuthorshipTypeId}]);
                     }
                 }
                 if (categoryMatch && categoryMatch[1] && !form.getFieldValue('categoryId')) {
@@ -224,6 +213,13 @@ export function DocumentCreatePage() {
                 }
                 if (descriptionMatch && descriptionMatch[1] && !form.getFieldValue('description')) {
                     form.setFieldValue('description', descriptionMatch[1].trim());
+                }
+                if (typeMatch && typeMatch[1] && !form.getFieldValue('documentTypeId')) {
+                    const documentTypeName = typeMatch[1].trim().toLowerCase();
+                    const foundDocumentType = documentTypes.find(type => type.name.toLowerCase() === documentTypeName);
+                    if (foundDocumentType) {
+                        form.setFieldValue('documentTypeId', foundDocumentType.id);
+                    }
                 }
                 if (tagsMatch && tagsMatch[1] && !form.getFieldValue('tagIds')) {
                     const tagNames = tagsMatch[1].split(',').map(tag => tag.trim().replace(/["']/g, '').toLowerCase());
@@ -303,8 +299,9 @@ export function DocumentCreatePage() {
 
             const documentData = {
                 title: values.title,
-                authorId: values.authorId,
                 categoryId: values.categoryId,
+                documentTypeId: values.documentTypeId,
+                participants: (values.participants || []).filter((participant: DocumentParticipantRef) => participant?.authorId && participant?.typeId),
                 publicationDate: values.publicationDate?.toISOString(),
                 tagIds: values.tagIds || [],
                 description: values.description || null,
@@ -386,31 +383,6 @@ export function DocumentCreatePage() {
                             </Form.Item>
 
                             <Form.Item
-                                name="authorId"
-                                label="Автор"
-                                rules={[
-                                    {required: true, message: 'Пожалуйста, выберите автора'},
-                                ]}
-                            >
-                                <Space.Compact style={{width: '100%'}}>
-                                    <Input
-                                        size="large"
-                                        placeholder="Нажмите кнопку для выбора автора"
-                                        readOnly
-                                        value={selectedAuthorName}
-                                        style={{flex: 1}}
-                                    />
-                                    <Button
-                                        size="large"
-                                        icon={<UserOutlined/>}
-                                        onClick={handleOpenAuthorModal}
-                                    >
-                                        Выбрать
-                                    </Button>
-                                </Space.Compact>
-                            </Form.Item>
-
-                            <Form.Item
                                 name="description"
                                 label="Описание/Аннотация"
                             >
@@ -421,7 +393,7 @@ export function DocumentCreatePage() {
                             </Form.Item>
 
                             <Row gutter={16}>
-                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                <Col xs={24} sm={24} md={8} lg={8} xl={8}>
                                     <Form.Item
                                         name="categoryId"
                                         label="Категория"
@@ -441,7 +413,27 @@ export function DocumentCreatePage() {
                                     </Form.Item>
                                 </Col>
 
-                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+                                    <Form.Item
+                                        name="documentTypeId"
+                                        label="Тип документа"
+                                        rules={[
+                                            {required: true, message: 'Пожалуйста, выберите тип документа'},
+                                        ]}
+                                    >
+                                        <Select
+                                            size="large"
+                                            placeholder="Выберите тип документа"
+                                            loading={loading}
+                                            options={documentTypes.map(documentType => ({
+                                                label: documentType.name,
+                                                value: documentType.id,
+                                            }))}
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col xs={24} sm={24} md={8} lg={8} xl={8}>
                                     <Form.Item
                                         name="publicationDate"
                                         label="Дата публикации"
@@ -458,6 +450,67 @@ export function DocumentCreatePage() {
                                     </Form.Item>
                                 </Col>
                             </Row>
+
+                            <Form.Item label="Участники" required>
+                                <Form.List name="participants" rules={[
+                                    {
+                                        validator: async (_, value) => {
+                                            if (!value || value.length === 0) {
+                                                throw new Error('Добавьте хотя бы одного участника');
+                                            }
+                                        },
+                                    },
+                                ]}>
+                                    {(fields, {add, remove}, {errors}) => (
+                                        <>
+                                            {fields.map((field, index) => (
+                                                <Space key={field.key} align="start" style={{display: 'flex', marginBottom: 12}} wrap>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'authorId']}
+                                                        label={index === 0 ? 'Участник' : ''}
+                                                        rules={[{required: true, message: 'Выберите участника'}]}
+                                                        style={{minWidth: 280, marginBottom: 0}}
+                                                    >
+                                                        <Select
+                                                            showSearch
+                                                            size="large"
+                                                            placeholder="Выберите участника"
+                                                            filterOption={(input, option) => String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                                            options={authors.map(author => ({label: author.name, value: author.id}))}
+                                                        />
+                                                    </Form.Item>
+                                                    <Form.Item
+                                                        {...field}
+                                                        name={[field.name, 'typeId']}
+                                                        label={index === 0 ? 'Роль' : ''}
+                                                        rules={[{required: true, message: 'Выберите роль'}]}
+                                                        style={{minWidth: 220, marginBottom: 0}}
+                                                    >
+                                                        <Select
+                                                            size="large"
+                                                            placeholder="Выберите роль"
+                                                            options={authorshipTypes.map(type => ({label: type.title, value: type.id}))}
+                                                        />
+                                                    </Form.Item>
+                                                    {fields.length > 1 && (
+                                                        <Button danger icon={<MinusCircleOutlined/>} onClick={() => remove(field.name)} style={{marginTop: index === 0 ? 30 : 0}} />
+                                                    )}
+                                                </Space>
+                                            ))}
+                                            <Form.ErrorList errors={errors}/>
+                                            <Button
+                                                type="dashed"
+                                                onClick={() => add({typeId: defaultAuthorshipTypeId})}
+                                                icon={<PlusOutlined/>}
+                                                size="large"
+                                            >
+                                                Добавить участника
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form.List>
+                            </Form.Item>
 
                             <Form.Item
                                 name="tagIds"
@@ -643,14 +696,6 @@ export function DocumentCreatePage() {
                 </>
             )}
 
-            {/* Модальное окно выбора автора */}
-            <AuthorSelectModal
-                visible={authorModalVisible}
-                authors={authors}
-                onClose={handleCloseAuthorModal}
-                onSelect={handleSelectAuthor}
-                onAddAuthor={handleAddAuthor}
-            />
 
             {/* Модальное окно выбора тегов */}
             <TagSelectModal
