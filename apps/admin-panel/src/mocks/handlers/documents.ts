@@ -1,6 +1,19 @@
 import { mockApiCall } from '@/mocks';
-import { MOCK_DOCUMENTS, createMockDocument, MOCK_AUTHORS, MOCK_CATEGORIES, MOCK_TAGS } from '@/mocks';
-import type { Document } from '@/types/document';
+import {
+    MOCK_DOCUMENTS,
+    createMockDocument,
+    MOCK_AUTHORS,
+    MOCK_CATEGORIES,
+    MOCK_TAGS,
+    MOCK_AUTHORSHIP_TYPES,
+    MOCK_DOCUMENT_TYPES,
+} from '@/mocks';
+import type {
+    CreateDocumentRequest,
+    Document,
+    DocumentParticipant,
+    UpdateDocumentRequest,
+} from '@/types/document';
 
 /**
  * Моковые обработчики для документов
@@ -32,8 +45,37 @@ export const documentsMockHandlers = {
   /**
    * Создать новый документ
    */
-  async create(data: Partial<Document>): Promise<Document> {
-    const newDocument = createMockDocument(data);
+  async create(data: CreateDocumentRequest): Promise<Document> {
+    const author = data.participants?.[0]
+      ? MOCK_AUTHORS.find(a => a.id === data.participants[0]!.authorId) ?? MOCK_AUTHORS[0]!
+      : MOCK_AUTHORS[0]!;
+
+    const category = MOCK_CATEGORIES.find(c => c.id === data.categoryId) ?? MOCK_CATEGORIES[0]!;
+    const documentType = MOCK_DOCUMENT_TYPES.find(t => t.id === data.documentTypeId) ?? MOCK_DOCUMENT_TYPES[0]!;
+    const tags = (data.tagIds ?? [])
+      .map(tagId => MOCK_TAGS.find(t => t.id === tagId))
+      .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+
+    const participants: DocumentParticipant[] = (data.participants ?? [])
+      .map(ref => {
+        const refAuthor = MOCK_AUTHORS.find(a => a.id === ref.authorId);
+        const refType = MOCK_AUTHORSHIP_TYPES.find(t => t.id === ref.typeId);
+        if (!refAuthor || !refType) return null;
+        return { author: refAuthor, authorshipType: refType };
+      })
+      .filter((p): p is DocumentParticipant => p !== null);
+
+    const newDocument = createMockDocument({
+      title: data.title,
+      description: data.description ?? undefined,
+      author,
+      category,
+      documentType,
+      participants,
+      publication_date: data.publicationDate,
+      tags,
+      content: data.content,
+    });
     MOCK_DOCUMENTS.push(newDocument);
 
     const result = await mockApiCall(newDocument, 1000);
@@ -43,7 +85,7 @@ export const documentsMockHandlers = {
   /**
    * Обновить документ
    */
-  async update(id: string, data: Partial<Document>): Promise<Document> {
+  async update(id: string, data: UpdateDocumentRequest): Promise<Document> {
     const index = MOCK_DOCUMENTS.findIndex(d => d.id === id);
 
     if (index === -1) {
@@ -52,30 +94,33 @@ export const documentsMockHandlers = {
 
     const baseDocument = MOCK_DOCUMENTS[index]!;
 
-    // Обрабатываем автора - если пришла строка, ищем в моках или оставляем текущего
-    let author = data.author ?? baseDocument.author;
-    if (typeof (data.author as any) === 'string') {
-      const foundAuthor = MOCK_AUTHORS.find(a => a.name === (data.author as any));
-      author = foundAuthor ?? baseDocument.author;
-    }
+    const category = data.categoryId !== undefined
+      ? MOCK_CATEGORIES.find(c => c.id === data.categoryId) ?? baseDocument.category
+      : baseDocument.category;
 
-    // Обрабатываем категорию - если пришла строка, ищем в моках или оставляем текущую
-    let category = data.category ?? baseDocument.category;
-    if (typeof (data.category as any) === 'string') {
-      const foundCategory = MOCK_CATEGORIES.find(c => c.title === (data.category as any));
-      category = foundCategory ?? baseDocument.category;
-    }
+    const documentType = data.documentTypeId !== undefined
+      ? MOCK_DOCUMENT_TYPES.find(t => t.id === data.documentTypeId) ?? baseDocument.documentType
+      : baseDocument.documentType;
 
-    // Обрабатываем теги - если пришёл массив строк, ищем соответствующие объекты
-    let tags = data.tags ?? baseDocument.tags;
-    if (Array.isArray(data.tags) && data.tags.length > 0 && typeof (data.tags[0] as any) === 'string') {
-      tags = (data.tags as unknown as string[])
-        .map(tagTitle => MOCK_TAGS.find(t => t.title === tagTitle))
-        .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined);
+    const tags = data.tagIds !== undefined
+      ? data.tagIds
+          .map(tagId => MOCK_TAGS.find(t => t.id === tagId))
+          .filter((tag): tag is NonNullable<typeof tag> => tag !== undefined)
+      : baseDocument.tags;
 
-      // Если не нашли теги, оставляем текущие
-      if (tags.length === 0) {
-        tags = baseDocument.tags;
+    let participants: DocumentParticipant[] | undefined = baseDocument.participants;
+    let author = baseDocument.author;
+    if (data.participants !== undefined) {
+      participants = data.participants
+        .map(ref => {
+          const refAuthor = MOCK_AUTHORS.find(a => a.id === ref.authorId);
+          const refType = MOCK_AUTHORSHIP_TYPES.find(t => t.id === ref.typeId);
+          if (!refAuthor || !refType) return null;
+          return { author: refAuthor, authorshipType: refType };
+        })
+        .filter((p): p is DocumentParticipant => p !== null);
+      if (participants.length > 0 && participants[0]) {
+        author = participants[0].author;
       }
     }
 
@@ -83,10 +128,12 @@ export const documentsMockHandlers = {
       id: baseDocument.id,
       title: data.title ?? baseDocument.title,
       description: data.description ?? baseDocument.description,
-      author: author as any,
-      category: category as any,
-      publication_date: data.publication_date ?? baseDocument.publication_date,
-      tags: tags as any,
+      author,
+      category,
+      documentType,
+      participants,
+      publication_date: data.publicationDate ?? baseDocument.publication_date,
+      tags,
       content: data.content ?? baseDocument.content,
       created_at: baseDocument.created_at,
       updated_at: new Date().toISOString(),
