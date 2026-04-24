@@ -1,4 +1,5 @@
 // Синхронизировано с services/gateway/internal/domain/models.go
+// и services/gateway/internal/domain/documents.go
 
 export interface Author {
     id: string;
@@ -15,12 +16,37 @@ export interface Tag {
     title: string;
 }
 
+export interface DocumentType {
+    id: number;
+    name: string;
+}
+
+export interface AuthorshipType {
+    id: number;
+    title: string;
+}
+
+// Представление связки "автор + роль" в ответе сервера
+export interface DocumentParticipant {
+    author: Author;
+    authorshipType: AuthorshipType;
+}
+
+// Тело, которое фронтенд отправляет для указания участника документа
+export interface DocumentParticipantRef {
+    authorId: string;
+    typeId: number;
+}
+
 export interface Document {
     id: string;
     title: string;
     description?: string | null;
+    // Primary author — бэкенд сохраняет поле для обратной совместимости (первый participant)
     author: Author;
     category: Category;
+    documentType?: DocumentType;
+    participants?: DocumentParticipant[];
     publication_date: string; // ISO 8601 timestamp
     tags: Tag[];
     content?: string | null; // Editor.js JSON (serialized OutputData). Backend converts to Markdown on save.
@@ -31,24 +57,26 @@ export interface Document {
 
 // Request/Response types синхронизированы с services/gateway/internal/domain/documents.go
 
-// Тип для создания нового документа
 export interface CreateDocumentRequest {
     title: string;
     description?: string | null;
-    authorId: string;
     categoryId: number;
+    documentTypeId: number;
+    participants: DocumentParticipantRef[];
     publicationDate: string; // ISO 8601 timestamp
     tagIds?: number[];
-    content?: string; // Editor.js JSON (serialized OutputData)
+    content?: string; // Markdown (бэкенд сам решает что делать дальше)
 }
 
 export interface UpdateDocumentRequest {
     title?: string;
     description?: string | null;
-    authorId?: string;
     categoryId?: number;
+    documentTypeId?: number;
+    participants?: DocumentParticipantRef[];
     publicationDate?: string; // ISO 8601 timestamp
     tagIds?: number[];
+    content?: string;
 }
 
 export interface ListDocumentsQuery {
@@ -56,6 +84,7 @@ export interface ListDocumentsQuery {
     limit?: number;
     authorId?: string;
     categoryId?: number;
+    documentTypeId?: number;
     tagId?: number;
     search?: string;
 }
@@ -79,4 +108,3 @@ export interface GetDocumentResponse {
 export interface UpdateDocumentResponse {
     document: Document;
 }
-

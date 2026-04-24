@@ -33,6 +33,12 @@ export const API_ENDPOINTS = {
     UPDATE: (id: number) => `/tags/${id}`,
     DELETE: (id: number) => `/tags/${id}`,
   },
+  DOCUMENT_TYPES: {
+    LIST: '/document-types',
+  },
+  AUTHORSHIP_TYPES: {
+    LIST: '/authorship-types',
+  },
   USERS: {
     LIST: '/users',
     UPDATE: (id: string) => `/users/${id}`,

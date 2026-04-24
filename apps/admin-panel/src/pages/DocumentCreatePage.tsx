@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {useNavigate} from '@tanstack/react-router';
 import type {UploadProps} from 'antd';
 import {
@@ -12,33 +12,57 @@ import {
     Input,
     message,
     Row,
-    Select,
     Space,
     Spin,
     Tag,
     Upload,
 } from 'antd';
 import {
+    AppstoreOutlined,
     ArrowLeftOutlined,
+    FileTextOutlined,
     InboxOutlined,
     InfoCircleOutlined,
     SaveOutlined,
     TagsOutlined,
-    UserOutlined,
+    TeamOutlined,
 } from '@ant-design/icons';
 import {documentService} from '../services/document.service';
 import {authorService} from '../services/author.service';
 import {categoryService} from '../services/category.service';
 import {tagService} from '../services/tag.service';
-import type {Author, Category, CreateDocumentRequest, Tag as TagType} from '@/types/document';
+import {documentTypeService} from '../services/documentType.service';
+import {authorshipTypeService} from '../services/authorshipType.service';
+import type {
+    Author,
+    AuthorshipType,
+    Category,
+    CreateDocumentRequest,
+    DocumentParticipantRef,
+    DocumentType,
+    Tag as TagType,
+} from '@/types/document';
 import './DocumentEditPage.css';
-import {AuthorSelectModal, DocumentEditor, TagSelectModal} from "@/components";
-import {editorjsToMarkdown, markdownToEditorjsBlocks} from "@/utils/editorjsMarkdown";
+import {
+    AuthorSelectModal,
+    CategorySelectModal,
+    DocumentEditor,
+    DocumentTypeSelectModal,
+    ParticipantsSelectModal,
+    TagSelectModal,
+} from '@/components';
+import {editorjsToMarkdown, markdownToEditorjsBlocks} from '@/utils/editorjsMarkdown';
 
 const {TextArea} = Input;
 const {Dragger} = Upload;
 
-// Компонент с примером YAML front matter
+interface DocumentFormValues {
+    title?: string;
+    description?: string;
+    publicationDate?: any;
+    content?: string;
+}
+
 const YamlFrontMatterExample = (
     <Alert
         type="info"
@@ -51,7 +75,7 @@ const YamlFrontMatterExample = (
                     padding: 12,
                     borderRadius: 4,
                     fontSize: 12,
-                    marginTop: 8
+                    marginTop: 8,
                 }}>
 {`---
 title: "Название работы"
@@ -72,7 +96,7 @@ tags: ["философия", "наука"]
 
 export function DocumentCreatePage() {
     const navigate = useNavigate();
-    const [form] = Form.useForm();
+    const [form] = Form.useForm<DocumentFormValues>();
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(true);
     const [previewContent, setContent] = useState<string>('');
@@ -80,32 +104,59 @@ export function DocumentCreatePage() {
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
-    // Модальные окна
-    const [authorModalVisible, setAuthorModalVisible] = useState(false);
-    const [tagModalVisible, setTagModalVisible] = useState(false);
-
-    // Данные с сервера
+    // Справочники
     const [authors, setAuthors] = useState<Author[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [tags, setTags] = useState<TagType[]>([]);
+    const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
+    const [authorshipTypes, setAuthorshipTypes] = useState<AuthorshipType[]>([]);
 
-    // Выбранные значения
-    const [selectedAuthorName, setSelectedAuthorName] = useState<string>('');
+    // Выбранные значения (отдельный state, чтобы не конфликтовать с Form.Item/<div>)
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | undefined>();
+    const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState<number | undefined>();
     const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+    const [participants, setParticipants] = useState<DocumentParticipantRef[]>([]);
 
-    // Загрузка данных при монтировании компонента
+    // Модалки
+    const [documentTypeModalVisible, setDocumentTypeModalVisible] = useState(false);
+    const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+    const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+    const [tagModalVisible, setTagModalVisible] = useState(false);
+    // Простой AuthorSelectModal пригодится для YAML front matter, но кнопки для него на форме
+    // нет — участники управляются через ParticipantsSelectModal.
+    const [authorModalVisible, setAuthorModalVisible] = useState(false);
+
+    const authorsById = useMemo(() => {
+        const map = new Map<string, Author>();
+        authors.forEach((a) => map.set(a.id, a));
+        return map;
+    }, [authors]);
+
+    const authorshipById = useMemo(() => {
+        const map = new Map<number, AuthorshipType>();
+        authorshipTypes.forEach((t) => map.set(t.id, t));
+        return map;
+    }, [authorshipTypes]);
+
+    const selectedDocumentType = documentTypes.find((t) => t.id === selectedDocumentTypeId);
+    const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
+
     useEffect(() => {
         const loadData = async () => {
             try {
                 setLoading(true);
-                const [authorsData, categoriesData, tagsData] = await Promise.all([
+                const [authorsData, categoriesData, tagsData, docTypesData, authorshipData] = await Promise.all([
                     authorService.getAll(),
                     categoryService.getAll(),
                     tagService.getAll(),
+                    documentTypeService.getAll(),
+                    authorshipTypeService.getAll(),
                 ]);
                 setAuthors(authorsData);
                 setCategories(categoriesData);
                 setTags(tagsData);
+                setDocumentTypes(docTypesData);
+                setAuthorshipTypes(authorshipData);
             } catch (error) {
                 message.error('Ошибка при загрузке данных');
                 console.error('Error loading data:', error);
@@ -120,57 +171,58 @@ export function DocumentCreatePage() {
         navigate({to: '/documents'});
     };
 
-    const handleOpenAuthorModal = () => {
-        setAuthorModalVisible(true);
+    const handleSelectDocumentType = (id: number) => {
+        setSelectedDocumentTypeId(id);
     };
 
-    const handleCloseAuthorModal = () => {
-        setAuthorModalVisible(false);
+    const handleSelectCategory = (id: number) => {
+        setSelectedCategoryId(id);
     };
 
-    const handleSelectAuthor = (authorId: string) => {
-        const selectedAuthor = authors.find(a => a.id === authorId);
-        form.setFieldValue('authorId', authorId);
-        if (selectedAuthor) {
-            setSelectedAuthorName(selectedAuthor.name);
-        }
-        message.success('Автор выбран');
+    const handleAddCategory = (newCategory: Category) => {
+        setCategories((prev) => [...prev, newCategory]);
+    };
+
+    const handleSelectParticipants = (next: DocumentParticipantRef[]) => {
+        setParticipants(next);
     };
 
     const handleAddAuthor = (newAuthor: Author) => {
-        const updatedAuthors = [...authors, newAuthor];
-        setAuthors(updatedAuthors);
-        setSelectedAuthorName(newAuthor.name);
+        setAuthors((prev) => [...prev, newAuthor]);
     };
 
-    const handleOpenTagModal = () => {
-        setTagModalVisible(true);
-    };
-
-    const handleCloseTagModal = () => {
-        setTagModalVisible(false);
+    // AuthorSelectModal вызывается только из YAML front matter логики (опционально) —
+    // оставляем обработчик, чтобы можно было расширять UX без отдельных кнопок.
+    const handleSelectAuthorFromYaml = (authorId: string) => {
+        const defaultType = authorshipTypes.find((t) => t.title.toLowerCase() === 'автор')
+            ?? authorshipTypes[0];
+        if (!defaultType) {
+            message.warning('Не удалось определить тип авторства — добавьте участника вручную');
+            return;
+        }
+        setParticipants((prev) => {
+            if (prev.some((p) => p.authorId === authorId && p.typeId === defaultType.id)) {
+                return prev;
+            }
+            return [...prev, {authorId, typeId: defaultType.id}];
+        });
     };
 
     const handleSelectTags = (tagIds: number[]) => {
         setSelectedTagIds(tagIds);
-        form.setFieldValue('tagIds', tagIds);
-        message.success(`Выбрано тегов: ${tagIds.length}`);
     };
 
     const handleAddTag = (newTag: TagType) => {
-        const updatedTags = [...tags, newTag];
-        setTags(updatedTags);
+        setTags((prev) => [...prev, newTag]);
     };
 
     const handleFileUpload = async (file: File) => {
-        // Проверка типа файла
         const isMarkdown = file.name.endsWith('.md') || file.name.endsWith('.markdown') || file.type === 'text/markdown';
         if (!isMarkdown) {
             message.error('Пожалуйста, загрузите файл в формате Markdown (.md или .markdown)');
             return false;
         }
 
-        // Проверка размера файла (например, максимум 5MB)
         const isLt5M = file.size / 1024 / 1024 < 5;
         if (!isLt5M) {
             message.error('Файл не должен превышать 5MB');
@@ -181,79 +233,70 @@ export function DocumentCreatePage() {
             const text = await file.text();
             let content = text;
 
-            // Попытка извлечь YAML front matter (метаданные в начале файла)
             const yamlFrontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
             const match = text.match(yamlFrontMatterRegex);
 
             if (match && match[1] && match[2]) {
                 const frontMatter = match[1];
-                content = match[2]; // Содержимое без front matter
+                content = match[2];
 
-                // Извлекаем метаданные
                 const titleMatch = frontMatter.match(/title:\s*["']?(.+?)["']?\s*$/m);
                 const authorMatch = frontMatter.match(/author:\s*["']?(.+?)["']?\s*$/m);
                 const tagsMatch = frontMatter.match(/tags:\s*\[(.+?)]/);
                 const categoryMatch = frontMatter.match(/category:\s*["']?(.+?)["']?\s*$/m);
                 const descriptionMatch = frontMatter.match(/description:\s*["']?(.+?)["']?\s*$/m);
 
-                // Устанавливаем значения в форму, если они не заполнены
                 if (titleMatch && titleMatch[1] && !form.getFieldValue('title')) {
                     form.setFieldValue('title', titleMatch[1].trim());
                 }
-                if (authorMatch && authorMatch[1] && !form.getFieldValue('authorId')) {
-                    // Пытаемся найти автора по имени
+                if (authorMatch && authorMatch[1] && participants.length === 0) {
                     const authorName = authorMatch[1].trim().toLowerCase();
-                    const foundAuthor = authors.find(author =>
+                    const foundAuthor = authors.find((author) =>
                         author.name.toLowerCase().includes(authorName) ||
-                        authorName.includes(author.name.toLowerCase())
+                        authorName.includes(author.name.toLowerCase()),
                     );
                     if (foundAuthor) {
-                        form.setFieldValue('authorId', foundAuthor.id);
-                        setSelectedAuthorName(foundAuthor.name);
+                        handleSelectAuthorFromYaml(foundAuthor.id);
                     }
                 }
-                if (categoryMatch && categoryMatch[1] && !form.getFieldValue('categoryId')) {
-                    // Пытаемся найти категорию по названию
+                if (categoryMatch && categoryMatch[1] && !selectedCategoryId) {
                     const categoryName = categoryMatch[1].trim().toLowerCase();
-                    const foundCategory = categories.find(category =>
-                        category.title.toLowerCase() === categoryName
+                    const foundCategory = categories.find(
+                        (category) => category.title.toLowerCase() === categoryName,
                     );
                     if (foundCategory) {
-                        form.setFieldValue('categoryId', foundCategory.id);
+                        setSelectedCategoryId(foundCategory.id);
                     }
                 }
                 if (descriptionMatch && descriptionMatch[1] && !form.getFieldValue('description')) {
                     form.setFieldValue('description', descriptionMatch[1].trim());
                 }
-                if (tagsMatch && tagsMatch[1] && !form.getFieldValue('tagIds')) {
-                    const tagNames = tagsMatch[1].split(',').map(tag => tag.trim().replace(/["']/g, '').toLowerCase());
-                    // Находим ID тегов по именам
+                if (tagsMatch && tagsMatch[1] && selectedTagIds.length === 0) {
+                    const tagNames = tagsMatch[1]
+                        .split(',')
+                        .map((tag) => tag.trim().replace(/["']/g, '').toLowerCase());
                     const foundTagIds = tags
-                        .filter(tag => tagNames.includes(tag.title.toLowerCase()))
-                        .map(tag => tag.id);
+                        .filter((tag) => tagNames.includes(tag.title.toLowerCase()))
+                        .map((tag) => tag.id);
                     if (foundTagIds.length > 0) {
-                        form.setFieldValue('tagIds', foundTagIds);
                         setSelectedTagIds(foundTagIds);
                     }
                 }
 
-                message.success(`Метаданные из файла успешно извлечены`);
+                message.success('Метаданные из файла успешно извлечены');
             }
 
-            // Конвертируем markdown в EditorJS JSON для редактора
             const editorBlocks = markdownToEditorjsBlocks(content);
             const editorJson = JSON.stringify({
                 time: Date.now(),
-                version: "2.31.0",
+                version: '2.31.0',
                 blocks: editorBlocks,
             });
 
-            // Устанавливаем содержимое в форму
             form.setFieldValue('content', editorJson);
             setContent(editorJson);
             setUploadedFileName(file.name);
 
-            // Если метаданных не было, пытаемся извлечь заголовок из первой строки
             if (!match) {
                 const lines = content.split('\n');
                 const firstLine = lines[0]?.trim();
@@ -271,7 +314,7 @@ export function DocumentCreatePage() {
             console.error('Error reading file:', error);
         }
 
-        return false; // Предотвращаем автоматическую загрузку
+        return false;
     };
 
     const uploadProps: UploadProps = {
@@ -285,11 +328,24 @@ export function DocumentCreatePage() {
         },
     };
 
-    const handleCreate = async (values: any) => {
+    const validateExtras = (): string | null => {
+        if (!selectedDocumentTypeId) return 'Выберите тип документа';
+        if (!selectedCategoryId) return 'Выберите категорию';
+        if (participants.length === 0) return 'Добавьте хотя бы одного участника';
+        if (selectedTagIds.length === 0) return 'Добавьте хотя бы один тег';
+        return null;
+    };
+
+    const handleCreate = async (values: DocumentFormValues) => {
+        const extrasError = validateExtras();
+        if (extrasError) {
+            message.error(extrasError);
+            return;
+        }
+
         try {
             setSaving(true);
 
-            // Конвертируем EditorJS JSON → Markdown перед отправкой на бэкенд
             const rawContent: string = values.content || '';
             let markdownContent = rawContent;
             try {
@@ -301,19 +357,19 @@ export function DocumentCreatePage() {
                 // уже Markdown — отправляем как есть
             }
 
-            const documentData = {
-                title: values.title,
-                authorId: values.authorId,
-                categoryId: values.categoryId,
-                publicationDate: values.publicationDate?.toISOString(),
-                tagIds: values.tagIds || [],
-                description: values.description || null,
+            const documentData: CreateDocumentRequest = {
+                title: values.title!,
+                description: values.description ? values.description : null,
+                categoryId: selectedCategoryId!,
+                documentTypeId: selectedDocumentTypeId!,
+                participants,
+                publicationDate: values.publicationDate!.toISOString(),
+                tagIds: selectedTagIds,
                 content: markdownContent,
-            } as CreateDocumentRequest;
+            };
 
             const newDocument = await documentService.create(documentData);
 
-            // Загружаем обложку, если она выбрана
             if (coverFile) {
                 try {
                     await documentService.uploadCover(newDocument.id, coverFile);
@@ -344,9 +400,29 @@ export function DocumentCreatePage() {
         message.info('Содержимое очищено');
     };
 
+    const renderParticipantsPreview = () => {
+        if (participants.length === 0) {
+            return <span style={{color: '#999'}}>Никто не выбран</span>;
+        }
+        return (
+            <Space size={[0, 8]} wrap>
+                {participants.map((p, idx) => {
+                    const author = authorsById.get(p.authorId);
+                    const role = authorshipById.get(p.typeId);
+                    const label = author?.name ?? 'Неизвестный автор';
+                    const roleLabel = role?.title ?? 'неизвестная роль';
+                    return (
+                        <Tag key={`${p.authorId}-${p.typeId}-${idx}`} color="geekblue">
+                            {label} — {roleLabel}
+                        </Tag>
+                    );
+                })}
+            </Space>
+        );
+    };
+
     return (
         <div>
-            {/* Заголовок */}
             <div style={{marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                 <h1>Добавление нового документа</h1>
                 <Button
@@ -358,7 +434,6 @@ export function DocumentCreatePage() {
                 </Button>
             </div>
 
-            {/* Индикатор загрузки */}
             {loading ? (
                 <Card>
                     <div style={{textAlign: 'center', padding: '50px 0'}}>
@@ -366,302 +441,313 @@ export function DocumentCreatePage() {
                     </div>
                 </Card>
             ) : (
-                <>
-                    {/* Форма создания */}
-                    <Card>
-                        <Form
-                            form={form}
-                            layout="vertical"
-                            onFinish={handleCreate}
+                <Card>
+                    <Form<DocumentFormValues>
+                        form={form}
+                        layout="vertical"
+                        onFinish={handleCreate}
+                    >
+                        <Form.Item
+                            name="title"
+                            label="Название"
+                            rules={[
+                                {required: true, message: 'Пожалуйста, введите название документа'},
+                                {min: 3, message: 'Название должно содержать минимум 3 символа'},
+                            ]}
                         >
-                            <Form.Item
-                                name="title"
-                                label="Название"
-                                rules={[
-                                    {required: true, message: 'Пожалуйста, введите название документа'},
-                                    {min: 3, message: 'Название должно содержать минимум 3 символа'},
-                                ]}
-                            >
-                                <Input size="large" placeholder="Введите название документа"/>
-                            </Form.Item>
+                            <Input size="large" placeholder="Введите название документа"/>
+                        </Form.Item>
 
-                            <Form.Item
-                                name="authorId"
-                                label="Автор"
-                                rules={[
-                                    {required: true, message: 'Пожалуйста, выберите автора'},
-                                ]}
+                        <Form.Item
+                            label="Тип документа"
+                            required
+                            validateStatus={selectedDocumentTypeId ? undefined : undefined}
+                        >
+                            <Button
+                                size="large"
+                                icon={<FileTextOutlined/>}
+                                onClick={() => setDocumentTypeModalVisible(true)}
+                                block
+                                style={{textAlign: 'left'}}
                             >
-                                <Space.Compact style={{width: '100%'}}>
-                                    <Input
+                                {selectedDocumentType ? selectedDocumentType.name : 'Выберите тип документа'}
+                            </Button>
+                        </Form.Item>
+
+                        <Form.Item label="Участники" required>
+                            <Space direction="vertical" style={{width: '100%'}} size={8}>
+                                <Button
+                                    size="large"
+                                    icon={<TeamOutlined/>}
+                                    onClick={() => setParticipantsModalVisible(true)}
+                                    block
+                                    style={{textAlign: 'left'}}
+                                >
+                                    {participants.length > 0
+                                        ? `Участников: ${participants.length}`
+                                        : 'Добавить участников'}
+                                </Button>
+                                {renderParticipantsPreview()}
+                            </Space>
+                        </Form.Item>
+
+                        <Form.Item
+                            name="description"
+                            label="Описание/Аннотация"
+                        >
+                            <TextArea
+                                rows={3}
+                                placeholder="Краткое описание документа (опционально)"
+                            />
+                        </Form.Item>
+
+                        <Row gutter={16}>
+                            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                <Form.Item label="Категория" required>
+                                    <Button
                                         size="large"
-                                        placeholder="Нажмите кнопку для выбора автора"
-                                        readOnly
-                                        value={selectedAuthorName}
-                                        style={{flex: 1}}
+                                        icon={<AppstoreOutlined/>}
+                                        onClick={() => setCategoryModalVisible(true)}
+                                        block
+                                        style={{textAlign: 'left'}}
+                                    >
+                                        {selectedCategory ? selectedCategory.title : 'Выберите категорию'}
+                                    </Button>
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} sm={24} md={12} lg={12} xl={12}>
+                                <Form.Item
+                                    name="publicationDate"
+                                    label="Дата публикации"
+                                    rules={[
+                                        {required: true, message: 'Пожалуйста, выберите дату публикации'},
+                                    ]}
+                                >
+                                    <DatePicker
+                                        size="large"
+                                        style={{width: '100%'}}
+                                        placeholder="Выберите дату"
+                                        format="DD.MM.YYYY"
+                                    />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item label="Теги" required>
+                            <Space direction="vertical" style={{width: '100%'}} size={8}>
+                                <Button
+                                    size="large"
+                                    icon={<TagsOutlined/>}
+                                    onClick={() => setTagModalVisible(true)}
+                                    block
+                                    style={{textAlign: 'left'}}
+                                >
+                                    {selectedTagIds.length > 0
+                                        ? `Выбрано тегов: ${selectedTagIds.length}`
+                                        : 'Выберите теги'}
+                                </Button>
+                                {selectedTagIds.length > 0 && (
+                                    <Space size={[0, 8]} wrap>
+                                        {selectedTagIds.map((tagId) => {
+                                            const tag = tags.find((t) => t.id === tagId);
+                                            return tag ? (
+                                                <Tag key={tagId} color="blue">
+                                                    {tag.title}
+                                                </Tag>
+                                            ) : null;
+                                        })}
+                                    </Space>
+                                )}
+                            </Space>
+                        </Form.Item>
+
+                        <Form.Item label="Обложка документа">
+                            <Upload
+                                accept="image/jpeg,image/png,image/webp"
+                                maxCount={1}
+                                showUploadList={false}
+                                beforeUpload={(file) => {
+                                    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                                    if (!allowed.includes(file.type)) {
+                                        message.error('Допустимые форматы: JPEG, PNG, WebP');
+                                        return false;
+                                    }
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        message.error('Файл обложки не должен превышать 5 МБ');
+                                        return false;
+                                    }
+                                    setCoverFile(file);
+                                    setCoverPreview(URL.createObjectURL(file));
+                                    return false;
+                                }}
+                            >
+                                <Button icon={<InboxOutlined/>}>Выбрать изображение</Button>
+                            </Upload>
+                            {coverPreview && (
+                                <div style={{marginTop: 12, position: 'relative', display: 'inline-block'}}>
+                                    <img
+                                        src={coverPreview}
+                                        alt="Превью обложки"
+                                        style={{
+                                            maxWidth: 320,
+                                            maxHeight: 180,
+                                            borderRadius: 8,
+                                            objectFit: 'cover',
+                                            border: '1px solid #d9d9d9',
+                                        }}
                                     />
                                     <Button
-                                        size="large"
-                                        icon={<UserOutlined/>}
-                                        onClick={handleOpenAuthorModal}
+                                        size="small"
+                                        danger
+                                        style={{marginLeft: 12, verticalAlign: 'top'}}
+                                        onClick={() => {
+                                            setCoverFile(null);
+                                            setCoverPreview(null);
+                                        }}
                                     >
-                                        Выбрать
+                                        Удалить
                                     </Button>
-                                </Space.Compact>
-                            </Form.Item>
+                                </div>
+                            )}
+                        </Form.Item>
 
-                            <Form.Item
-                                name="description"
-                                label="Описание/Аннотация"
-                            >
-                                <TextArea
-                                    rows={3}
-                                    placeholder="Краткое описание документа (опционально)"
-                                />
-                            </Form.Item>
+                        <Form.Item label="Загрузка Markdown файла">
+                            <Dragger {...uploadProps}>
+                                <p className="ant-upload-drag-icon">
+                                    <InboxOutlined/>
+                                </p>
+                                <p className="ant-upload-text">
+                                    Нажмите или перетащите Markdown файл в эту область
+                                </p>
+                                <p className="ant-upload-hint">
+                                    Поддерживаются файлы форматов .md и .markdown (максимум 5MB)
+                                    <br/>
+                                    Метаданные из YAML front matter будут автоматически извлечены
+                                </p>
+                                {uploadedFileName && (
+                                    <p style={{marginTop: 8, color: '#52c41a', fontWeight: 'bold'}}>
+                                        ✓ Загружен: {uploadedFileName}
+                                    </p>
+                                )}
+                            </Dragger>
 
-                            <Row gutter={16}>
-                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-                                    <Form.Item
-                                        name="categoryId"
-                                        label="Категория"
-                                        rules={[
-                                            {required: true, message: 'Пожалуйста, выберите категорию'},
-                                        ]}
-                                    >
-                                        <Select
-                                            size="large"
-                                            placeholder="Выберите категорию"
-                                            loading={loading}
-                                            options={categories.map(category => ({
-                                                label: category.title,
-                                                value: category.id,
-                                            }))}
-                                        />
-                                    </Form.Item>
-                                </Col>
-
-                                <Col xs={24} sm={24} md={12} lg={12} xl={12}>
-                                    <Form.Item
-                                        name="publicationDate"
-                                        label="Дата публикации"
-                                        rules={[
-                                            {required: true, message: 'Пожалуйста, выберите дату публикации'},
-                                        ]}
-                                    >
-                                        <DatePicker
-                                            size="large"
-                                            style={{width: '100%'}}
-                                            placeholder="Выберите дату"
-                                            format="DD.MM.YYYY"
-                                        />
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-
-                            <Form.Item
-                                name="tagIds"
-                                label="Теги"
-                                rules={[
-                                    {required: true, message: 'Пожалуйста, добавьте хотя бы один тег'},
+                            <Collapse
+                                ghost
+                                style={{marginTop: 16}}
+                                items={[
+                                    {
+                                        key: '1',
+                                        label: (
+                                            <span>
+                                                <InfoCircleOutlined style={{marginRight: 8}}/>
+                                                Как использовать YAML front matter
+                                            </span>
+                                        ),
+                                        children: YamlFrontMatterExample,
+                                    },
                                 ]}
-                            >
-                                <div>
-                                    <Space.Compact style={{width: '100%', marginBottom: 8}}>
-                                        <Input
-                                            size="large"
-                                            placeholder="Нажмите кнопку для выбора тегов"
-                                            readOnly
-                                            value={`Выбрано тегов: ${selectedTagIds.length}`}
-                                            style={{flex: 1}}
-                                        />
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="content"
+                            label={
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    width: '100%',
+                                }}>
+                                    <span>Содержание</span>
+                                    {previewContent && (
                                         <Button
-                                            size="large"
-                                            icon={<TagsOutlined/>}
-                                            onClick={handleOpenTagModal}
+                                            type="link"
+                                            danger
+                                            size="small"
+                                            onClick={handleClearContent}
+                                            style={{padding: 0}}
                                         >
-                                            Выбрать
+                                            Очистить
                                         </Button>
-                                    </Space.Compact>
-                                    {selectedTagIds.length > 0 && (
-                                        <Space size={[0, 8]} wrap>
-                                            {selectedTagIds.map(tagId => {
-                                                const tag = tags.find(t => t.id === tagId);
-                                                return tag ? (
-                                                    <Tag key={tagId} color="blue">
-                                                        {tag.title}
-                                                    </Tag>
-                                                ) : null;
-                                            })}
-                                        </Space>
                                     )}
                                 </div>
-                            </Form.Item>
+                            }
+                            rules={[
+                                {required: true, message: 'Пожалуйста, введите содержание документа'},
+                                {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
+                            ]}
+                        >
+                            <DocumentEditor onChange={handleContentChange} value={previewContent}/>
+                        </Form.Item>
 
-                            {/* Обложка документа */}
-                            <Form.Item label="Обложка документа">
-                                <Upload
-                                    accept="image/jpeg,image/png,image/webp"
-                                    maxCount={1}
-                                    showUploadList={false}
-                                    beforeUpload={(file) => {
-                                        const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-                                        if (!allowed.includes(file.type)) {
-                                            message.error('Допустимые форматы: JPEG, PNG, WebP');
-                                            return false;
-                                        }
-                                        if (file.size > 5 * 1024 * 1024) {
-                                            message.error('Файл обложки не должен превышать 5 МБ');
-                                            return false;
-                                        }
-                                        setCoverFile(file);
-                                        setCoverPreview(URL.createObjectURL(file));
-                                        return false;
-                                    }}
+                        <Form.Item>
+                            <Space size="middle">
+                                <Button
+                                    type="primary"
+                                    htmlType="submit"
+                                    icon={<SaveOutlined/>}
+                                    size="large"
+                                    loading={saving}
                                 >
-                                    <Button icon={<InboxOutlined/>}>Выбрать изображение</Button>
-                                </Upload>
-                                {coverPreview && (
-                                    <div style={{marginTop: 12, position: 'relative', display: 'inline-block'}}>
-                                        <img
-                                            src={coverPreview}
-                                            alt="Превью обложки"
-                                            style={{
-                                                maxWidth: 320,
-                                                maxHeight: 180,
-                                                borderRadius: 8,
-                                                objectFit: 'cover',
-                                                border: '1px solid #d9d9d9'
-                                            }}
-                                        />
-                                        <Button
-                                            size="small"
-                                            danger
-                                            style={{marginLeft: 12, verticalAlign: 'top'}}
-                                            onClick={() => {
-                                                setCoverFile(null);
-                                                setCoverPreview(null);
-                                            }}
-                                        >
-                                            Удалить
-                                        </Button>
-                                    </div>
-                                )}
-                            </Form.Item>
-
-                            {/* Drag & Drop для загрузки файла */}
-                            <Form.Item label="Загрузка Markdown файла">
-                                <Dragger {...uploadProps}>
-                                    <p className="ant-upload-drag-icon">
-                                        <InboxOutlined/>
-                                    </p>
-                                    <p className="ant-upload-text">
-                                        Нажмите или перетащите Markdown файл в эту область
-                                    </p>
-                                    <p className="ant-upload-hint">
-                                        Поддерживаются файлы форматов .md и .markdown (максимум 5MB)
-                                        <br/>
-                                        Метаданные из YAML front matter будут автоматически извлечены
-                                    </p>
-                                    {uploadedFileName && (
-                                        <p style={{marginTop: 8, color: '#52c41a', fontWeight: 'bold'}}>
-                                            ✓ Загружен: {uploadedFileName}
-                                        </p>
-                                    )}
-                                </Dragger>
-
-                                <Collapse
-                                    ghost
-                                    style={{marginTop: 16}}
-                                    items={[
-                                        {
-                                            key: '1',
-                                            label: (
-                                                <span>
-                                            <InfoCircleOutlined style={{marginRight: 8}}/>
-                                            Как использовать YAML front matter
-                                        </span>
-                                            ),
-                                            children: YamlFrontMatterExample,
-                                        },
-                                    ]}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="content"
-                                label={
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        width: '100%'
-                                    }}>
-                                        <span>Содержание</span>
-                                        {previewContent && (
-                                            <Button
-                                                type="link"
-                                                danger
-                                                size="small"
-                                                onClick={handleClearContent}
-                                                style={{padding: 0}}
-                                            >
-                                                Очистить
-                                            </Button>
-                                        )}
-                                    </div>
-                                }
-                                rules={[
-                                    {required: true, message: 'Пожалуйста, введите содержание документа'},
-                                    {min: 10, message: 'Содержание должно содержать минимум 10 символов'},
-                                ]}
-                            >
-                                <DocumentEditor onChange={handleContentChange} value={previewContent}/>
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Space size="middle">
-                                    <Button
-                                        type="primary"
-                                        htmlType="submit"
-                                        icon={<SaveOutlined/>}
-                                        size="large"
-                                        loading={saving}
-                                    >
-                                        Создать документ
-                                    </Button>
-                                    <Button
-                                        size="large"
-                                        onClick={handleBack}
-                                    >
-                                        Отмена
-                                    </Button>
-                                </Space>
-                            </Form.Item>
-                        </Form>
-                    </Card>
-                </>
+                                    Создать документ
+                                </Button>
+                                <Button
+                                    size="large"
+                                    onClick={handleBack}
+                                >
+                                    Отмена
+                                </Button>
+                            </Space>
+                        </Form.Item>
+                    </Form>
+                </Card>
             )}
 
-            {/* Модальное окно выбора автора */}
-            <AuthorSelectModal
-                visible={authorModalVisible}
+            <DocumentTypeSelectModal
+                visible={documentTypeModalVisible}
+                documentTypes={documentTypes}
+                selectedId={selectedDocumentTypeId}
+                onClose={() => setDocumentTypeModalVisible(false)}
+                onSelect={handleSelectDocumentType}
+            />
+
+            <CategorySelectModal
+                visible={categoryModalVisible}
+                categories={categories}
+                selectedId={selectedCategoryId}
+                onClose={() => setCategoryModalVisible(false)}
+                onSelect={handleSelectCategory}
+                onAddCategory={handleAddCategory}
+            />
+
+            <ParticipantsSelectModal
+                visible={participantsModalVisible}
                 authors={authors}
-                onClose={handleCloseAuthorModal}
-                onSelect={handleSelectAuthor}
+                authorshipTypes={authorshipTypes}
+                selectedParticipants={participants}
+                onClose={() => setParticipantsModalVisible(false)}
+                onSelect={handleSelectParticipants}
                 onAddAuthor={handleAddAuthor}
             />
 
-            {/* Модальное окно выбора тегов */}
             <TagSelectModal
                 visible={tagModalVisible}
                 tags={tags}
                 selectedTagIds={selectedTagIds}
-                onClose={handleCloseTagModal}
+                onClose={() => setTagModalVisible(false)}
                 onSelect={handleSelectTags}
                 onAddTag={handleAddTag}
+            />
+
+            {/* Оставляем закрытым, но пригодится если потребуется быстрый выбор автора */}
+            <AuthorSelectModal
+                visible={authorModalVisible}
+                authors={authors}
+                onClose={() => setAuthorModalVisible(false)}
+                onSelect={handleSelectAuthorFromYaml}
+                onAddAuthor={handleAddAuthor}
             />
         </div>
     );
 }
-

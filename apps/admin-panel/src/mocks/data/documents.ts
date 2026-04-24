@@ -1,4 +1,12 @@
-import type {Author, Category, Document, Tag} from '@/types/document.ts';
+import type {
+    Author,
+    AuthorshipType,
+    Category,
+    Document,
+    DocumentParticipant,
+    DocumentType,
+    Tag,
+} from '@/types/document.ts';
 
 /**
  * Моковые авторы
@@ -37,6 +45,31 @@ export const MOCK_TAGS: Tag[] = [
 ];
 
 /**
+ * Типы документов (соответствует миграции 000007_extend_documents_metadata)
+ */
+export const MOCK_DOCUMENT_TYPES: DocumentType[] = [
+    {id: 1, name: 'Не указан'},
+    {id: 2, name: 'Статья'},
+    {id: 3, name: 'Монография'},
+    {id: 4, name: 'Сборник'},
+    {id: 5, name: 'Рецензия'},
+];
+
+/**
+ * Типы авторства (соответствует миграции 000007_extend_documents_metadata)
+ */
+export const MOCK_AUTHORSHIP_TYPES: AuthorshipType[] = [
+    {id: 1, title: 'автор'},
+    {id: 2, title: 'редактор'},
+    {id: 3, title: 'рецензент'},
+];
+
+const participantFor = (author: Author, authorshipType: AuthorshipType): DocumentParticipant => ({
+    author,
+    authorshipType,
+});
+
+/**
  * Моковые данные документов
  * Синхронизировано с services/gateway/internal/domain/models.go
  */
@@ -47,6 +80,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Важнейший труд Иммануила Канта по теории познания',
         author: MOCK_AUTHORS[0]!,
         category: MOCK_CATEGORIES[0]!,
+        documentType: MOCK_DOCUMENT_TYPES[2]!,
+        participants: [participantFor(MOCK_AUTHORS[0]!, MOCK_AUTHORSHIP_TYPES[0]!)],
         publication_date: '1781-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[1]!, MOCK_TAGS[2]!, MOCK_TAGS[3]!],
         content: '# Критика чистого разума\n\nОсновополагающий философский труд по теории познания...',
@@ -59,6 +94,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Фундаментальная работа Мартина Хайдеггера по онтологии',
         author: MOCK_AUTHORS[1]!,
         category: MOCK_CATEGORIES[1]!,
+        documentType: MOCK_DOCUMENT_TYPES[2]!,
+        participants: [participantFor(MOCK_AUTHORS[1]!, MOCK_AUTHORSHIP_TYPES[0]!)],
         publication_date: '1927-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[4]!, MOCK_TAGS[5]!, MOCK_TAGS[6]!],
         content: '# Бытие и время\n\nФундаментальная онтология Dasein...',
@@ -71,6 +108,8 @@ export const MOCK_DOCUMENTS: Document[] = [
         description: 'Классическое произведение Гегеля по феноменологии и диалектике',
         author: MOCK_AUTHORS[2]!,
         category: MOCK_CATEGORIES[2]!,
+        documentType: MOCK_DOCUMENT_TYPES[2]!,
+        participants: [participantFor(MOCK_AUTHORS[2]!, MOCK_AUTHORSHIP_TYPES[0]!)],
         publication_date: '1807-01-01T00:00:00Z',
         tags: [MOCK_TAGS[0]!, MOCK_TAGS[7]!, MOCK_TAGS[8]!, MOCK_TAGS[9]!],
         content: '# Феноменология духа\n\nДиалектическое развитие сознания...',
@@ -84,12 +123,24 @@ export const MOCK_DOCUMENTS: Document[] = [
  */
 export function createMockDocument(data: Partial<Document>): Document {
     const now = new Date().toISOString();
+    const fallbackAuthor = MOCK_AUTHORS[0]!;
+    const fallbackCategory = MOCK_CATEGORIES[0]!;
+    const fallbackDocumentType = MOCK_DOCUMENT_TYPES[0]!;
+    const fallbackAuthorship = MOCK_AUTHORSHIP_TYPES[0]!;
+
+    const author = data.author || fallbackAuthor;
+    const participants = data.participants && data.participants.length > 0
+        ? data.participants
+        : [participantFor(author, fallbackAuthorship)];
+
     return {
         id: `550e8400-e29b-41d4-a716-4466554401${String(MOCK_DOCUMENTS.length + 1).padStart(2, '0')}`,
         title: data.title || 'Новый документ',
         description: data.description,
-        author: data.author || MOCK_AUTHORS[0]!,
-        category: data.category || MOCK_CATEGORIES[0]!,
+        author,
+        category: data.category || fallbackCategory,
+        documentType: data.documentType || fallbackDocumentType,
+        participants,
         publication_date: data.publication_date || new Date().toISOString(),
         tags: data.tags || [],
         content: data.content || '# Новый документ\n\nСодержание документа...',
@@ -97,4 +148,3 @@ export function createMockDocument(data: Partial<Document>): Document {
         updated_at: now,
     };
 }
-
