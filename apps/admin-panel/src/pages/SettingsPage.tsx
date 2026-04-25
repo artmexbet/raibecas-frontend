@@ -1,26 +1,106 @@
-import { useState } from 'react';
+import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
 import {
-  Card,
+  Button,
   Form,
   Input,
-  Button,
-  Switch,
-  Select,
-  Divider,
-  message,
-  Tabs,
-  Space,
   InputNumber,
+  Select,
+  Space,
+  Switch,
+  Tabs,
+  message,
 } from 'antd';
+import type { FormInstance } from 'antd';
 import {
-  SettingOutlined,
-  SafetyOutlined,
   BellOutlined,
   GlobalOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons';
+import { PageHeader, SectionLabel } from '@/components';
 
 const { Option } = Select;
 const { TextArea } = Input;
+
+/* ------------------------------------------------------------------ */
+/* Shared card shell for settings sections                            */
+/* ------------------------------------------------------------------ */
+
+const SettingsSurface = memo(function SettingsSurface({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--hairline)',
+        borderRadius: 12,
+        padding: '28px 32px',
+      }}
+    >
+      {children}
+    </div>
+  );
+});
+
+const FormActions = memo(function FormActions({
+  loading,
+  form,
+  onCancel,
+}: {
+  loading: boolean;
+  form: FormInstance;
+  onCancel?: () => void;
+}) {
+  const onReset = useCallback(() => {
+    form.resetFields();
+    if (onCancel) onCancel();
+  }, [form, onCancel]);
+  return (
+    <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
+      <Space>
+        <Button type="primary" htmlType="submit" loading={loading}>
+          Сохранить изменения
+        </Button>
+        <Button onClick={onReset} disabled={loading}>
+          Сбросить
+        </Button>
+      </Space>
+    </Form.Item>
+  );
+});
+
+/* ------------------------------------------------------------------ */
+/* Main component                                                     */
+/* ------------------------------------------------------------------ */
+
+const GENERAL_INITIAL = {
+  siteName: 'Админ-панель Raibecas',
+  siteDescription: 'Система управления документами и пользователями',
+  language: 'ru',
+  timezone: 'Europe/Moscow',
+  maintenanceMode: false,
+};
+
+const SECURITY_INITIAL = {
+  passwordMinLength: 8,
+  passwordRequireUppercase: true,
+  passwordRequireNumbers: true,
+  passwordRequireSpecialChars: true,
+  sessionTimeout: 60,
+  maxLoginAttempts: 5,
+  lockoutDuration: 30,
+  twoFactorAuth: false,
+};
+
+const NOTIFICATIONS_INITIAL = {
+  emailNotifications: true,
+  newUserRequests: true,
+  documentChanges: true,
+  systemAlerts: true,
+  emailFrom: 'noreply@raibecas.kz',
+  smtpHost: '',
+  smtpPort: 587,
+  smtpUsername: '',
+  smtpPassword: '',
+};
 
 export function SettingsPage() {
   const [generalForm] = Form.useForm();
@@ -28,64 +108,39 @@ export function SettingsPage() {
   const [notificationForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
-  const handleSaveGeneral = async (values: any) => {
-    try {
-      setLoading(true);
-      console.log('Сохранение общих настроек:', values);
-      // TODO: Отправить запрос на сервер
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success('Общие настройки успешно сохранены');
-    } catch (error) {
-      console.error('Ошибка при сохранении настроек:', error);
-      message.error('Не удалось сохранить настройки');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const makeSaveHandler = useCallback(
+    (label: string) => async (values: unknown) => {
+      try {
+        setLoading(true);
+        console.log(`Сохранение настроек [${label}]:`, values);
+        // TODO: отправить запрос на сервер
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        message.success(`Настройки "${label}" сохранены`);
+      } catch (error) {
+        console.error(`Ошибка при сохранении настроек [${label}]:`, error);
+        message.error('Не удалось сохранить настройки');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
-  const handleSaveSecurity = async (values: any) => {
-    try {
-      setLoading(true);
-      console.log('Сохранение настроек безопасности:', values);
-      // TODO: Отправить запрос на сервер
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success('Настройки безопасности успешно сохранены');
-    } catch (error) {
-      console.error('Ошибка при сохранении настроек:', error);
-      message.error('Не удалось сохранить настройки');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveNotifications = async (values: any) => {
-    try {
-      setLoading(true);
-      console.log('Сохранение настроек уведомлений:', values);
-      // TODO: Отправить запрос на сервер
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success('Настройки уведомлений успешно сохранены');
-    } catch (error) {
-      console.error('Ошибка при сохранении настроек:', error);
-      message.error('Не удалось сохранить настройки');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSaveGeneral = useMemo(() => makeSaveHandler('Общие'), [makeSaveHandler]);
+  const handleSaveSecurity = useMemo(() => makeSaveHandler('Безопасность'), [makeSaveHandler]);
+  const handleSaveNotifications = useMemo(
+    () => makeSaveHandler('Уведомления'),
+    [makeSaveHandler],
+  );
 
   const generalSettings = (
-    <Card>
+    <SettingsSurface>
+      <SectionLabel>Идентификация платформы</SectionLabel>
       <Form
         form={generalForm}
         layout="vertical"
         onFinish={handleSaveGeneral}
-        initialValues={{
-          siteName: 'Админ-панель Raibecas',
-          siteDescription: 'Система управления документами и пользователями',
-          language: 'ru',
-          timezone: 'Europe/Moscow',
-          maintenanceMode: false,
-        }}
+        initialValues={GENERAL_INITIAL}
       >
         <Form.Item
           label="Название сайта"
@@ -95,20 +150,13 @@ export function SettingsPage() {
           <Input placeholder="Название вашего сайта" />
         </Form.Item>
 
-        <Form.Item
-          label="Описание сайта"
-          name="siteDescription"
-        >
-          <TextArea
-            rows={3}
-            placeholder="Краткое описание сайта"
-          />
+        <Form.Item label="Описание сайта" name="siteDescription">
+          <TextArea rows={3} placeholder="Краткое описание сайта" />
         </Form.Item>
 
-        <Form.Item
-          label="Язык системы"
-          name="language"
-        >
+        <SectionLabel marginTop={12}>Локализация и&nbsp;часовой пояс</SectionLabel>
+
+        <Form.Item label="Язык системы" name="language">
           <Select>
             <Option value="ru">Русский</Option>
             <Option value="en">English</Option>
@@ -116,10 +164,7 @@ export function SettingsPage() {
           </Select>
         </Form.Item>
 
-        <Form.Item
-          label="Часовой пояс"
-          name="timezone"
-        >
+        <Form.Item label="Часовой пояс" name="timezone">
           <Select>
             <Option value="Europe/Moscow">Москва (UTC+3)</Option>
             <Option value="Asia/Almaty">Алматы (UTC+6)</Option>
@@ -127,7 +172,7 @@ export function SettingsPage() {
           </Select>
         </Form.Item>
 
-        <Divider />
+        <SectionLabel marginTop={12}>Режим обслуживания</SectionLabel>
 
         <Form.Item
           label="Режим обслуживания"
@@ -138,39 +183,20 @@ export function SettingsPage() {
           <Switch />
         </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Сохранить изменения
-            </Button>
-            <Button onClick={() => generalForm.resetFields()}>
-              Сбросить
-            </Button>
-          </Space>
-        </Form.Item>
+        <FormActions loading={loading} form={generalForm} />
       </Form>
-    </Card>
+    </SettingsSurface>
   );
 
   const securitySettings = (
-    <Card>
+    <SettingsSurface>
+      <SectionLabel>Требования к паролю</SectionLabel>
       <Form
         form={securityForm}
         layout="vertical"
         onFinish={handleSaveSecurity}
-        initialValues={{
-          passwordMinLength: 8,
-          passwordRequireUppercase: true,
-          passwordRequireNumbers: true,
-          passwordRequireSpecialChars: true,
-          sessionTimeout: 60,
-          maxLoginAttempts: 5,
-          lockoutDuration: 30,
-          twoFactorAuth: false,
-        }}
+        initialValues={SECURITY_INITIAL}
       >
-        <h3>Требования к паролю</h3>
-
         <Form.Item
           label="Минимальная длина пароля"
           name="passwordMinLength"
@@ -203,9 +229,7 @@ export function SettingsPage() {
           <Switch />
         </Form.Item>
 
-        <Divider />
-
-        <h3>Безопасность сеансов</h3>
+        <SectionLabel marginTop={24}>Безопасность сеансов</SectionLabel>
 
         <Form.Item
           label="Время сеанса (минуты)"
@@ -223,58 +247,34 @@ export function SettingsPage() {
           <InputNumber min={3} max={10} />
         </Form.Item>
 
-        <Form.Item
-          label="Длительность блокировки (минуты)"
-          name="lockoutDuration"
-        >
+        <Form.Item label="Длительность блокировки (минуты)" name="lockoutDuration">
           <InputNumber min={5} max={1440} />
         </Form.Item>
 
-        <Divider />
+        <SectionLabel marginTop={24}>Двухфакторная аутентификация</SectionLabel>
 
         <Form.Item
-          label="Двухфакторная аутентификация"
+          label="Требовать 2FA для всех пользователей"
           name="twoFactorAuth"
           valuePropName="checked"
-          tooltip="Требовать двухфакторную аутентификацию для всех пользователей"
         >
           <Switch />
         </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Сохранить изменения
-            </Button>
-            <Button onClick={() => securityForm.resetFields()}>
-              Сбросить
-            </Button>
-          </Space>
-        </Form.Item>
+        <FormActions loading={loading} form={securityForm} />
       </Form>
-    </Card>
+    </SettingsSurface>
   );
 
   const notificationSettings = (
-    <Card>
+    <SettingsSurface>
+      <SectionLabel>Уведомления по email</SectionLabel>
       <Form
         form={notificationForm}
         layout="vertical"
         onFinish={handleSaveNotifications}
-        initialValues={{
-          emailNotifications: true,
-          newUserRequests: true,
-          documentChanges: true,
-          systemAlerts: true,
-          emailFrom: 'noreply@raibecas.kz',
-          smtpHost: '',
-          smtpPort: 587,
-          smtpUsername: '',
-          smtpPassword: '',
-        }}
+        initialValues={NOTIFICATIONS_INITIAL}
       >
-        <h3>Уведомления по email</h3>
-
         <Form.Item
           label="Включить email-уведомления"
           name="emailNotifications"
@@ -299,17 +299,11 @@ export function SettingsPage() {
           <Switch />
         </Form.Item>
 
-        <Form.Item
-          label="Системные оповещения"
-          name="systemAlerts"
-          valuePropName="checked"
-        >
+        <Form.Item label="Системные оповещения" name="systemAlerts" valuePropName="checked">
           <Switch />
         </Form.Item>
 
-        <Divider />
-
-        <h3>Настройки SMTP</h3>
+        <SectionLabel marginTop={24}>Настройки SMTP</SectionLabel>
 
         <Form.Item
           label="Email отправителя"
@@ -319,86 +313,68 @@ export function SettingsPage() {
           <Input placeholder="noreply@example.com" />
         </Form.Item>
 
-        <Form.Item
-          label="SMTP хост"
-          name="smtpHost"
-        >
+        <Form.Item label="SMTP хост" name="smtpHost">
           <Input placeholder="smtp.example.com" />
         </Form.Item>
 
-        <Form.Item
-          label="SMTP порт"
-          name="smtpPort"
-        >
+        <Form.Item label="SMTP порт" name="smtpPort">
           <InputNumber min={1} max={65535} style={{ width: '100%' }} />
         </Form.Item>
 
-        <Form.Item
-          label="SMTP имя пользователя"
-          name="smtpUsername"
-        >
+        <Form.Item label="SMTP имя пользователя" name="smtpUsername">
           <Input placeholder="username" />
         </Form.Item>
 
-        <Form.Item
-          label="SMTP пароль"
-          name="smtpPassword"
-        >
+        <Form.Item label="SMTP пароль" name="smtpPassword">
           <Input.Password placeholder="password" />
         </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Сохранить изменения
-            </Button>
-            <Button onClick={() => notificationForm.resetFields()}>
-              Сбросить
-            </Button>
-          </Space>
-        </Form.Item>
+        <FormActions loading={loading} form={notificationForm} />
       </Form>
-    </Card>
+    </SettingsSurface>
   );
 
-  const items = [
-    {
-      key: 'general',
-      label: (
-        <span>
-          <GlobalOutlined /> Общие
-        </span>
-      ),
-      children: generalSettings,
-    },
-    {
-      key: 'security',
-      label: (
-        <span>
-          <SafetyOutlined /> Безопасность
-        </span>
-      ),
-      children: securitySettings,
-    },
-    {
-      key: 'notifications',
-      label: (
-        <span>
-          <BellOutlined /> Уведомления
-        </span>
-      ),
-      children: notificationSettings,
-    },
-  ];
+  const tabItems = useMemo(
+    () => [
+      {
+        key: 'general',
+        label: (
+          <span>
+            <GlobalOutlined style={{ marginRight: 6 }} /> Общие
+          </span>
+        ),
+        children: generalSettings,
+      },
+      {
+        key: 'security',
+        label: (
+          <span>
+            <SafetyOutlined style={{ marginRight: 6 }} /> Безопасность
+          </span>
+        ),
+        children: securitySettings,
+      },
+      {
+        key: 'notifications',
+        label: (
+          <span>
+            <BellOutlined style={{ marginRight: 6 }} /> Уведомления
+          </span>
+        ),
+        children: notificationSettings,
+      },
+    ],
+    [generalSettings, securitySettings, notificationSettings],
+  );
 
   return (
     <div>
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center' }}>
-        <SettingOutlined style={{ fontSize: 24, marginRight: 12 }} />
-        <h1 style={{ margin: 0 }}>Настройки системы</h1>
-      </div>
-
-      <Tabs defaultActiveKey="general" items={items} />
+      <PageHeader
+        eyebrow="Настройки"
+        title="Конфигурация системы"
+        description="Общие параметры платформы, правила безопасности и каналы уведомлений."
+      />
+      <Tabs defaultActiveKey="general" items={tabItems} />
     </div>
   );
 }
