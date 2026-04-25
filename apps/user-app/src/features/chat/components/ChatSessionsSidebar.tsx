@@ -54,7 +54,7 @@ export function ChatSessionsSidebar({
         }}
       >
         <div>
-          <Title level={4} className="chat-sessions-sidebar__title" style={{ marginBottom: 0, color: token.colorText }}>
+          <Title level={4} className="chat-sessions-sidebar__title" style={{ marginBottom: 0, color: token.colorText, fontSize: token.fontSizeLG - 1 }}>
             Ваши чаты
           </Title>
           <p className="chat-sessions-sidebar__caption" style={{ color: token.colorTextSecondary }}>

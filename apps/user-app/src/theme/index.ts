@@ -156,8 +156,8 @@ export const lightTheme: ThemeConfig = {
     colorBgChatBubbleAssistant: 'rgba(220, 210, 205, 0.9)',
     colorBorderChatBubbleUser: 'rgba(30, 16, 18, 0.08)',
     boxShadowChatSoft: '0 18px 44px rgba(31, 24, 20, 0.08)',
-    borderRadiusChatPanel: 28,
-    borderRadiusChatBubble: 30,
+    borderRadiusChatPanel: 16,
+    borderRadiusChatBubble: 14,
   },
   components: {
     Layout: {
@@ -254,8 +254,8 @@ export const darkTheme: ThemeConfig = {
     colorBgChatBubbleAssistant: 'rgba(61, 34, 38, 0.92)',
     colorBorderChatBubbleUser: 'rgba(255,255,255,0.06)',
     boxShadowChatSoft: '0 18px 44px rgba(0, 0, 0, 0.34)',
-    borderRadiusChatPanel: 28,
-    borderRadiusChatBubble: 30,
+    borderRadiusChatPanel: 16,
+    borderRadiusChatBubble: 14,
   },
   components: {
     Layout: {

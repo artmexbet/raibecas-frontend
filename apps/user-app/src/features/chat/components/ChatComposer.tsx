@@ -39,7 +39,7 @@ export function ChatComposer({
       style={{
         border: `1px solid ${token.colorBorderSecondary}`,
         borderRadius: token.borderRadiusChatPanel,
-        padding: `${token.paddingMD}px ${token.paddingLG - 2}px ${token.paddingMD - 2}px`,
+        padding: `${token.paddingSM + 4}px ${token.padding}px ${token.paddingSM + 2}px`,
         background: token.colorBgChatComposer,
         boxShadow: token.boxShadowChatSoft,
       }}
@@ -54,10 +54,10 @@ export function ChatComposer({
               onSend();
             }
           }}
-          autoSize={{ minRows: 3, maxRows: 7 }}
+          autoSize={{ minRows: 1, maxRows: 6 }}
           disabled={!canSendMessage || creatingSession}
           placeholder="Введите текст для поиска..."
-          style={{ fontSize: token.fontSizeLG + 1, lineHeight: 1.5 }}
+          style={{ fontSize: token.fontSize, lineHeight: 1.6 }}
         />
 
       <div className="chat-composer__footer">
@@ -105,8 +105,8 @@ export function ChatComposer({
           onClick={onSend}
           aria-label="Отправить сообщение"
           style={{
-            width: token.controlHeightLG - 2,
-            height: token.controlHeightLG - 2,
+            width: token.controlHeight - 4,
+            height: token.controlHeight - 4,
             borderRadius: token.borderRadius,
             background: token.colorBgChatChip,
             color: token.colorText,
