@@ -11,3 +11,6 @@ export { TagSelectModal } from './TagSelectModal';
 export { DocumentTypeSelectModal } from './DocumentTypeSelectModal';
 export { CategorySelectModal } from './CategorySelectModal';
 export { ParticipantsSelectModal } from './ParticipantsSelectModal';
+export { DocumentMetaFields, ParticipantsPreview } from './DocumentMetaFields';
+export type { DocumentMetaFieldsProps } from './DocumentMetaFields';
+export { PageHeader, SectionLabel, SelectorField, StatCard, ModalHeader } from './ui';

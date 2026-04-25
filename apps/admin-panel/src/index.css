@@ -1,28 +1,266 @@
-/*:root {*/
-/*  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;*/
-/*  line-height: 1.5;*/
-/*  color-scheme: light dark;*/
-/*  color: rgba(255, 255, 255, 0.87);*/
-/*  background-color: #242424;*/
-/*}*/
+/* ---------------------------------------------------------------------------
+ * Raibecas · Admin Panel · Design Foundation
+ *
+ * Aesthetic: "Philosopher's Library" — editorial academic
+ *  · Display serif:  Fraunces  (variable, characterful, scholarly)
+ *  · Body sans:      IBM Plex Sans (precise, technical, pairs with Fraunces)
+ *  · Mono:           JetBrains Mono
+ *
+ * Palette: deep ink navy on warm cream paper, ochre accents, burgundy danger.
+ * ------------------------------------------------------------------------- */
 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=IBM+Plex+Sans:ital,wght@0,300..700;1,400..600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Ink / text --------------------------------------------------------- */
+  --ink-900: #16233d;
+  --ink-800: #1d2a46;
+  --ink-700: #27344f;
+  --ink-600: #3b475e;
+  --ink-500: #5a6578;
+  --ink-400: #7b8497;
+  --ink-300: #a2a9b6;
+  --ink-200: #c9ced7;
+  --ink-100: #e2e5ec;
+
+  /* Paper / surfaces -------------------------------------------------- */
+  --paper: #f7f2e6;
+  --paper-soft: #fbf8ef;
+  --paper-deep: #efe8d4;
+  --surface: #ffffff;
+  --surface-muted: #fafaf6;
+
+  /* Hairlines & dividers ---------------------------------------------- */
+  --hairline: #e6dfca;
+  --hairline-strong: #d3cbb1;
+
+  /* Accents ----------------------------------------------------------- */
+  --ochre: #b4884a;
+  --ochre-deep: #8f6a32;
+  --ochre-soft: #f3e6c6;
+  --burgundy: #8b2a2a;
+  --burgundy-soft: #f6dcd8;
+  --forest: #2d6a4f;
+  --forest-soft: #d9ebe0;
+  --amber: #c08f2c;
+  --amber-soft: #f6e6c0;
+
+  /* Shadows (low, paper-like) ----------------------------------------- */
+  --shadow-xs: 0 1px 0 rgba(22, 35, 61, 0.04);
+  --shadow-sm: 0 1px 2px rgba(22, 35, 61, 0.06), 0 0 0 1px rgba(22, 35, 61, 0.04);
+  --shadow-md: 0 4px 16px -8px rgba(22, 35, 61, 0.12), 0 0 0 1px rgba(22, 35, 61, 0.04);
+  --shadow-lg: 0 24px 48px -24px rgba(22, 35, 61, 0.18), 0 0 0 1px rgba(22, 35, 61, 0.05);
+
+  /* Radii -------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  /* Typography -------------------------------------------------------- */
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino', 'Georgia', serif;
+  --font-body: 'IBM Plex Sans', 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+
+/* Global reset-ish ---------------------------------------------------- */
+html,
 body {
   margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  color: var(--ink-900);
+  background: var(--paper);
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
   display: grid;
   min-width: 320px;
   min-height: 100vh;
   position: relative;
 }
 
-/*.app {*/
-/*  margin: 0 auto;*/
-/*  padding: 2rem;*/
-/*  text-align: center;*/
-/*  position: relative;*/
-/*  z-index: 1;*/
-/*}*/
+/* Editorial headings -------------------------------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-900);
+  font-variation-settings: 'opsz' 120, 'SOFT' 30;
+}
 
-/*h1 {*/
-/*  font-size: 3.2em;*/
-/*  line-height: 1.1;*/
-/*}*/
+h1 {
+  font-size: 36px;
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variation-settings: 'opsz' 144, 'SOFT' 40;
+}
+
+/* Reusable classes (used in pages) ----------------------------------- */
+
+/* Eyebrow — small-caps label sitting above page titles */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ochre-deep);
+}
+
+.eyebrow--ink {
+  color: var(--ink-500);
+}
+
+.hairline {
+  display: block;
+  height: 1px;
+  width: 100%;
+  background: var(--hairline);
+  border: 0;
+}
+
+.hairline-vert {
+  width: 1px;
+  background: var(--hairline);
+}
+
+/* Mono caption for IDs, meta, timestamps */
+.mono-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-400);
+}
+
+/* Section label (small caps, italic serif) for form section headers */
+.section-label {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink-500);
+  letter-spacing: 0.02em;
+}
+
+/* Page scaffolding ---------------------------------------------------- */
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ---------- Ant Design overrides, scoped to our aesthetic ---------- */
+
+/* Card: thinner hairline borders, warmer surfaces */
+.ant-card {
+  border-color: var(--hairline) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.ant-card .ant-card-head {
+  border-bottom-color: var(--hairline) !important;
+  background: var(--surface);
+}
+
+.ant-card .ant-card-head-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--ink-800);
+}
+
+/* Table: editorial header */
+.ant-table-thead > tr > th {
+  background: var(--paper-soft) !important;
+  color: var(--ink-500) !important;
+  font-family: var(--font-body) !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  border-bottom-color: var(--hairline-strong) !important;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom-color: var(--hairline) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--paper-soft) !important;
+}
+
+/* Tags: quieter borders */
+.ant-tag {
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+/* Menu (sidebar) brand feel */
+.ant-menu-dark,
+.ant-layout-sider {
+  background: var(--ink-900) !important;
+}
+
+.ant-menu-dark .ant-menu-item-selected {
+  background: var(--ochre-deep) !important;
+  color: #fff !important;
+}
+
+.ant-menu-dark .ant-menu-item {
+  color: rgba(247, 242, 230, 0.75);
+  border-radius: 0 !important;
+}
+
+.ant-menu-dark .ant-menu-item:hover {
+  color: #fff !important;
+}
+
+/* Drawer/Modal titles in display serif */
+.ant-modal-title {
+  font-family: var(--font-display) !important;
+  font-size: 20px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Inputs & buttons rhythm */
+.ant-btn {
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+}
+
+.ant-btn-lg {
+  font-weight: 500;
+}
+
+/* Alerts: quieter borders, warmer tints */
+.ant-alert {
+  border-color: var(--hairline) !important;
+}
+
+/* Tabs: underline in ochre */
+.ant-tabs-ink-bar {
+  background: var(--ochre) !important;
+}
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--ink-900) !important;
+  font-weight: 600;
+}
+
+/* Scrollbar cosmetics */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-200) transparent;
+}
