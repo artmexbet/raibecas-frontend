@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Typography, theme } from 'antd';
 import type { ChatMessage } from '@/types/chat';
 
@@ -22,7 +24,7 @@ export function MessageBubble({ msg, streaming = false }: MessageBubbleProps) {
       <div
         className="chat-message__bubble"
         style={{
-          padding: `${token.paddingMD - 6}px ${token.paddingLG - 4}px`,
+          padding: `${token.paddingSM + 2}px ${token.padding - 2}px`,
           borderRadius: bubbleRadius,
           borderTopRightRadius: isUser ? token.borderRadiusLG - 2 : bubbleRadius,
           borderTopLeftRadius: isUser ? bubbleRadius : token.borderRadiusLG - 2,
@@ -32,22 +34,32 @@ export function MessageBubble({ msg, streaming = false }: MessageBubbleProps) {
           color: token.colorText,
         }}
       >
-        <Text
-          className="chat-message__text"
-          style={{
-            color: 'inherit',
-            fontSize: 20,
-            lineHeight: 1.5,
-          }}
-        >
-          {msg.content}
-        </Text>
+        {isUser ? (
+          <>
+            <Text
+              className="chat-message__text"
+              style={{
+                color: 'inherit',
+                fontSize: token.fontSize,
+                lineHeight: 1.6,
+              }}
+            >
+              {msg.content}
+            </Text>
 
-        {streaming ? (
-          <span className="chat-message__cursor" style={{ color: token.colorPrimary }} />
-        ) : null}
+            {streaming ? (
+              <span className="chat-message__cursor" style={{ color: token.colorPrimary }} />
+            ) : null}
+          </>
+        ) : (
+          <div className="chat-message__markdown" style={{ fontSize: token.fontSize, color: 'inherit' }}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+            {streaming ? (
+              <span className="chat-message__cursor" style={{ color: token.colorPrimary }} />
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

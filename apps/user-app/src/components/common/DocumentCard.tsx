@@ -33,7 +33,7 @@ export function DocumentCard({ doc }: DocumentCardProps) {
           <div
             style={{
               margin: '-18px -20px 16px',
-              height: 160,
+              height: 300,
               overflow: 'hidden',
               borderRadius: '16px 16px 0 0',
             }}
