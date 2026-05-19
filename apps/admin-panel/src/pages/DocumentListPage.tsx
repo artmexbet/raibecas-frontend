@@ -9,6 +9,7 @@ import {
   EyeOutlined,
   PlusOutlined,
   SearchOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { documentService } from '@/services/document.service';
 import { PageHeader } from '@/components';
@@ -185,6 +186,7 @@ export function DocumentListPage() {
   const [documents, setDocuments] = useState<DocumentType[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [reindexingIds, setReindexingIds] = useState<Set<string>>(new Set());
 
   const loadDocuments = useCallback(async () => {
     try {
@@ -272,6 +274,27 @@ export function DocumentListPage() {
     navigate({ to: '/documents/new' });
   }, [navigate]);
 
+  const handleReindex = useCallback(
+    async (record: DocumentType) => {
+      setReindexingIds((prev) => new Set(prev).add(record.id));
+      try {
+        await documentService.reindex(record.id);
+        message.success('Документ поставлен в очередь на индексацию');
+        await loadDocuments();
+      } catch (error) {
+        message.error('Ошибка при запуске индексации');
+        console.error('Error reindexing document:', error);
+      } finally {
+        setReindexingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(record.id);
+          return next;
+        });
+      }
+    },
+    [loadDocuments],
+  );
+
   const columns: ColumnsType<DocumentType> = useMemo(
     () => [
       {
@@ -288,6 +311,55 @@ export function DocumentListPage() {
         width: '24%',
         render: (_, record) => (
           <ParticipantsCell participants={resolveParticipants(record)} />
+        ),
+      },
+      {
+        title: 'Статус',
+        key: 'is_public',
+        width: 110,
+        filters: [
+          { text: 'Опубликован', value: true },
+          { text: 'Черновик', value: false },
+        ],
+        onFilter: (value, record) => record.is_public === value,
+        render: (_, record) =>
+          record.is_public ? (
+            <Tag color="success">Опубликован</Tag>
+          ) : (
+            <Tag color="orange">Черновик</Tag>
+          ),
+      },
+      {
+        title: 'Индексация',
+        key: 'indexed',
+        width: 160,
+        filters: [
+          { text: 'Проиндексирован', value: true },
+          { text: 'Не проиндексирован', value: false },
+        ],
+        onFilter: (value, record) => record.indexed === value,
+        render: (_, record) => (
+          <Space size={6}>
+            {record.indexed ? (
+              <Tag color="blue">Проиндексирован</Tag>
+            ) : (
+              <Tag color="warning">Не проиндексирован</Tag>
+            )}
+            {!record.indexed && (
+              <Tooltip title="Запустить индексацию">
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ThunderboltOutlined />}
+                  loading={reindexingIds.has(record.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReindex(record);
+                  }}
+                />
+              </Tooltip>
+            )}
+          </Space>
         ),
       },
       {
@@ -412,7 +484,7 @@ export function DocumentListPage() {
         ),
       },
     ],
-    [categoryFilters, documentTypeFilters, handleView, handleEdit, handleDelete],
+    [categoryFilters, documentTypeFilters, handleView, handleEdit, handleDelete, handleReindex, reindexingIds],
   );
 
   return (

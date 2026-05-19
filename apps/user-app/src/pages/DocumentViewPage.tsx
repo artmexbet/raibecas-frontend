@@ -10,6 +10,7 @@ import { bookmarkService } from '@/services/bookmark.service';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
+import { getParticipantsLabel } from '@/utils/participants';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -341,7 +342,21 @@ export function DocumentViewPage() {
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
           <Text type="secondary">
             <UserOutlined style={{ marginRight: 6 }} />
-            {currentDocument.author.name}
+            {currentDocument.participants && currentDocument.participants.length > 0 ? (
+              <span>
+                {currentDocument.participants.map((p, idx) => (
+                  <span key={`${p.author.id}-${p.authorshipType.id}`}>
+                    {idx > 0 && <span style={{ color: '#d9d9d9', margin: '0 6px' }}>·</span>}
+                    {p.author.name}
+                    <em style={{ color: 'var(--colorTextTertiary, #999)', fontSize: 12, marginLeft: 4 }}>
+                      {p.authorshipType.title}
+                    </em>
+                  </span>
+                ))}
+              </span>
+            ) : (
+              getParticipantsLabel(currentDocument)
+            )}
           </Text>
           <span style={{ color: '#d9d9d9' }}>|</span>
           <Text type="secondary">

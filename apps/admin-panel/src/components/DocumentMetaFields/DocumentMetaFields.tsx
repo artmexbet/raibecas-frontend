@@ -1,8 +1,9 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import { Button, Col, DatePicker, Form, Input, Row, Space, Tag, Upload, message } from 'antd';
+import { Button, Col, DatePicker, Form, Input, Row, Space, Switch, Tag, Upload, message } from 'antd';
 import {
   AppstoreOutlined,
   FileTextOutlined,
+  GlobalOutlined,
   InboxOutlined,
   TagsOutlined,
   TeamOutlined,
@@ -55,6 +56,10 @@ export interface DocumentMetaFieldsProps {
   coverPreview: string | null;
   onCoverChange: (file: File | null, previewUrl: string | null) => void;
   originalCoverUrl?: string | null;
+
+  /** Public visibility toggle */
+  isPublic: boolean;
+  onPublicChange: (value: boolean) => void;
 
   /** Loading indicator for reference-data fetches */
   metadataLoading?: boolean;
@@ -141,6 +146,8 @@ export const DocumentMetaFields = memo(function DocumentMetaFields({
   coverPreview,
   onCoverChange,
   originalCoverUrl,
+  isPublic,
+  onPublicChange,
   metadataLoading,
 }: DocumentMetaFieldsProps) {
   const [documentTypeModalVisible, setDocumentTypeModalVisible] = useState(false);
@@ -355,6 +362,26 @@ export const DocumentMetaFields = memo(function DocumentMetaFields({
             </Space>
           </div>
         )}
+      </Form.Item>
+
+      <Form.Item label="Видимость">
+        <Space align="center" size={12}>
+          <Switch
+            checked={isPublic}
+            onChange={onPublicChange}
+            checkedChildren={<GlobalOutlined />}
+            unCheckedChildren="—"
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: isPublic ? 'var(--forest)' : 'var(--ink-500)',
+              fontSize: 13,
+            }}
+          >
+            {isPublic ? 'Опубликован публично' : 'Черновик — скрыт от пользователей'}
+          </span>
+        </Space>
       </Form.Item>
 
       <DocumentTypeSelectModal

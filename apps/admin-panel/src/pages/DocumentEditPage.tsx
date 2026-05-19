@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Alert, Button, Form, Space, Spin, message } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
@@ -23,6 +23,7 @@ import './DocumentEditPage.css';
 import {
   DocumentEditor,
   DocumentMetaFields,
+  FloatingSaveButton,
   PageHeader,
   SectionLabel,
 } from '@/components';
@@ -40,6 +41,7 @@ export function DocumentEditPage() {
   const id = (params as any).id;
   const navigate = useNavigate();
   const [form] = Form.useForm<EditDocumentFormValues>();
+  const inlineSaveRef = useRef<HTMLButtonElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export function DocumentEditPage() {
   const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState<number | undefined>();
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [participants, setParticipants] = useState<DocumentParticipantRef[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
 
   const [editorContent, setEditorContent] = useState<string>('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -114,6 +117,7 @@ export function DocumentEditPage() {
         setSelectedCategoryId(data.category?.id);
         setSelectedDocumentTypeId(data.documentType?.id);
         setSelectedTagIds(data.tags?.map((tag) => tag.id) ?? []);
+        setIsPublic(data.is_public ?? false);
 
         if (data.participants && data.participants.length > 0) {
           setParticipants(
@@ -235,6 +239,7 @@ export function DocumentEditPage() {
           publicationDate: values.publicationDate?.toISOString(),
           tagIds: selectedTagIds,
           content: markdownContent,
+          isPublic,
         };
 
         await documentService.update(document.id, updatedData);
@@ -267,6 +272,7 @@ export function DocumentEditPage() {
       selectedTagIds,
       coverFile,
       navigate,
+      isPublic,
     ],
   );
 
@@ -340,6 +346,8 @@ export function DocumentEditPage() {
           onCoverChange={handleCoverChange}
           originalCoverUrl={document.cover_url ?? null}
           metadataLoading={loadingMetadata}
+          isPublic={isPublic}
+          onPublicChange={setIsPublic}
         />
 
         <SectionLabel marginTop={16}>Содержание</SectionLabel>
@@ -358,6 +366,7 @@ export function DocumentEditPage() {
         <Form.Item>
           <Space size="middle">
             <Button
+              ref={inlineSaveRef}
               type="primary"
               htmlType="submit"
               icon={<SaveOutlined />}
@@ -371,6 +380,13 @@ export function DocumentEditPage() {
             </Button>
           </Space>
         </Form.Item>
+
+        <FloatingSaveButton
+          form={form}
+          loading={saving}
+          label="Сохранить"
+          inlineRef={inlineSaveRef}
+        />
       </Form>
     </div>
   );

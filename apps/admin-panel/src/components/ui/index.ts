@@ -3,3 +3,4 @@ export { SectionLabel } from './SectionLabel';
 export { SelectorField } from './SelectorField';
 export { StatCard } from './StatCard';
 export { ModalHeader } from './ModalHeader';
+export { FloatingSaveButton } from './FloatingSaveButton';
