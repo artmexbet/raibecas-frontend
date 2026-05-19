@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
-import { Card, Spin, Alert, Button, Row, Col, Statistic, Space, Divider } from 'antd';
-import { ArrowLeftOutlined, EyeOutlined, CommentOutlined, ClockCircleOutlined, EditOutlined } from '@ant-design/icons';
+import { Alert, Button, Space, Spin, Tag, Tooltip, message } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { documentService } from '@/services/document.service';
 import { DocumentViewer } from '@/components';
 import type { Document } from '@/types/document';
-import { statisticCardColors, statisticColors } from '@/theme';
 import './DocumentViewPage.css';
 
 export function DocumentViewPage() {
@@ -15,6 +14,7 @@ export function DocumentViewPage() {
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reindexing, setReindexing] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -46,14 +46,18 @@ export function DocumentViewPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleReindex = async () => {
+    if (!document) return;
+    setReindexing(true);
+    try {
+      await documentService.reindex(document.id);
+      message.success('Документ поставлен в очередь на индексацию');
+      await loadDocument(document.id);
+    } catch {
+      message.error('Ошибка при запуске индексации');
+    } finally {
+      setReindexing(false);
+    }
   };
 
   if (loading) {
@@ -95,125 +99,41 @@ export function DocumentViewPage() {
         >
           Назад к списку
         </Button>
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={handleEdit}
-          size="large"
-        >
-          Редактировать
-        </Button>
+        <Space size={8}>
+          {document.is_public ? (
+            <Tag color="success">Опубликован</Tag>
+          ) : (
+            <Tag color="orange">Черновик</Tag>
+          )}
+          {document.indexed ? (
+            <Tag color="blue">Проиндексирован</Tag>
+          ) : (
+            <Tag color="warning">Не проиндексирован</Tag>
+          )}
+        </Space>
+        <Space size={8}>
+          {!document.indexed && (
+            <Tooltip title="Запустить индексацию документа">
+              <Button
+                icon={<ThunderboltOutlined />}
+                loading={reindexing}
+                onClick={handleReindex}
+                size="large"
+              >
+                Индексировать
+              </Button>
+            </Tooltip>
+          )}
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={handleEdit}
+            size="large"
+          >
+            Редактировать
+          </Button>
+        </Space>
       </div>
-
-      {/* Статистика просмотров */}
-      {/*
-      <Card
-        title="Статистика документа"
-        className="document-view-page__stats-card"
-      >
-
-        <Row gutter={16}>
-          <Col span={6}>
-            <div style={{ color: statisticColors.views }}>
-              <Statistic
-                title="Всего просмотров"
-                value={document.views ?? 0}
-                prefix={<EyeOutlined />}
-              />
-            </div>
-          </Col>
-          <Col span={6}>
-            <div style={{ color: statisticColors.notes }}>
-              <Statistic
-                title="Количество заметок"
-                value={document.notesCount ?? 0}
-                prefix={<CommentOutlined />}
-              />
-            </div>
-          </Col>
-          <Col span={6}>
-            <Card
-              variant='outlined'
-              style={{ background: statisticCardColors.date.background }}
-            >
-              <Space orientation="vertical" size="small">
-                <div className="document-view-page__date-card-label">
-                  <ClockCircleOutlined style={{ marginRight: 8 }} />
-                  Дата создания
-                </div>
-                <div className="document-view-page__date-card-value">
-                  {formatDate(document.created_at)}
-                </div>
-              </Space>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card
-              variant='outlined'
-              style={{ background: statisticCardColors.date.background }}
-            >
-              <Space orientation="vertical" size="small">
-                <div className="document-view-page__date-card-label">
-                  <ClockCircleOutlined style={{ marginRight: 8 }} />
-                  Последнее обновление
-                </div>
-                <div className="document-view-page__date-card-value">
-                  {formatDate(document.updated_at)}
-                </div>
-              </Space>
-            </Card>
-          </Col>
-        </Row>
-
-
-        <Divider />
-
-        <div>
-          <h3 className="document-view-page__stats-section-title">Активность пользователей</h3>
-          <Row gutter={16}>
-            <Col span={8}>
-              <Card
-                variant='outlined'
-                style={{ background: statisticCardColors.time.background }}
-              >
-                <div style={{ fontSize: '24px', color: statisticCardColors.time.color }}>
-                  <Statistic
-                    title="Среднее время чтения"
-                    value={12}
-                    suffix="мин"
-                  />
-                </div>
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card
-                variant='outlined'
-                style={{ background: statisticCardColors.users.background }}
-              >
-                <div style={{ fontSize: '24px', color: statisticCardColors.users.color }}>
-                  <Statistic
-                    title="Уникальные пользователи"
-                    value={Math.floor((document.views ?? 0) * 0.7)}
-                  />
-                </div>
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card
-                variant='outlined'
-                style={{ background: statisticCardColors.repeats.background }}
-              >
-                <div style={{ fontSize: '24px', color: statisticCardColors.repeats.color }}>
-                  <Statistic
-                    title="Повторные просмотры"
-                    value={Math.floor((document.views ?? 0) * 0.3)}
-                  />
-                </div>
-              </Card>
-            </Col>
-          </Row>
-        </div>
-      </Card>*/}
 
       {/* Сам документ */}
       <DocumentViewer document={document} />

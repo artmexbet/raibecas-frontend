@@ -4,6 +4,7 @@ import { CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { Link } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import type { Document } from '@/types/document';
+import { getParticipantsLabel } from '@/utils/participants';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -135,7 +136,7 @@ export function DocumentCard({ doc }: DocumentCardProps) {
         >
           <Text type="secondary" style={{ fontSize: 12 }}>
             <UserOutlined style={{ marginRight: 5 }} />
-            {doc.author.name}
+            {getParticipantsLabel(doc)}
           </Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
             <CalendarOutlined style={{ marginRight: 5 }} />

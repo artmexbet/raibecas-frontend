@@ -102,4 +102,9 @@ export const documentService = {
         );
         return response.data.cover_url;
     },
+
+    // Запустить переиндексацию документа
+    async reindex(id: string): Promise<void> {
+        await apiClient.post(API_ENDPOINTS.DOCUMENTS.REINDEX(id));
+    },
 }

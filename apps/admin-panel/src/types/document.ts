@@ -53,6 +53,8 @@ export interface Document {
     cover_url?: string | null; // Presigned URL for cover image (24h TTL)
     created_at: string; // ISO 8601 timestamp
     updated_at: string; // ISO 8601 timestamp
+    indexed: boolean;
+    is_public: boolean;
 }
 
 // Request/Response types синхронизированы с services/gateway/internal/domain/documents.go
@@ -66,6 +68,7 @@ export interface CreateDocumentRequest {
     publicationDate: string; // ISO 8601 timestamp
     tagIds?: number[];
     content?: string; // Markdown (бэкенд сам решает что делать дальше)
+    isPublic?: boolean;
 }
 
 export interface UpdateDocumentRequest {
@@ -77,6 +80,7 @@ export interface UpdateDocumentRequest {
     publicationDate?: string; // ISO 8601 timestamp
     tagIds?: number[];
     content?: string;
+    isPublic?: boolean;
 }
 
 export interface ListDocumentsQuery {

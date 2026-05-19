@@ -14,6 +14,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/documents/${id}`,
     DELETE: (id: string) => `/documents/${id}`,
     COVER: (id: string) => `/documents/${id}/cover`,
+    REINDEX: (id: string) => `/documents/${id}/reindex`,
   },
   AUTHORS: {
     LIST: '/authors',

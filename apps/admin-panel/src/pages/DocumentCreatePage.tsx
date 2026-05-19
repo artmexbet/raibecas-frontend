@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import type { UploadProps } from 'antd';
 import {
@@ -36,6 +36,7 @@ import './DocumentEditPage.css';
 import {
   DocumentEditor,
   DocumentMetaFields,
+  FloatingSaveButton,
   PageHeader,
   SectionLabel,
 } from '@/components';
@@ -100,6 +101,7 @@ export function DocumentCreatePage() {
   const [loading, setLoading] = useState(true);
   const [previewContent, setContent] = useState<string>('');
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  const inlineSaveRef = useRef<HTMLButtonElement>(null);
 
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
@@ -116,6 +118,7 @@ export function DocumentCreatePage() {
   const [selectedDocumentTypeId, setSelectedDocumentTypeId] = useState<number | undefined>();
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [participants, setParticipants] = useState<DocumentParticipantRef[]>([]);
+  const [isPublic, setIsPublic] = useState(false);
 
   /* Parallel fetch (async-parallel) */
   useEffect(() => {
@@ -345,6 +348,7 @@ export function DocumentCreatePage() {
           publicationDate: values.publicationDate!.toISOString(),
           tagIds: selectedTagIds,
           content: markdownContent,
+          isPublic,
         };
 
         const newDocument = await documentService.create(documentData);
@@ -374,6 +378,7 @@ export function DocumentCreatePage() {
       selectedTagIds,
       coverFile,
       navigate,
+      isPublic,
     ],
   );
 
@@ -433,6 +438,8 @@ export function DocumentCreatePage() {
             coverFile={coverFile}
             coverPreview={coverPreview}
             onCoverChange={handleCoverChange}
+            isPublic={isPublic}
+            onPublicChange={setIsPublic}
           />
 
           <SectionLabel marginTop={16}>Импорт Markdown</SectionLabel>
@@ -520,6 +527,7 @@ export function DocumentCreatePage() {
           <Form.Item>
             <Space size="middle">
               <Button
+                ref={inlineSaveRef}
                 type="primary"
                 htmlType="submit"
                 icon={<SaveOutlined />}
@@ -533,6 +541,13 @@ export function DocumentCreatePage() {
               </Button>
             </Space>
           </Form.Item>
+
+          <FloatingSaveButton
+            form={form}
+            loading={saving}
+            label="Создать документ"
+            inlineRef={inlineSaveRef}
+          />
         </Form>
       )}
     </div>
