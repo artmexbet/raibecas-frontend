@@ -42,6 +42,8 @@ export interface Document {
   tags: Tag[];
   content?: string | null;
   cover_url?: string | null; // Presigned URL for cover image (24h TTL)
+  indexed: boolean;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }
