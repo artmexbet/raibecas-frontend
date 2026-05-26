@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Flex, message, theme } from 'antd';
-import { CalendarOutlined, UserOutlined, ArrowLeftOutlined, BookOutlined } from '@ant-design/icons';
-import { Link, useParams } from '@tanstack/react-router';
+import { CalendarOutlined, UserOutlined, ArrowLeftOutlined, BookOutlined, EditOutlined } from '@ant-design/icons';
+import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,6 +10,7 @@ import { bookmarkService } from '@/services/bookmark.service';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
+import { DocumentNoteSidebar } from '@/components/common/DocumentNoteSidebar';
 import { getParticipantsLabel } from '@/utils/participants';
 
 const { Title, Text, Paragraph } = Typography;
@@ -170,10 +171,12 @@ function getBookmarkSaveErrorMessage(error: unknown) {
 
 export function DocumentViewPage() {
   const { id } = useParams({ from: '/documents/$id' });
+  const navigate = useNavigate();
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectionDraft, setSelectionDraft] = useState<SelectionDraft | null>(null);
   const [savingSelection, setSavingSelection] = useState(false);
+  const [savingNote, setSavingNote] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const { token } = theme.useToken();
 
@@ -222,6 +225,44 @@ export function DocumentViewPage() {
       setSavingSelection(false);
     }
   }, [clearSelectionDraft, currentDocument, savingSelection, selectionDraft]);
+
+  const handleCreateNoteFromSelection = useCallback(async () => {
+    if (!currentDocument || !selectionDraft || savingNote || selectionDraft.isTooLong) {
+      return;
+    }
+
+    setSavingNote(true);
+
+    try {
+      // Сохраняем текстовый якорь — первые 80 символов выделенного текста (device-independent)
+      const positionInDocument = selectionDraft.quoteText.slice(0, 80);
+
+      // Сначала сохраняем цитату как закладку, чтобы получить bookmark_id
+      const bookmarkResult = await bookmarkService.create({
+        documentId: currentDocument.id,
+        kind: 'quote',
+        quoteText: selectionDraft.quoteText,
+        context: selectionDraft.context,
+        pageLabel: selectionDraft.pageLabel,
+      });
+
+      clearSelectionDraft(true);
+
+      // Переходим на создание заметки с привязкой к документу и закладке
+      const params = new URLSearchParams({
+        documentId: currentDocument.id,
+        bookmarkId: bookmarkResult.item.id,
+        selectedText: selectionDraft.quoteText,
+        positionInDocument,
+      });
+
+      navigate({ to: `/notes/create?${params.toString()}` });
+    } catch (error) {
+      message.error('Не удалось создать закладку для заметки. Попробуйте ещё раз.');
+    } finally {
+      setSavingNote(false);
+    }
+  }, [clearSelectionDraft, contentRef, currentDocument, navigate, savingNote, selectionDraft]);
 
   useEffect(() => {
     setLoading(true);
@@ -311,7 +352,11 @@ export function DocumentViewPage() {
         ]}
       />
 
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', overflow: 'visible' }}>
+        {/* Стикеры-заметки сбоку */}
+        {currentDocument && (
+          <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
+        )}
         {/* Hero обложка */}
         {currentDocument.cover_url && (
           <div
@@ -470,10 +515,18 @@ export function DocumentViewPage() {
                     type="primary"
                     icon={<BookOutlined />}
                     loading={savingSelection}
-                    disabled={selectionDraft.isTooLong}
+                    disabled={selectionDraft.isTooLong || savingNote}
                     onClick={() => void handleSaveSelection()}
                   >
                     В закладки
+                  </Button>
+                  <Button
+                    icon={<EditOutlined />}
+                    loading={savingNote}
+                    disabled={selectionDraft.isTooLong || savingSelection}
+                    onClick={() => void handleCreateNoteFromSelection()}
+                  >
+                    Заметка
                   </Button>
                   <Button onClick={() => clearSelectionDraft(true)}>Отмена</Button>
                 </Flex>
