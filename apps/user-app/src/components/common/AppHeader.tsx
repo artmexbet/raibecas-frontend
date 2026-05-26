@@ -20,6 +20,7 @@ import raibLogo from '../../raib_logo.svg';
 const NAV_ROUTES: Record<string, string> = {
     catalog: '/catalog',
     bookmarks: '/bookmarks',
+    notes: '/notes',
     settings: '/settings',
     help: '/chat',
 };

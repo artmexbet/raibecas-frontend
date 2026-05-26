@@ -14,6 +14,7 @@ const server = serve({
     // Echo console logs from the browser to the server
     console: true,
   },
+  hostname: "0.0.0.0"
 });
 
 console.log(`🚀 Server running at ${server.url}`);

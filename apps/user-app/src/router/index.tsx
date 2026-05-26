@@ -3,6 +3,10 @@ import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { CatalogPage } from '@/pages/CatalogPage';
 import { BookmarksPage } from '@/pages/BookmarksPage';
+import { NotesPage } from '@/pages/NotesPage';
+import { NoteCreatePage } from '@/pages/NoteCreatePage';
+import { NoteViewPage } from '@/pages/NoteViewPage';
+import { NoteEditPage } from '@/pages/NoteEditPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
 import { ChatPage } from '../pages/ChatPage';
 import { SettingsPage } from '../pages/SettingsPage';
@@ -59,6 +63,9 @@ const documentViewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/documents/$id',
   component: DocumentViewPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    highlight: typeof search.highlight === 'string' ? search.highlight : undefined,
+  }),
   beforeLoad: () => {
     if (!authService.isAuthenticated()) {
       throw redirect({ to: '/login' });
@@ -70,6 +77,50 @@ const bookmarksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/bookmarks',
   component: BookmarksPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const notesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes',
+  component: NotesPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const noteCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes/create',
+  component: NoteCreatePage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const noteViewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes/$id',
+  component: NoteViewPage,
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
+const noteEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/notes/$id/edit',
+  component: NoteEditPage,
   beforeLoad: () => {
     if (!authService.isAuthenticated()) {
       throw redirect({ to: '/login' });
@@ -105,6 +156,10 @@ const routeTree = rootRoute.addChildren([
   registerRoute,
   catalogRoute,
   bookmarksRoute,
+  notesRoute,
+  noteCreateRoute,
+  noteViewRoute,
+  noteEditRoute,
   chatRoute,
   documentViewRoute,
   settingsRoute,

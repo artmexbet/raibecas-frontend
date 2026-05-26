@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Flex, message, theme } from 'antd';
-import { CalendarOutlined, UserOutlined, ArrowLeftOutlined, BookOutlined } from '@ant-design/icons';
-import { Link, useParams } from '@tanstack/react-router';
+import { CalendarOutlined, UserOutlined, ArrowLeftOutlined, BookOutlined, EditOutlined } from '@ant-design/icons';
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -10,6 +10,7 @@ import { bookmarkService } from '@/services/bookmark.service';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
+import { DocumentNoteSidebar } from '@/components/common/DocumentNoteSidebar';
 import { getParticipantsLabel } from '@/utils/participants';
 
 const { Title, Text, Paragraph } = Typography;
@@ -18,6 +19,94 @@ const MIN_BOOKMARK_SELECTION_LENGTH = 3;
 const MAX_BOOKMARK_SELECTION_LENGTH = 4000;
 const MAX_CONTEXT_LENGTH = 280;
 const MAX_PREVIEW_LENGTH = 140;
+const HIGHLIGHT_FADE_DELAY_MS = 4000;
+
+/**
+ * Finds the first occurrence of `searchText` inside `container` using a TreeWalker,
+ * wraps it in a <mark> element with the given className, scrolls to it, and
+ * returns a cleanup function that removes the highlight after a delay.
+ */
+function highlightTextInContainer(
+  container: HTMLElement,
+  searchText: string,
+  className: string,
+): (() => void) | null {
+  const normalizedSearch = searchText.replace(/\s+/g, ' ').trim().toLowerCase();
+  if (!normalizedSearch) {
+    return null;
+  }
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  let accumulated = '';
+  const textNodes: { node: Text; start: number; end: number }[] = [];
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const nodeText = node.textContent ?? '';
+    const start = accumulated.length;
+    accumulated += nodeText;
+    textNodes.push({ node, start, end: accumulated.length });
+  }
+
+  const normalizedAccumulated = accumulated.toLowerCase();
+  const matchIndex = normalizedAccumulated.indexOf(normalizedSearch);
+  if (matchIndex === -1) {
+    return null;
+  }
+
+  const matchEnd = matchIndex + normalizedSearch.length;
+
+  // Find which text nodes contain the match
+  const marks: HTMLElement[] = [];
+  for (const { node, start, end } of textNodes) {
+    if (end <= matchIndex || start >= matchEnd) {
+      continue;
+    }
+
+    const overlapStart = Math.max(0, matchIndex - start);
+    const overlapEnd = Math.min(node.textContent!.length, matchEnd - start);
+
+    const range = document.createRange();
+    range.setStart(node, overlapStart);
+    range.setEnd(node, overlapEnd);
+
+    const mark = document.createElement('mark');
+    mark.className = className;
+    range.surroundContents(mark);
+    marks.push(mark);
+  }
+
+  if (marks.length > 0) {
+    // Scroll to the first mark after a short delay to let layout settle
+    const firstMark = marks[0];
+    if (firstMark) {
+      requestAnimationFrame(() => {
+        firstMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    // Fade out after delay
+    const fadeTimeout = window.setTimeout(() => {
+      for (const mark of marks) {
+        mark.classList.add(`${className}--fading`);
+      }
+    }, HIGHLIGHT_FADE_DELAY_MS);
+
+    // Cleanup: remove marks and restore original text
+    return () => {
+      window.clearTimeout(fadeTimeout);
+      for (const mark of marks) {
+        const parent = mark.parentNode;
+        if (parent) {
+          parent.replaceChild(document.createTextNode(mark.textContent ?? ''), mark);
+          parent.normalize();
+        }
+      }
+    };
+  }
+
+  return null;
+}
 
 type SelectionDraft = {
   quoteText: string;
@@ -170,11 +259,15 @@ function getBookmarkSaveErrorMessage(error: unknown) {
 
 export function DocumentViewPage() {
   const { id } = useParams({ from: '/documents/$id' });
+  const { highlight } = useSearch({ from: '/documents/$id' });
+  const navigate = useNavigate();
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectionDraft, setSelectionDraft] = useState<SelectionDraft | null>(null);
   const [savingSelection, setSavingSelection] = useState(false);
+  const [savingNote, setSavingNote] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const cleanupHighlightRef = useRef<(() => void) | null>(null);
   const { token } = theme.useToken();
 
   const clearSelectionDraft = useCallback((clearNativeSelection = false) => {
@@ -223,6 +316,44 @@ export function DocumentViewPage() {
     }
   }, [clearSelectionDraft, currentDocument, savingSelection, selectionDraft]);
 
+  const handleCreateNoteFromSelection = useCallback(async () => {
+    if (!currentDocument || !selectionDraft || savingNote || selectionDraft.isTooLong) {
+      return;
+    }
+
+    setSavingNote(true);
+
+    try {
+      // Сохраняем текстовый якорь — первые 80 символов выделенного текста (device-independent)
+      const positionInDocument = selectionDraft.quoteText.slice(0, 80);
+
+      // Сначала сохраняем цитату как закладку, чтобы получить bookmark_id
+      const bookmarkResult = await bookmarkService.create({
+        documentId: currentDocument.id,
+        kind: 'quote',
+        quoteText: selectionDraft.quoteText,
+        context: selectionDraft.context,
+        pageLabel: selectionDraft.pageLabel,
+      });
+
+      clearSelectionDraft(true);
+
+      // Переходим на создание заметки с привязкой к документу и закладке
+      const params = new URLSearchParams({
+        documentId: currentDocument.id,
+        bookmarkId: bookmarkResult.item.id,
+        selectedText: selectionDraft.quoteText,
+        positionInDocument,
+      });
+
+      navigate({ to: `/notes/create?${params.toString()}` });
+    } catch (error) {
+      message.error('Не удалось создать закладку для заметки. Попробуйте ещё раз.');
+    } finally {
+      setSavingNote(false);
+    }
+  }, [clearSelectionDraft, contentRef, currentDocument, navigate, savingNote, selectionDraft]);
+
   useEffect(() => {
     setLoading(true);
     setCurrentDocument(null);
@@ -236,6 +367,33 @@ export function DocumentViewPage() {
   useEffect(() => {
     clearSelectionDraft(true);
   }, [clearSelectionDraft, currentDocument?.id]);
+
+  // Highlight bookmark quote text when navigating from a bookmark card
+  useEffect(() => {
+    if (!highlight || !currentDocument?.content || !contentRef.current) {
+      return undefined;
+    }
+
+    // Wait for ReactMarkdown to render the content
+    const timeoutId = window.setTimeout(() => {
+      const container = contentRef.current;
+      if (!container) {
+        return;
+      }
+
+      const cleanup = highlightTextInContainer(container, highlight, 'bookmark-highlight');
+      if (cleanup) {
+        // Store cleanup for when the effect is re-run or component unmounts
+        cleanupHighlightRef.current = cleanup;
+      }
+    }, 300);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      cleanupHighlightRef.current?.();
+      cleanupHighlightRef.current = null;
+    };
+  }, [highlight, currentDocument?.content]);
 
   useEffect(() => {
     if (!currentDocument?.content) {
@@ -311,7 +469,11 @@ export function DocumentViewPage() {
         ]}
       />
 
-      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', overflow: 'visible' }}>
+        {/* Стикеры-заметки сбоку */}
+        {currentDocument && (
+          <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
+        )}
         {/* Hero обложка */}
         {currentDocument.cover_url && (
           <div
@@ -470,10 +632,18 @@ export function DocumentViewPage() {
                     type="primary"
                     icon={<BookOutlined />}
                     loading={savingSelection}
-                    disabled={selectionDraft.isTooLong}
+                    disabled={selectionDraft.isTooLong || savingNote}
                     onClick={() => void handleSaveSelection()}
                   >
                     В закладки
+                  </Button>
+                  <Button
+                    icon={<EditOutlined />}
+                    loading={savingNote}
+                    disabled={selectionDraft.isTooLong || savingSelection}
+                    onClick={() => void handleCreateNoteFromSelection()}
+                  >
+                    Заметка
                   </Button>
                   <Button onClick={() => clearSelectionDraft(true)}>Отмена</Button>
                 </Flex>

@@ -10,6 +10,7 @@ const server = serve({
     hmr: true,
     console: true,
   },
+  hostname: "0.0.0.0"
 });
 
 console.log(`🚀 User App running at ${server.url}`);

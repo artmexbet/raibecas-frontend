@@ -72,5 +72,9 @@ export const bookmarkService = {
       item: normalizeBookmark(response.data.item),
     };
   },
+
+  async delete(id: string): Promise<void> {
+    await apiClient.delete(API_ENDPOINTS.BOOKMARKS.BY_ID(id));
+  },
 };
 

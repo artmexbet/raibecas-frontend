@@ -42,6 +42,7 @@ export function AppLayout({
           width: '100%',
           position: 'relative',
           zIndex: 1,
+          overflow: 'visible',
         }}
       >
         {children}

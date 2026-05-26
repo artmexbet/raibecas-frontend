@@ -1,8 +1,9 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {Button, Empty, Flex, Masonry, Pagination, Spin, theme, Typography} from 'antd';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Button, Empty, Flex, Masonry, message, Pagination, Spin, theme, Typography} from 'antd';
 import {FileTextOutlined, MessageOutlined,} from '@ant-design/icons';
 import {useNavigate} from '@tanstack/react-router';
 import {documentService} from '@/services/document.service';
+import {bookmarkService} from '@/services/bookmark.service';
 import {documentTypeService} from '../services/documentType.service';
 import type {Document, DocumentType, ListDocumentsQuery} from '@/types/document';
 import {AppHeader, DocumentCard, PageBackground} from '@/components/common';
@@ -31,6 +32,11 @@ export function CatalogPage() {
     const [activeDocumentTypeId, setActiveDocumentTypeId] = useState<number | null>(null);
     const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([]);
 
+    // Bookmark state: Map<documentId, bookmarkId>
+    const [bookmarkMap, setBookmarkMap] = useState<Map<string, string>>(new Map());
+    const [bookmarkToggling, setBookmarkToggling] = useState<Set<string>>(new Set());
+    const bookmarkLoadedRef = useRef(false);
+
     const {token} = theme.useToken();
 
     /* Load document types once on mount */
@@ -38,6 +44,26 @@ export function CatalogPage() {
         documentTypeService.getAll()
             .then((types) => setDocumentTypes(Array.isArray(types) ? types : []))
             .catch(() => setDocumentTypes([]));
+    }, []);
+
+    /* Load publication bookmarks once on mount */
+    useEffect(() => {
+        if (bookmarkLoadedRef.current) {
+            return;
+        }
+        bookmarkLoadedRef.current = true;
+
+        bookmarkService.getAll({ kind: 'publication', limit: 100 })
+            .then((result) => {
+                const map = new Map<string, string>();
+                for (const item of result.items) {
+                    map.set(item.document.id, item.id);
+                }
+                setBookmarkMap(map);
+            })
+            .catch(() => {
+                // Silently fail — bookmarks are non-critical
+            });
     }, []);
 
     const fetchDocuments = useCallback(async (query: ListDocumentsQuery) => {
@@ -67,11 +93,57 @@ export function CatalogPage() {
         setPage(1);
     }, []);
 
+    const handleBookmarkToggle = useCallback(async (docId: string) => {
+        if (bookmarkToggling.has(docId)) {
+            return;
+        }
+
+        setBookmarkToggling((prev) => new Set(prev).add(docId));
+
+        try {
+            const existingBookmarkId = bookmarkMap.get(docId);
+
+            if (existingBookmarkId) {
+                // Remove bookmark
+                await bookmarkService.delete(existingBookmarkId);
+                setBookmarkMap((prev) => {
+                    const next = new Map(prev);
+                    next.delete(docId);
+                    return next;
+                });
+                message.success('Убрано из закладок');
+            } else {
+                // Add bookmark
+                const result = await bookmarkService.create({
+                    documentId: docId,
+                    kind: 'publication',
+                });
+                setBookmarkMap((prev) => new Map(prev).set(docId, result.item.id));
+                message.success('Добавлено в закладки');
+            }
+        } catch {
+            message.error('Не удалось обновить закладку. Попробуйте ещё раз.');
+        } finally {
+            setBookmarkToggling((prev) => {
+                const next = new Set(prev);
+                next.delete(docId);
+                return next;
+            });
+        }
+    }, [bookmarkMap, bookmarkToggling]);
+
     const masonryItems = documents.map((doc) => ({
         key: doc.id,
         height: estimateCardHeight(doc),
         data: doc,
-        children: <DocumentCard doc={doc}/>,
+        children: (
+            <DocumentCard
+                doc={doc}
+                isBookmarked={bookmarkMap.has(doc.id)}
+                onBookmarkToggle={handleBookmarkToggle}
+                bookmarkLoading={bookmarkToggling.has(doc.id)}
+            />
+        ),
     }));
 
     return (

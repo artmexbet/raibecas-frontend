@@ -22,6 +22,10 @@ export const API_ENDPOINTS = {
     LIST: '/bookmarks',
     BY_ID: (id: string) => `/bookmarks/${id}`,
   },
+  NOTES: {
+    LIST: '/notes',
+    BY_ID: (id: string) => `/notes/${id}`,
+  },
   CATEGORIES: {
     LIST: '/categories',
   },
