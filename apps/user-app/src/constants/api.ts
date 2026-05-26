@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
   CHAT: {
     SESSIONS: (userID: string) => `/chat/${userID}/sessions`,
   },
+  SEARCH: {
+    QUERY: '/search',
+  },
 } as const;
 
 export const STORAGE_KEYS = {

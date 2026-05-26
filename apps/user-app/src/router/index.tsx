@@ -8,6 +8,7 @@ import { NoteCreatePage } from '@/pages/NoteCreatePage';
 import { NoteViewPage } from '@/pages/NoteViewPage';
 import { NoteEditPage } from '@/pages/NoteEditPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
+import { SearchPage } from '../pages/SearchPage';
 import { ChatPage } from '../pages/ChatPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { authService } from '@/services/auth.service';
@@ -150,6 +151,20 @@ const settingsRoute = createRoute({
   },
 });
 
+const searchRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/search',
+  component: SearchPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search.q === 'string' ? search.q : undefined,
+  }),
+  beforeLoad: () => {
+    if (!authService.isAuthenticated()) {
+      throw redirect({ to: '/login' });
+    }
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
@@ -163,6 +178,7 @@ const routeTree = rootRoute.addChildren([
   chatRoute,
   documentViewRoute,
   settingsRoute,
+  searchRoute,
 ]);
 
 export const router = createRouter({ routeTree });
