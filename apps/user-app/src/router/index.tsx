@@ -8,7 +8,7 @@ import { NoteCreatePage } from '@/pages/NoteCreatePage';
 import { NoteViewPage } from '@/pages/NoteViewPage';
 import { NoteEditPage } from '@/pages/NoteEditPage';
 import { DocumentViewPage } from '@/pages/DocumentViewPage';
-import { SearchPage } from '@/pages/SearchPage';
+import { SearchPage } from '../pages/SearchPage';
 import { ChatPage } from '../pages/ChatPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { authService } from '@/services/auth.service';
