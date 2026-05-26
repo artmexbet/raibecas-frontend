@@ -7,6 +7,7 @@ import {
     FolderOutlined,
     MoonOutlined,
     QuestionCircleOutlined,
+    SearchOutlined,
     SettingOutlined,
     SunOutlined,
 } from '@ant-design/icons';
@@ -19,6 +20,7 @@ import raibLogo from '../../raib_logo.svg';
 // Маппинг ключ навбара → путь
 const NAV_ROUTES: Record<string, string> = {
     catalog: '/catalog',
+    search: '/search',
     bookmarks: '/bookmarks',
     notes: '/notes',
     settings: '/settings',
@@ -27,6 +29,7 @@ const NAV_ROUTES: Record<string, string> = {
 
 const defaultNavItems: NavItem[] = [
     {key: 'catalog', icon: FolderOutlined, label: 'Каталог'},
+    {key: 'search', icon: SearchOutlined, label: 'Поиск'},
     {key: 'bookmarks', icon: BookOutlined, label: 'Закладки'},
     {key: 'notes', icon: EditOutlined, label: 'Заметки'},
     {key: 'settings', icon: SettingOutlined, label: 'Настройки'},
