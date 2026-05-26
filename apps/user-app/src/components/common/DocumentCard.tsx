@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Tag, Typography, theme } from 'antd';
-import { CalendarOutlined, UserOutlined } from '@ant-design/icons';
+import { BookFilled, BookOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { Link } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import type { Document } from '@/types/document';
@@ -10,10 +10,17 @@ const { Title, Text, Paragraph } = Typography;
 
 interface DocumentCardProps {
   doc: Document;
+  /** Whether this document is bookmarked by the current user. */
+  isBookmarked?: boolean;
+  /** Called when the user clicks the bookmark toggle icon. */
+  onBookmarkToggle?: (docId: string) => void;
+  /** Whether a bookmark toggle operation is in progress. */
+  bookmarkLoading?: boolean;
 }
 
-export function DocumentCard({ doc }: DocumentCardProps) {
+export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoading }: DocumentCardProps) {
   const { token } = theme.useToken();
+  const showBookmarkIcon = onBookmarkToggle !== undefined;
 
   return (
     <Link to="/documents/$id" params={{ id: doc.id }} style={{ display: 'block' }}>
@@ -26,9 +33,56 @@ export function DocumentCard({ doc }: DocumentCardProps) {
           background: token.colorBgContainer,
           border: `1px solid ${token.colorBorder}`,
           transition: 'box-shadow 0.2s ease, transform 0.15s ease',
+          position: 'relative',
         }}
         styles={{ body: { padding: '18px 20px' } }}
       >
+        {/* Bookmark toggle icon */}
+        {showBookmarkIcon && (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={isBookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!bookmarkLoading) {
+                onBookmarkToggle(doc.id);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!bookmarkLoading) {
+                  onBookmarkToggle(doc.id);
+                }
+              }
+            }}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              zIndex: 3,
+              width: 32,
+              height: 32,
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: 8,
+              background: isBookmarked ? `${token.colorPrimary}18` : `${token.colorBgContainer}cc`,
+              backdropFilter: 'blur(4px)',
+              cursor: bookmarkLoading ? 'wait' : 'pointer',
+              transition: 'background 0.2s ease, transform 0.15s ease, opacity 0.2s ease',
+              opacity: bookmarkLoading ? 0.6 : 1,
+              fontSize: 16,
+              color: isBookmarked ? token.colorPrimary : token.colorTextTertiary,
+              border: `1px solid ${isBookmarked ? `${token.colorPrimary}30` : token.colorBorderSecondary}`,
+            }}
+          >
+            {isBookmarked ? <BookFilled /> : <BookOutlined />}
+          </div>
+        )}
+
         {/* Обложка */}
         {doc.cover_url ? (
           <div

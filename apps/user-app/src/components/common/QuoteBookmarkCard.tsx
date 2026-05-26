@@ -24,6 +24,7 @@ export function QuoteBookmarkCard({ bookmark }: QuoteBookmarkCardProps) {
       <Link
         to="/documents/$id"
         params={{ id: bookmark.document.id }}
+        search={{ highlight: bookmark.quote_text }}
         style={{ display: 'block', textDecoration: 'none' }}
       >
         <Card
@@ -62,7 +63,7 @@ export function QuoteBookmarkCard({ bookmark }: QuoteBookmarkCardProps) {
                 transform: 'translateY(-4px)',
               }}
             >
-              “
+              &ldquo;
             </span>
 
             <Paragraph
@@ -150,4 +151,3 @@ export function QuoteBookmarkCard({ bookmark }: QuoteBookmarkCardProps) {
     </div>
   );
 }
-

@@ -63,6 +63,9 @@ const documentViewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/documents/$id',
   component: DocumentViewPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    highlight: typeof search.highlight === 'string' ? search.highlight : undefined,
+  }),
   beforeLoad: () => {
     if (!authService.isAuthenticated()) {
       throw redirect({ to: '/login' });
