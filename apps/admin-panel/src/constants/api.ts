@@ -1,5 +1,11 @@
-// API endpoints
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
+// Prefer process.env when available (build-time define), fall back to import.meta.env in dev.
+const runtimeEnv = ((globalThis as any).process?.env ?? (import.meta as any).env ?? {}) as Record<
+  string,
+  string | undefined
+>;
+
+export const API_BASE_URL = (runtimeEnv.BUN_PUBLIC_API_URL || 'http://localhost:8080') + '/api/v1';
+export const CHAT_WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1$/, '/ws/chat');
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -59,6 +65,3 @@ export const API_ENDPOINTS = {
 export const STORAGE_KEYS = {
   ADMIN_DATA: 'admin_data', // Публичная информация о пользователе
 } as const;
-
-
-
