@@ -22,11 +22,12 @@ import {
 import { chatService, type ChatMessage, type ChatSession } from '@/services/chat.service';
 import { authService } from '@/services/auth.service';
 import { PageHeader } from '@/components';
+import { CHAT_WS_BASE_URL } from '@/constants/api';
 
 const { Text } = Typography;
 const { TextArea } = Input;
 
-const WS_BASE_URL = 'ws://localhost:8080/ws/chat';
+const WS_BASE_URL = CHAT_WS_BASE_URL;
 
 /* ------------------------------------------------------------------ */
 /* Hoisted formatters (js-hoist-regexp / avoid re-creation per render)  */
