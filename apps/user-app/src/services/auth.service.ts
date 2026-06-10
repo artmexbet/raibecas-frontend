@@ -14,10 +14,16 @@ function getDeviceId(): string {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
+    const deviceId = getDeviceId();
     const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, {
       ...credentials,
-      device_id: getDeviceId(),
-    }, { withCredentials: true });
+      deviceId,
+    }, {
+      withCredentials: true,
+      headers: {
+        'X-Device-ID': deviceId,
+      },
+    });
 
     const { access_token, user } = response.data;
     tokenManager.setAccessToken(access_token);

@@ -4,7 +4,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from 'react';
 import { Alert, Button, theme } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -23,26 +22,8 @@ import { ChatLaunchContextAlert } from '@/features/chat/components/ChatLaunchCon
 import { ChatComposer } from '@/features/chat/components/ChatComposer';
 import { MessageBubble } from '@/features/chat/components/MessageBubble';
 import { ChatEmptyState } from '@/features/chat/components/ChatEmptyState';
+import { getChatThemeVars } from '@/features/chat/lib/chat-theme';
 import '@/features/chat/chat-page.css';
-
-function getChatPageStyles(token: ReturnType<typeof theme.useToken>['token']): CSSProperties {
-  return {
-    ['--chat-text-primary' as string]: token.colorText,
-    ['--chat-text-secondary' as string]: token.colorTextSecondary,
-    ['--chat-placeholder' as string]: token.colorTextTertiary,
-    ['--chat-border' as string]: token.colorBorderSecondary,
-    ['--chat-divider' as string]: token.colorSplit,
-    ['--chat-sidebar-bg' as string]: token.colorBgChatSidebar,
-    ['--chat-surface-strong' as string]: token.colorBgChatSurface,
-    ['--chat-composer-bg' as string]: token.colorBgChatComposer,
-    ['--chat-chip-bg' as string]: token.colorBgChatChip,
-    ['--chat-chip-bg-hover' as string]: token.colorBgChatChipHover,
-    ['--chat-bubble-user' as string]: token.colorBgChatBubbleUser,
-    ['--chat-bubble-user-border' as string]: token.colorBorderChatBubbleUser,
-    ['--chat-bubble-assistant' as string]: token.colorBgChatBubbleAssistant,
-    ['--chat-shadow-soft' as string]: token.boxShadowChatSoft,
-  };
-}
 
 export function ChatPage() {
   const storedUser = authService.getStoredUser();
@@ -78,7 +59,7 @@ export function ChatPage() {
   } = useChatSessions({ userID, initialRouteState });
   const { isConnected, isStreaming, sendMessage, reconnect } = useChatWebSocket(userID);
 
-  const chatPageStyles = useMemo(() => getChatPageStyles(token), [token]);
+  const chatPageStyles = useMemo(() => getChatThemeVars(token), [token]);
   const allMessages = streamingContent
     ? [...messages, { role: 'assistant', content: streamingContent } satisfies ChatMessage]
     : messages;

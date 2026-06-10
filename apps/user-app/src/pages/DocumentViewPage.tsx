@@ -1,19 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Flex, message, theme } from 'antd';
-import { CalendarOutlined, UserOutlined, ArrowLeftOutlined, BookOutlined, EditOutlined } from '@ant-design/icons';
+import {
+  ArrowLeftOutlined,
+  BookOutlined,
+  EditOutlined,
+  MessageOutlined,
+  ReadOutlined,
+} from '@ant-design/icons';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { bookmarkService } from '@/services/bookmark.service';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
+import { DocumentBriefCard } from '@/components/common/DocumentBriefCard';
 import { DocumentNoteSidebar } from '@/components/common/DocumentNoteSidebar';
-import { getParticipantsLabel } from '@/utils/participants';
+import { InlineDocumentChat } from '@/features/chat/components/InlineDocumentChat';
+import './document-view.css';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
+
+type DocumentViewMode = 'card' | 'reading';
 
 const MIN_BOOKMARK_SELECTION_LENGTH = 3;
 const MAX_BOOKMARK_SELECTION_LENGTH = 4000;
@@ -263,6 +272,9 @@ export function DocumentViewPage() {
   const navigate = useNavigate();
   const [currentDocument, setCurrentDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
+  // Navigating from a bookmark highlight should jump straight to the text.
+  const [viewMode, setViewMode] = useState<DocumentViewMode>(highlight ? 'reading' : 'card');
+  const [chatVisible, setChatVisible] = useState(true);
   const [selectionDraft, setSelectionDraft] = useState<SelectionDraft | null>(null);
   const [savingSelection, setSavingSelection] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
@@ -357,12 +369,14 @@ export function DocumentViewPage() {
   useEffect(() => {
     setLoading(true);
     setCurrentDocument(null);
+    setViewMode(highlight ? 'reading' : 'card');
+    setChatVisible(true);
     documentService
       .getById(id)
       .then(setCurrentDocument)
       .catch(() => setCurrentDocument(null))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [highlight, id]);
 
   useEffect(() => {
     clearSelectionDraft(true);
@@ -460,204 +474,189 @@ export function DocumentViewPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout contentMaxWidth={viewMode === 'reading' ? 1440 : 1100}>
       <Breadcrumb
-        style={{ marginBottom: 24 }}
+        style={{ marginBottom: 20 }}
         items={[
-          { title: <Link to="/catalog">Каталог</Link> },
+          { title: <Link to="/catalog">Каталог работ</Link> },
+          { title: currentDocument.documentType?.name ?? currentDocument.category.title },
           { title: currentDocument.title },
         ]}
       />
 
-      <div style={{ maxWidth: 860, margin: '0 auto', position: 'relative', overflow: 'visible' }}>
-        {/* Стикеры-заметки сбоку */}
-        {currentDocument && (
-          <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
-        )}
-        {/* Hero обложка */}
-        {currentDocument.cover_url && (
-          <div
-            style={{
-              width: '100%',
-              height: 320,
-              borderRadius: 16,
-              overflow: 'hidden',
-              marginBottom: 32,
-            }}
-          >
-            <img
-              src={currentDocument.cover_url}
-              alt={currentDocument.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
-        )}
-        {/* Мета */}
-        <div style={{ marginBottom: 12 }}>
-          <Tag color="blue">{currentDocument.category.title}</Tag>
-        </div>
-
-        <Title level={2} style={{ marginBottom: 16 }}>
+      {/* Заголовок работы (общий для обоих состояний) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <ReadOutlined style={{ fontSize: 22, color: token.colorPrimary, flexShrink: 0 }} />
+        <Title
+          level={3}
+          style={{ margin: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
+        >
           {currentDocument.title}
         </Title>
-
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24, alignItems: 'center' }}>
-          <Text type="secondary">
-            <UserOutlined style={{ marginRight: 6 }} />
-            {currentDocument.participants && currentDocument.participants.length > 0 ? (
-              <span>
-                {currentDocument.participants.map((p, idx) => (
-                  <span key={`${p.author.id}-${p.authorshipType.id}`}>
-                    {idx > 0 && <span style={{ color: '#d9d9d9', margin: '0 6px' }}>·</span>}
-                    {p.author.name}
-                    <em style={{ color: 'var(--colorTextTertiary, #999)', fontSize: 12, marginLeft: 4 }}>
-                      {p.authorshipType.title}
-                    </em>
-                  </span>
-                ))}
-              </span>
-            ) : (
-              getParticipantsLabel(currentDocument)
-            )}
-          </Text>
-          <span style={{ color: '#d9d9d9' }}>|</span>
-          <Text type="secondary">
-            <CalendarOutlined style={{ marginRight: 6 }} />
-            {dayjs(currentDocument.publication_date).format('D MMMM YYYY')}
-          </Text>
-        </div>
-
-        {currentDocument.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-            {currentDocument.tags.map((tag) => (
-              <Tag key={tag.id}>{tag.title}</Tag>
-            ))}
-          </div>
-        )}
-
-        <Divider />
-
-        {/* Описание */}
-        {currentDocument.description && (
-          <Paragraph
-            style={{
-              fontSize: 16,
-              lineHeight: 1.8,
-              color: token.colorTextSecondary,
-              marginBottom: 32,
-            }}
-          >
-            {currentDocument.description}
-          </Paragraph>
-        )}
-
-        {/* Контент */}
-        {currentDocument.content && (
-          <>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                padding: '12px 16px',
-                marginBottom: 18,
-                borderRadius: 14,
-                background: token.colorBgContainer,
-                border: `1px solid ${token.colorBorderSecondary}`,
-              }}
-            >
-              <div>
-                <Text strong style={{ display: 'block', marginBottom: 2 }}>
-                  Выделяйте важные фрагменты по ходу чтения
-                </Text>
-                <Text type="secondary">После выделения текста появится действие для сохранения цитаты в закладки.</Text>
-              </div>
-
-              {selectionDraft ? (
-                <Tag color={selectionDraft.isTooLong ? 'error' : 'blue'} style={{ marginInlineEnd: 0 }}>
-                  {selectionDraft.isTooLong
-                    ? `Слишком длинный фрагмент: ${selectionDraft.quoteText.length} символов`
-                    : `Выделено ${selectionDraft.quoteText.length} символов`}
-                </Tag>
-              ) : null}
-            </div>
-
-            <div ref={contentRef} className="document-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {currentDocument.content}
-              </ReactMarkdown>
-            </div>
-
-            {selectionDraft ? (
-              <div
-                className="animate-fade-in"
-                onMouseDown={(event) => event.preventDefault()}
-                style={{
-                  position: 'fixed',
-                  top: selectionDraft.top,
-                  left: selectionDraft.left,
-                  transform: selectionDraft.placement === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
-                  width: 320,
-                  maxWidth: 'calc(100vw - 24px)',
-                  padding: 14,
-                  borderRadius: 16,
-                  background: token.colorBgElevated,
-                  border: `1px solid ${token.colorBorderSecondary}`,
-                  boxShadow: token.boxShadowSecondary,
-                  zIndex: 1200,
-                }}
-              >
-                <Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>
-                  Цитата для закладки
-                </Text>
-                <Text style={{ display: 'block', fontSize: 14, lineHeight: 1.6, marginBottom: 10 }}>
-                  “{truncateText(selectionDraft.quoteText, MAX_PREVIEW_LENGTH)}”
-                </Text>
-
-                {selectionDraft.context ? (
-                  <Text type="secondary" style={{ display: 'block', fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>
-                    {selectionDraft.context}
-                  </Text>
-                ) : null}
-
-                {selectionDraft.isTooLong ? (
-                  <Text type="danger" style={{ display: 'block', marginBottom: 12 }}>
-                    Выделите не больше {MAX_BOOKMARK_SELECTION_LENGTH} символов, чтобы сохранить цитату.
-                  </Text>
-                ) : null}
-
-                <Flex gap={8} wrap>
-                  <Button
-                    type="primary"
-                    icon={<BookOutlined />}
-                    loading={savingSelection}
-                    disabled={selectionDraft.isTooLong || savingNote}
-                    onClick={() => void handleSaveSelection()}
-                  >
-                    В закладки
-                  </Button>
-                  <Button
-                    icon={<EditOutlined />}
-                    loading={savingNote}
-                    disabled={selectionDraft.isTooLong || savingSelection}
-                    onClick={() => void handleCreateNoteFromSelection()}
-                  >
-                    Заметка
-                  </Button>
-                  <Button onClick={() => clearSelectionDraft(true)}>Отмена</Button>
-                </Flex>
-              </div>
-            ) : null}
-          </>
-        )}
-
-        <Divider />
-
-        <Link to="/catalog">
-          <Button icon={<ArrowLeftOutlined />}>Вернуться в каталог</Button>
-        </Link>
       </div>
+
+      {viewMode === 'card' ? (
+        /* ── Состояние 1: карточка с краткой информацией ── */
+        <DocumentBriefCard doc={currentDocument} onRead={() => setViewMode('reading')} />
+      ) : (
+        /* ── Состояние 2: чтение текста + встроенный чат ── */
+        <>
+          <div style={{ marginBottom: 20 }}>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => setViewMode('card')}>
+              Вернуться в карточку
+            </Button>
+          </div>
+
+          <div className={`doc-reading${chatVisible ? '' : ' doc-reading--full'}`}>
+            <div className="doc-reading__text" style={{ position: 'relative', overflow: 'visible' }}>
+              {/* Стикеры-заметки сбоку */}
+              <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
+
+              {currentDocument.content ? (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      padding: '12px 16px',
+                      marginBottom: 18,
+                      borderRadius: 14,
+                      background: token.colorBgContainer,
+                      border: `1px solid ${token.colorBorderSecondary}`,
+                    }}
+                  >
+                    <div>
+                      <Text strong style={{ display: 'block', marginBottom: 2 }}>
+                        Выделяйте важные фрагменты по ходу чтения
+                      </Text>
+                      <Text type="secondary">
+                        После выделения текста появится действие для сохранения цитаты в закладки.
+                      </Text>
+                    </div>
+
+                    {selectionDraft ? (
+                      <Tag color={selectionDraft.isTooLong ? 'error' : 'blue'} style={{ marginInlineEnd: 0 }}>
+                        {selectionDraft.isTooLong
+                          ? `Слишком длинный фрагмент: ${selectionDraft.quoteText.length} символов`
+                          : `Выделено ${selectionDraft.quoteText.length} символов`}
+                      </Tag>
+                    ) : null}
+                  </div>
+
+                  <div ref={contentRef} className="document-content">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {currentDocument.content}
+                    </ReactMarkdown>
+                  </div>
+
+                  {selectionDraft ? (
+                    <div
+                      className="animate-fade-in"
+                      onMouseDown={(event) => event.preventDefault()}
+                      style={{
+                        position: 'fixed',
+                        top: selectionDraft.top,
+                        left: selectionDraft.left,
+                        transform: selectionDraft.placement === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+                        width: 320,
+                        maxWidth: 'calc(100vw - 24px)',
+                        padding: 14,
+                        borderRadius: 16,
+                        background: token.colorBgElevated,
+                        border: `1px solid ${token.colorBorderSecondary}`,
+                        boxShadow: token.boxShadowSecondary,
+                        zIndex: 1200,
+                      }}
+                    >
+                      <Text type="secondary" style={{ display: 'block', fontSize: 12, marginBottom: 6 }}>
+                        Цитата для закладки
+                      </Text>
+                      <Text style={{ display: 'block', fontSize: 14, lineHeight: 1.6, marginBottom: 10 }}>
+                        “{truncateText(selectionDraft.quoteText, MAX_PREVIEW_LENGTH)}”
+                      </Text>
+
+                      {selectionDraft.context ? (
+                        <Text type="secondary" style={{ display: 'block', fontSize: 12, lineHeight: 1.5, marginBottom: 12 }}>
+                          {selectionDraft.context}
+                        </Text>
+                      ) : null}
+
+                      {selectionDraft.isTooLong ? (
+                        <Text type="danger" style={{ display: 'block', marginBottom: 12 }}>
+                          Выделите не больше {MAX_BOOKMARK_SELECTION_LENGTH} символов, чтобы сохранить цитату.
+                        </Text>
+                      ) : null}
+
+                      <Flex gap={8} wrap>
+                        <Button
+                          type="primary"
+                          icon={<BookOutlined />}
+                          loading={savingSelection}
+                          disabled={selectionDraft.isTooLong || savingNote}
+                          onClick={() => void handleSaveSelection()}
+                        >
+                          В закладки
+                        </Button>
+                        <Button
+                          icon={<EditOutlined />}
+                          loading={savingNote}
+                          disabled={selectionDraft.isTooLong || savingSelection}
+                          onClick={() => void handleCreateNoteFromSelection()}
+                        >
+                          Заметка
+                        </Button>
+                        <Button onClick={() => clearSelectionDraft(true)}>Отмена</Button>
+                      </Flex>
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <Text type="secondary">Текст работы пока недоступен.</Text>
+              )}
+
+              <Divider />
+
+              <Link to="/catalog">
+                <Button icon={<ArrowLeftOutlined />}>Вернуться в каталог</Button>
+              </Link>
+            </div>
+
+            {/* Чат остаётся смонтированным даже когда скрыт — диалог не теряется */}
+            <InlineDocumentChat
+              documentId={currentDocument.id}
+              documentTitle={currentDocument.title}
+              hidden={!chatVisible}
+              onHide={() => setChatVisible(false)}
+            />
+          </div>
+        </>
+      )}
+
+      {/* Плавающая кнопка чата: в карточке или когда чат скрыт */}
+      {viewMode === 'card' || !chatVisible ? (
+        <Button
+          type="primary"
+          shape="circle"
+          icon={<MessageOutlined />}
+          size="large"
+          aria-label="Открыть чат"
+          onClick={() => {
+            setViewMode('reading');
+            setChatVisible(true);
+          }}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            boxShadow: token.boxShadowSecondary,
+            zIndex: 200,
+          }}
+        />
+      ) : null}
     </AppLayout>
   );
 }

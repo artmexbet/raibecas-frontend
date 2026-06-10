@@ -4,8 +4,14 @@ const runtimeEnv = ((globalThis as any).process?.env ?? (import.meta as any).env
   string | undefined
 >;
 
-export const API_BASE_URL = (runtimeEnv.BUN_PUBLIC_API_URL || 'http://localhost:8080') + '/api/v1';
-export const CHAT_WS_BASE_URL = API_BASE_URL.replace(/^http/, 'ws').replace(/\/api\/v1$/, '/ws/chat');
+const API_FALLBACK_ORIGIN = 'http://82.146.19.6:8080';
+const normalizeApiOrigin = (url: string) => url.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
+export const API_TARGET_BASE_URL = normalizeApiOrigin(
+  runtimeEnv.BUN_PUBLIC_API_URL || runtimeEnv.API_URL || API_FALLBACK_ORIGIN
+);
+export const API_BASE_URL = '/api/v1';
+export const CHAT_WS_BASE_URL = `${API_TARGET_BASE_URL.replace(/^http/, 'ws').replace(/\/$/, '')}/ws/chat`;
 
 export const API_ENDPOINTS = {
   AUTH: {

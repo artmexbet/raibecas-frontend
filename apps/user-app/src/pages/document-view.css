@@ -1,0 +1,120 @@
+/* ── State 1: brief-info card ──────────────────────────────────────── */
+
+.doc-brief {
+  display: flex;
+  gap: 36px;
+  align-items: flex-start;
+}
+
+.doc-brief__cover-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.doc-brief__cover {
+  width: 270px;
+  height: 380px;
+  overflow: hidden;
+}
+
+.doc-brief__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.doc-brief__cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.doc-brief__ribbon {
+  position: absolute;
+  top: 0;
+  right: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.doc-brief__ribbon:not(:disabled):hover {
+  transform: translateY(2px);
+}
+
+.doc-brief__ribbon-shape {
+  display: block;
+  width: 40px;
+  height: 56px;
+  border-radius: 0 0 4px 4px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+  box-shadow: 0 10px 24px rgba(76, 44, 39, 0.18);
+  transition: background 0.2s ease;
+}
+
+.doc-brief__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.doc-brief__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-brief__tags {
+  align-items: flex-start;
+}
+
+.doc-brief__tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.doc-brief__abstract {
+  padding: 18px 20px;
+  max-height: 280px;
+  overflow: auto;
+}
+
+@media (max-width: 760px) {
+  .doc-brief {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .doc-brief__cover-wrap {
+    align-self: center;
+  }
+}
+
+/* ── State 2: reading view (text + inline chat) ────────────────────── */
+
+.doc-reading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+  gap: 28px;
+  align-items: start;
+}
+
+.doc-reading--full {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.doc-reading__text {
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .doc-reading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

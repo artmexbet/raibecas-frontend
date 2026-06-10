@@ -2,6 +2,7 @@ export {Logo} from './Logo';
 export {NavBar} from './NavBar';
 export type {NavItem} from './NavBar';
 export {DocumentCard} from './DocumentCard';
+export {DocumentBriefCard} from './DocumentBriefCard';
 export {BookmarkRibbon} from './BookmarkRibbon';
 export {QuoteBookmarkCard} from './QuoteBookmarkCard';
 export {PageBackground} from './PageBackground';
