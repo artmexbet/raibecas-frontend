@@ -10,3 +10,7 @@ export {AuthHeader} from './AuthHeader';
 export {AuthFolderCard} from './AuthFolderCard';
 export {AppHeader} from './AppHeader';
 export {DocumentNoteSidebar} from './DocumentNoteSidebar';
+export {BottomNavBar} from './BottomNavBar';
+export {MobileFilterTabs} from './MobileFilterTabs';
+export type {MobileFilterTab} from './MobileFilterTabs';
+export {ThemeToggleButton} from './ThemeToggleButton';

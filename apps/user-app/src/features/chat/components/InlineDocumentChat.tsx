@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Input, Typography, theme } from 'antd';
+import type { TextAreaRef } from 'antd/es/input/TextArea';
 import {
   ArrowRightOutlined,
   LeftOutlined,
@@ -28,6 +29,11 @@ interface InlineDocumentChatProps {
   onHide: () => void;
 }
 
+export interface InlineDocumentChatHandle {
+  /** Append text to the composer input and focus it. */
+  appendContext: (text: string) => void;
+}
+
 /**
  * Compact inline RAG chat shown next to a document's text. Reuses the existing
  * chat backend: it streams responses over the same WebSocket hook used by the
@@ -35,7 +41,8 @@ interface InlineDocumentChatProps {
  * "open fully" action hands the conversation off to `/chat` (with the document
  * launch context and the created session id) so it continues seamlessly there.
  */
-export function InlineDocumentChat({ documentId, documentTitle, hidden = false, onHide }: InlineDocumentChatProps) {
+export const InlineDocumentChat = forwardRef<InlineDocumentChatHandle, InlineDocumentChatProps>(
+  function InlineDocumentChat({ documentId, documentTitle, hidden = false, onHide }, ref) {
   const { token } = theme.useToken();
   const navigate = useNavigate();
   const userID = authService.getStoredUser()?.id ?? null;
@@ -46,6 +53,14 @@ export function InlineDocumentChat({ documentId, documentTitle, hidden = false, 
   const [sendError, setSendError] = useState<string | null>(null);
   const sessionIdRef = useRef('');
   const bottomRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<TextAreaRef>(null);
+
+  useImperativeHandle(ref, () => ({
+    appendContext: (text: string) => {
+      setInputValue((prev) => (prev.trim() ? `${prev.trim()}\n\n${text}` : text));
+      textAreaRef.current?.focus();
+    },
+  }));
 
   const { isConnected, isStreaming, sendMessage } = useChatWebSocket(userID);
 
@@ -175,6 +190,7 @@ export function InlineDocumentChat({ documentId, documentTitle, hidden = false, 
 
       <div className="doc-chat__composer">
         <TextArea
+          ref={textAreaRef}
           className="doc-chat__composer-input"
           value={inputValue}
           onChange={(event) => setInputValue(event.target.value)}
@@ -209,4 +225,4 @@ export function InlineDocumentChat({ documentId, documentTitle, hidden = false, 
       </div>
     </aside>
   );
-}
+});

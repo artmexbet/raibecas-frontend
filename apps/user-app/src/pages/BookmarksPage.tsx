@@ -1,13 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { Button, Card, Empty, Flex, Masonry, Pagination, Result, Spin, Typography, theme } from 'antd';
+import { Button, Card, Empty, FloatButton, Flex, Masonry, Pagination, Result, Spin, Typography, theme } from 'antd';
 import { BookOutlined, FileTextOutlined, MessageOutlined, ReadOutlined } from '@ant-design/icons';
 import { AppHeader } from '@/components/common/AppHeader';
 import { BookmarkRibbon } from '@/components/common/BookmarkRibbon';
+import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { DocumentCard } from '@/components/common/DocumentCard';
+import { MobileFilterTabs } from '@/components/common/MobileFilterTabs';
 import { PageBackground } from '@/components/common/PageBackground';
 import { QuoteBookmarkCard } from '@/components/common/QuoteBookmarkCard';
 import { bookmarkService } from '@/services/bookmark.service';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { BookmarkItem, BookmarkKind, QuoteBookmark } from '@/types/bookmark';
 import type { Document } from '@/types/document';
 
@@ -43,6 +46,16 @@ function estimatePublicationCardHeight(doc: Document): number {
   const coverHeight = doc.cover_url ? 172 : 0;
 
   return base + tagsHeight + descHeight + coverHeight;
+}
+
+/** Высота компактной горизонтальной карточки публикации (мобильная вёрстка) */
+function estimateMobilePublicationCardHeight(doc: Document): number {
+  const headerH = 28 + 8;
+  const titleLines = Math.min(4, Math.max(1, Math.ceil((doc.title?.length ?? 0) / 18)));
+  const contentH = Math.max(titleLines * 21, doc.cover_url ? 130 : 0);
+  const tagsH = doc.tags.length > 0 ? 12 + 24 : 0;
+  const bodyPadding = 28;
+  return headerH + contentH + tagsH + bodyPadding;
 }
 
 function estimateQuoteCardHeight(bookmark: QuoteBookmark): number {
@@ -83,6 +96,7 @@ export function BookmarksPage() {
   const requestIdRef = useRef(0);
 
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const fetchBookmarks = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -137,7 +151,9 @@ export function BookmarksPage() {
         if (bookmark.kind === 'publication') {
           return {
             key: bookmark.id,
-            height: estimatePublicationCardHeight(bookmark.document),
+            height: isMobile
+              ? estimateMobilePublicationCardHeight(bookmark.document)
+              : estimatePublicationCardHeight(bookmark.document),
             data: bookmark,
             children: (
               <div
@@ -171,7 +187,7 @@ export function BookmarksPage() {
           children: <QuoteBookmarkCard bookmark={bookmark} />,
         };
       }),
-    [items]
+    [items, isMobile]
   );
 
   const publicationCount = items.filter((bookmark) => bookmark.kind === 'publication').length;
@@ -194,7 +210,7 @@ export function BookmarksPage() {
         style={{
           maxWidth: 1600,
           margin: '0 auto',
-          padding: '28px 32px 48px',
+          padding: isMobile ? '12px 16px 100px' : '28px 32px 48px',
           position: 'relative',
           zIndex: 1,
         }}
@@ -208,114 +224,127 @@ export function BookmarksPage() {
           </Text>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: 6,
-              borderRadius: 999,
-              background: token.colorBgContainer,
-              boxShadow: token.boxShadowSecondary,
+        {isMobile ? (
+          <MobileFilterTabs
+            tabs={BOOKMARK_FILTERS.map((filter) => ({ key: filter.key, label: filter.label }))}
+            activeKey={activeFilter}
+            onChange={(key) => {
+              setActiveFilter(key as BookmarkFilterKey);
+              setPage(1);
             }}
-          >
-            {BOOKMARK_FILTERS.map((filter) => {
-              const isActive = activeFilter === filter.key;
+          />
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: 6,
+                borderRadius: 999,
+                background: token.colorBgContainer,
+                boxShadow: token.boxShadowSecondary,
+              }}
+            >
+              {BOOKMARK_FILTERS.map((filter) => {
+                const isActive = activeFilter === filter.key;
 
-              return (
-                <Button
-                  key={filter.key}
-                  type="text"
-                  onClick={() => {
-                    setActiveFilter(filter.key);
-                    setPage(1);
-                  }}
+                return (
+                  <Button
+                    key={filter.key}
+                    type="text"
+                    onClick={() => {
+                      setActiveFilter(filter.key);
+                      setPage(1);
+                    }}
+                    style={{
+                      height: 40,
+                      paddingInline: 18,
+                      borderRadius: 999,
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? token.colorPrimary : token.colorTextSecondary,
+                      background: isActive ? `${token.colorPrimary}12` : 'transparent',
+                    }}
+                  >
+                    {filter.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!isMobile && (
+          <Flex gap={16} wrap style={{ marginBottom: 24 }}>
+            <Card
+              style={{
+                flex: '1 1 260px',
+                borderRadius: 18,
+                background: token.colorBgContainer,
+                border: `1px solid ${token.colorBorder}`,
+              }}
+            >
+              <Flex align="center" gap={12}>
+                <div
                   style={{
-                    height: 40,
-                    paddingInline: 18,
-                    borderRadius: 999,
-                    fontWeight: isActive ? 700 : 500,
-                    color: isActive ? token.colorPrimary : token.colorTextSecondary,
-                    background: isActive ? `${token.colorPrimary}12` : 'transparent',
+                    width: 42,
+                    height: 42,
+                    borderRadius: 14,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: `${token.colorPrimary}12`,
+                    color: token.colorPrimary,
+                    fontSize: 18,
                   }}
                 >
-                  {filter.label}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
+                  <BookOutlined />
+                </div>
+                <div>
+                  <Text type="secondary">Найдено материалов</Text>
+                  <Title level={3} style={{ margin: 0 }}>
+                    {total}
+                  </Title>
+                </div>
+              </Flex>
+            </Card>
 
-        <Flex gap={16} wrap style={{ marginBottom: 24 }}>
-          <Card
-            style={{
-              flex: '1 1 260px',
-              borderRadius: 18,
-              background: token.colorBgContainer,
-              border: `1px solid ${token.colorBorder}`,
-            }}
-          >
-            <Flex align="center" gap={12}>
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 14,
-                  display: 'grid',
-                  placeItems: 'center',
-                  background: `${token.colorPrimary}12`,
-                  color: token.colorPrimary,
-                  fontSize: 18,
-                }}
-              >
-                <BookOutlined />
-              </div>
-              <div>
-                <Text type="secondary">Найдено материалов</Text>
-                <Title level={3} style={{ margin: 0 }}>
-                  {total}
-                </Title>
-              </div>
-            </Flex>
-          </Card>
-
-          <Card
-            style={{
-              flex: '1 1 260px',
-              borderRadius: 18,
-              background: token.colorBgContainer,
-              border: `1px solid ${token.colorBorder}`,
-            }}
-          >
-            <Flex align="center" gap={12}>
-              <div
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 14,
-                  display: 'grid',
-                  placeItems: 'center',
-                  background: token.colorFillSecondary,
-                  color: token.colorText,
-                  fontSize: 18,
-                }}
-              >
-                {activeFilter === 'quotes' ? <FileTextOutlined /> : <ReadOutlined />}
-              </div>
-              <div>
-                <Text type="secondary">На этой странице</Text>
-                <Title level={4} style={{ margin: 0 }}>
-                  {activeFilter === 'quotes'
-                    ? `${quoteCount} цитат`
-                    : activeFilter === 'publications'
-                      ? `${publicationCount} публикаций`
-                      : `${publicationCount} публикаций и ${quoteCount} цитат`}
-                </Title>
-              </div>
-            </Flex>
-          </Card>
-        </Flex>
+            <Card
+              style={{
+                flex: '1 1 260px',
+                borderRadius: 18,
+                background: token.colorBgContainer,
+                border: `1px solid ${token.colorBorder}`,
+              }}
+            >
+              <Flex align="center" gap={12}>
+                <div
+                  style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 14,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: token.colorFillSecondary,
+                    color: token.colorText,
+                    fontSize: 18,
+                  }}
+                >
+                  {activeFilter === 'quotes' ? <FileTextOutlined /> : <ReadOutlined />}
+                </div>
+                <div>
+                  <Text type="secondary">На этой странице</Text>
+                  <Title level={4} style={{ margin: 0 }}>
+                    {activeFilter === 'quotes'
+                      ? `${quoteCount} цитат`
+                      : activeFilter === 'publications'
+                        ? `${publicationCount} публикаций`
+                        : `${publicationCount} публикаций и ${quoteCount} цитат`}
+                  </Title>
+                </div>
+              </Flex>
+            </Card>
+          </Flex>
+        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 100 }}>
@@ -356,21 +385,27 @@ export function BookmarksPage() {
         )}
       </div>
 
-      <Button
-        type="primary"
-        shape="circle"
-        icon={<MessageOutlined />}
-        size="large"
-        style={{
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          width: 56,
-          height: 56,
-          boxShadow: token.boxShadowSecondary,
-          zIndex: 200,
-        }}
-      />
+      {!isMobile && (
+        <Button
+          type="primary"
+          shape="circle"
+          icon={<MessageOutlined />}
+          size="large"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            boxShadow: token.boxShadowSecondary,
+            zIndex: 200,
+          }}
+        />
+      )}
+
+      {isMobile && <FloatButton.BackTop style={{ bottom: 100, right: 16 }} />}
+
+      <BottomNavBar />
     </div>
   );
 }

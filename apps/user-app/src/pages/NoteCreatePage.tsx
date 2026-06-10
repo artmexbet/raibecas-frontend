@@ -2,8 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { Alert, Button, Card, Form, Input, Typography, message, theme } from 'antd';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { PageBackground } from '@/components/common/PageBackground';
 import { noteService } from '@/services/note.service';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -13,6 +15,7 @@ export function NoteCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   // Читаем query-параметры для привязки к документу/закладке
   const searchParams = useMemo(() => {
@@ -56,19 +59,19 @@ export function NoteCreatePage() {
     <div style={{ minHeight: '100vh', background: token.colorBgLayout, position: 'relative' }}>
       <PageBackground opacity={0.04} />
 
-      <AppHeader showSearch={false} />
+      <AppHeader showSearch={isMobile} />
 
       <div
         style={{
           maxWidth: 1600,
           margin: '0 auto',
-          padding: '28px 32px 48px',
+          padding: isMobile ? '12px 16px 100px' : '28px 32px 48px',
           position: 'relative',
           zIndex: 1,
         }}
       >
         {/* Breadcrumb */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: isMobile ? 12 : 24 }}>
           <Text
             style={{ color: token.colorTextSecondary, fontSize: 14, cursor: 'pointer' }}
             onClick={() => navigate({ to: '/notes' })}
@@ -88,10 +91,10 @@ export function NoteCreatePage() {
             margin: '0 auto',
           }}
           styles={{
-            body: { padding: '40px 48px' },
+            body: { padding: isMobile ? '24px 20px' : '40px 48px' },
           }}
         >
-          <Title level={3} style={{ marginBottom: hasLinkedContext ? 16 : 32 }}>
+          <Title level={isMobile ? 4 : 3} style={{ marginBottom: hasLinkedContext ? 16 : 32 }}>
             Создание заметки
           </Title>
 
@@ -172,6 +175,8 @@ export function NoteCreatePage() {
           </Form>
         </Card>
       </div>
+
+      <BottomNavBar />
     </div>
   );
 }

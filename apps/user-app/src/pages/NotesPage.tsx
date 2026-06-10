@@ -4,9 +4,11 @@ import { Button, Card, Col, Empty, Pagination, Result, Row, Spin, Typography, th
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { NoteCard } from '@/components/common/NoteCard';
 import { PageBackground } from '@/components/common/PageBackground';
 import { noteService } from '@/services/note.service';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { NoteItem } from '@/types/note';
 
 const { Title, Text } = Typography;
@@ -33,6 +35,7 @@ export function NotesPage() {
   const navigate = useNavigate();
 
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const fetchNotes = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -95,21 +98,23 @@ export function NotesPage() {
         style={{
           maxWidth: 1600,
           margin: '0 auto',
-          padding: '28px 32px 48px',
+          padding: isMobile ? '12px 16px 100px' : '28px 32px 48px',
           position: 'relative',
           zIndex: 1,
         }}
       >
         {/* Breadcrumb */}
-        <div style={{ marginBottom: 24 }}>
-          <Text style={{ color: token.colorTextSecondary, fontSize: 14 }}>
-            Заметки
-          </Text>
-          <Text style={{ color: token.colorTextSecondary, fontSize: 14, margin: '0 8px' }}>{'>'}</Text>
-          <Text strong style={{ fontSize: 14 }}>
-            Все
-          </Text>
-        </div>
+        {!isMobile && (
+          <div style={{ marginBottom: 24 }}>
+            <Text style={{ color: token.colorTextSecondary, fontSize: 14 }}>
+              Заметки
+            </Text>
+            <Text style={{ color: token.colorTextSecondary, fontSize: 14, margin: '0 8px' }}>{'>'}</Text>
+            <Text strong style={{ fontSize: 14 }}>
+              Все
+            </Text>
+          </div>
+        )}
 
         {/* Контент */}
         {loading ? (
@@ -129,9 +134,9 @@ export function NotesPage() {
           />
         ) : (
           <>
-            <Row gutter={[24, 24]}>
+            <Row gutter={isMobile ? [12, 12] : [24, 24]}>
               {/* Карточка "Новая заметка" */}
-              <Col xs={24} sm={12} md={8} lg={6}>
+              <Col xs={12} sm={12} md={8} lg={6}>
                 <Card
                   hoverable
                   onClick={() => navigate({ to: '/notes/create' })}
@@ -141,7 +146,7 @@ export function NotesPage() {
                     background: token.colorBgContainer,
                     cursor: 'pointer',
                     height: '100%',
-                    minHeight: 280,
+                    minHeight: isMobile ? 160 : 280,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -152,15 +157,15 @@ export function NotesPage() {
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '40px 24px',
+                      padding: isMobile ? '24px 12px' : '40px 24px',
                     },
                   }}
                 >
                   <PlusOutlined
                     style={{
-                      fontSize: 48,
+                      fontSize: isMobile ? 32 : 48,
                       color: token.colorTextQuaternary,
-                      marginBottom: 16,
+                      marginBottom: isMobile ? 8 : 16,
                     }}
                   />
                   <Title
@@ -169,6 +174,7 @@ export function NotesPage() {
                       margin: 0,
                       color: token.colorTextSecondary,
                       fontWeight: 500,
+                      textAlign: 'center',
                     }}
                   >
                     Новая заметка
@@ -178,7 +184,7 @@ export function NotesPage() {
 
               {/* Карточки заметок */}
               {items.map((note) => (
-                <Col xs={24} sm={12} md={8} lg={6} key={note.id}>
+                <Col xs={12} sm={12} md={8} lg={6} key={note.id}>
                   <NoteCard note={note} />
                 </Col>
               ))}
@@ -205,6 +211,8 @@ export function NotesPage() {
           </>
         )}
       </div>
+
+      <BottomNavBar />
     </div>
   );
 }

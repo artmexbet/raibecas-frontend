@@ -1,8 +1,9 @@
 import React from 'react';
 import { Layout, theme } from 'antd';
 import { useTheme } from '@/theme/ThemeContext';
-import { AppHeader, PageBackground } from '@/components/common';
+import { AppHeader, BottomNavBar, PageBackground } from '@/components/common';
 import type { AppHeaderProps } from '@/components/common/AppHeader';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Content, Footer } = Layout;
 
@@ -23,6 +24,7 @@ export function AppLayout({
 }: AppLayoutProps) {
   const { mode } = useTheme();
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const headerBorder = mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
 
@@ -43,12 +45,13 @@ export function AppLayout({
           position: 'relative',
           zIndex: 1,
           overflow: 'visible',
+          ...(isMobile ? { paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 100 } : null),
         }}
       >
         {children}
       </Content>
 
-      {!hideFooter ? (
+      {!hideFooter && !isMobile ? (
         <Footer
           style={{
             textAlign: 'center',
@@ -64,6 +67,8 @@ export function AppLayout({
           Raibecas © {new Date().getFullYear()} — Библиотека научных работ
         </Footer>
       ) : null}
+
+      <BottomNavBar />
     </Layout>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Flex, message, theme } from 'antd';
+import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Drawer, Flex, message, theme } from 'antd';
 import {
   ArrowLeftOutlined,
   BookOutlined,
@@ -18,6 +18,8 @@ import { AppLayout } from '@/layouts/AppLayout';
 import { DocumentBriefCard } from '@/components/common/DocumentBriefCard';
 import { DocumentNoteSidebar } from '@/components/common/DocumentNoteSidebar';
 import { InlineDocumentChat } from '@/features/chat/components/InlineDocumentChat';
+import type { InlineDocumentChatHandle } from '@/features/chat/components/InlineDocumentChat';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import './document-view.css';
 
 const { Title, Text } = Typography;
@@ -280,7 +282,9 @@ export function DocumentViewPage() {
   const [savingNote, setSavingNote] = useState(false);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const cleanupHighlightRef = useRef<(() => void) | null>(null);
+  const inlineChatRef = useRef<InlineDocumentChatHandle>(null);
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const clearSelectionDraft = useCallback((clearNativeSelection = false) => {
     setSelectionDraft(null);
@@ -366,17 +370,37 @@ export function DocumentViewPage() {
     }
   }, [clearSelectionDraft, contentRef, currentDocument, navigate, savingNote, selectionDraft]);
 
+  const handleDiscussInChat = useCallback(() => {
+    if (!selectionDraft) {
+      return;
+    }
+
+    const quoteText = selectionDraft.quoteText;
+    setChatVisible(true);
+    clearSelectionDraft(true);
+
+    requestAnimationFrame(() => {
+      inlineChatRef.current?.appendContext(quoteText);
+      document.querySelector('.doc-chat')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }, [clearSelectionDraft, selectionDraft]);
+
   useEffect(() => {
     setLoading(true);
     setCurrentDocument(null);
     setViewMode(highlight ? 'reading' : 'card');
-    setChatVisible(true);
     documentService
       .getById(id)
       .then(setCurrentDocument)
       .catch(() => setCurrentDocument(null))
       .finally(() => setLoading(false));
   }, [highlight, id]);
+
+  // На десктопе чат открыт по умолчанию; на мобильных — скрыт за FAB,
+  // чтобы не выезжать поверх контента сразу при входе в чтение.
+  useEffect(() => {
+    setChatVisible(!isMobile);
+  }, [id, isMobile]);
 
   useEffect(() => {
     clearSelectionDraft(true);
@@ -476,7 +500,7 @@ export function DocumentViewPage() {
   return (
     <AppLayout contentMaxWidth={viewMode === 'reading' ? 1440 : 1100}>
       <Breadcrumb
-        style={{ marginBottom: 20 }}
+        style={{ marginBottom: 20, fontSize: isMobile ? 12 : undefined }}
         items={[
           { title: <Link to="/catalog">Каталог работ</Link> },
           { title: currentDocument.documentType?.name ?? currentDocument.category.title },
@@ -484,16 +508,19 @@ export function DocumentViewPage() {
         ]}
       />
 
-      {/* Заголовок работы (общий для обоих состояний) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
-        <ReadOutlined style={{ fontSize: 22, color: token.colorPrimary, flexShrink: 0 }} />
-        <Title
-          level={3}
-          style={{ margin: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
-        >
-          {currentDocument.title}
-        </Title>
-      </div>
+      {/* Заголовок работы (общий для обоих состояний); на мобильной карточке заголовок
+          показывается под обложкой внутри DocumentBriefCard */}
+      {!isMobile || viewMode !== 'card' ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+          <ReadOutlined style={{ fontSize: 22, color: token.colorPrimary, flexShrink: 0 }} />
+          <Title
+            level={isMobile ? 4 : 3}
+            style={{ margin: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
+          >
+            {currentDocument.title}
+          </Title>
+        </div>
+      ) : null}
 
       {viewMode === 'card' ? (
         /* ── Состояние 1: карточка с краткой информацией ── */
@@ -501,49 +528,55 @@ export function DocumentViewPage() {
       ) : (
         /* ── Состояние 2: чтение текста + встроенный чат ── */
         <>
-          <div style={{ marginBottom: 20 }}>
-            <Button icon={<ArrowLeftOutlined />} onClick={() => setViewMode('card')}>
+          <div style={{ marginBottom: isMobile ? 12 : 20 }}>
+            <Button
+              icon={<ArrowLeftOutlined />}
+              size={isMobile ? 'small' : 'middle'}
+              onClick={() => setViewMode('card')}
+            >
               Вернуться в карточку
             </Button>
           </div>
 
-          <div className={`doc-reading${chatVisible ? '' : ' doc-reading--full'}`}>
+          <div className={`doc-reading${chatVisible && !isMobile ? '' : ' doc-reading--full'}`}>
             <div className="doc-reading__text" style={{ position: 'relative', overflow: 'visible' }}>
               {/* Стикеры-заметки сбоку */}
               <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
 
               {currentDocument.content ? (
                 <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 12,
-                      padding: '12px 16px',
-                      marginBottom: 18,
-                      borderRadius: 14,
-                      background: token.colorBgContainer,
-                      border: `1px solid ${token.colorBorderSecondary}`,
-                    }}
-                  >
-                    <div>
-                      <Text strong style={{ display: 'block', marginBottom: 2 }}>
-                        Выделяйте важные фрагменты по ходу чтения
-                      </Text>
-                      <Text type="secondary">
-                        После выделения текста появится действие для сохранения цитаты в закладки.
-                      </Text>
-                    </div>
+                  {!isMobile ? (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        padding: '12px 16px',
+                        marginBottom: 18,
+                        borderRadius: 14,
+                        background: token.colorBgContainer,
+                        border: `1px solid ${token.colorBorderSecondary}`,
+                      }}
+                    >
+                      <div>
+                        <Text strong style={{ display: 'block', marginBottom: 2 }}>
+                          Выделяйте важные фрагменты по ходу чтения
+                        </Text>
+                        <Text type="secondary">
+                          После выделения текста появится действие для сохранения цитаты в закладки.
+                        </Text>
+                      </div>
 
-                    {selectionDraft ? (
-                      <Tag color={selectionDraft.isTooLong ? 'error' : 'blue'} style={{ marginInlineEnd: 0 }}>
-                        {selectionDraft.isTooLong
-                          ? `Слишком длинный фрагмент: ${selectionDraft.quoteText.length} символов`
-                          : `Выделено ${selectionDraft.quoteText.length} символов`}
-                      </Tag>
-                    ) : null}
-                  </div>
+                      {selectionDraft ? (
+                        <Tag color={selectionDraft.isTooLong ? 'error' : 'blue'} style={{ marginInlineEnd: 0 }}>
+                          {selectionDraft.isTooLong
+                            ? `Слишком длинный фрагмент: ${selectionDraft.quoteText.length} символов`
+                            : `Выделено ${selectionDraft.quoteText.length} символов`}
+                        </Tag>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div ref={contentRef} className="document-content">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -551,7 +584,7 @@ export function DocumentViewPage() {
                     </ReactMarkdown>
                   </div>
 
-                  {selectionDraft ? (
+                  {selectionDraft && !isMobile ? (
                     <div
                       className="animate-fade-in"
                       onMouseDown={(event) => event.preventDefault()}
@@ -611,6 +644,65 @@ export function DocumentViewPage() {
                       </Flex>
                     </div>
                   ) : null}
+
+                  {selectionDraft && isMobile ? (
+                    <div
+                      className="animate-fade-in"
+                      onMouseDown={(event) => event.preventDefault()}
+                      style={{
+                        position: 'fixed',
+                        top: selectionDraft.top,
+                        left: selectionDraft.left,
+                        transform: selectionDraft.placement === 'top' ? 'translate(-50%, -100%)' : 'translate(-50%, 0)',
+                        display: 'flex',
+                        alignItems: 'stretch',
+                        borderRadius: 999,
+                        overflow: 'hidden',
+                        background: token.colorBgElevated,
+                        boxShadow: token.boxShadowSecondary,
+                        zIndex: 1200,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={handleDiscussInChat}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          border: 'none',
+                          background: 'transparent',
+                          padding: '10px 16px',
+                          fontSize: 13,
+                          color: token.colorText,
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <MessageOutlined /> обсудить в чате
+                      </button>
+                      <div style={{ width: 1, background: token.colorBorderSecondary }} />
+                      <button
+                        type="button"
+                        onClick={() => void handleSaveSelection()}
+                        disabled={selectionDraft.isTooLong || savingSelection}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          border: 'none',
+                          background: 'transparent',
+                          padding: '10px 16px',
+                          fontSize: 13,
+                          color: selectionDraft.isTooLong ? token.colorTextQuaternary : token.colorText,
+                          cursor: selectionDraft.isTooLong ? 'not-allowed' : 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <BookOutlined /> добавить в закладки
+                      </button>
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <Text type="secondary">Текст работы пока недоступен.</Text>
@@ -623,14 +715,39 @@ export function DocumentViewPage() {
               </Link>
             </div>
 
-            {/* Чат остаётся смонтированным даже когда скрыт — диалог не теряется */}
-            <InlineDocumentChat
-              documentId={currentDocument.id}
-              documentTitle={currentDocument.title}
-              hidden={!chatVisible}
-              onHide={() => setChatVisible(false)}
-            />
+            {/* На десктопе чат остаётся смонтированным даже когда скрыт — диалог не теряется */}
+            {!isMobile ? (
+              <InlineDocumentChat
+                ref={inlineChatRef}
+                documentId={currentDocument.id}
+                documentTitle={currentDocument.title}
+                hidden={!chatVisible}
+                onHide={() => setChatVisible(false)}
+              />
+            ) : null}
           </div>
+
+          {/* На мобильных чат открывается выезжающей снизу панелью */}
+          {isMobile ? (
+            <Drawer
+              placement="bottom"
+              open={chatVisible}
+              onClose={() => setChatVisible(false)}
+              closable={false}
+              size="68%"
+              styles={{
+                body: { padding: 0, overflow: 'hidden' },
+                section: { borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden' },
+              }}
+            >
+              <InlineDocumentChat
+                ref={inlineChatRef}
+                documentId={currentDocument.id}
+                documentTitle={currentDocument.title}
+                onHide={() => setChatVisible(false)}
+              />
+            </Drawer>
+          ) : null}
         </>
       )}
 
@@ -648,7 +765,7 @@ export function DocumentViewPage() {
           }}
           style={{
             position: 'fixed',
-            bottom: 24,
+            bottom: isMobile ? 92 : 24,
             right: 24,
             width: 56,
             height: 56,

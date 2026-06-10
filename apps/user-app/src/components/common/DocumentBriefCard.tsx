@@ -4,8 +4,9 @@ import { ReadOutlined, TagsOutlined, UserOutlined } from '@ant-design/icons';
 import type { Document } from '@/types/document';
 import { bookmarkService } from '@/services/bookmark.service';
 import { getParticipantsLabel } from '@/utils/participants';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
-const { Text, Paragraph } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 interface DocumentBriefCardProps {
   doc: Document;
@@ -21,6 +22,7 @@ interface DocumentBriefCardProps {
  */
 export function DocumentBriefCard({ doc, onRead }: DocumentBriefCardProps) {
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
   const [bookmarkId, setBookmarkId] = useState<string | null>(null);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const loadedRef = useRef(false);
@@ -116,6 +118,18 @@ export function DocumentBriefCard({ doc, onRead }: DocumentBriefCardProps) {
 
       {/* Контент справа */}
       <div className="doc-brief__body">
+        {isMobile ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <ReadOutlined style={{ fontSize: 18, color: token.colorPrimary, flexShrink: 0 }} />
+            <Title
+              level={4}
+              style={{ margin: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
+            >
+              {doc.title}
+            </Title>
+          </div>
+        ) : null}
+
         <div className="doc-brief__row">
           <UserOutlined style={{ color: token.colorTextSecondary }} />
           <Text style={{ fontSize: token.fontSizeLG, color: token.colorText }}>

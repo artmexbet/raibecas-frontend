@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Typography, theme } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { NoteItem } from '@/types/note';
 
 const { Title, Paragraph, Text } = Typography;
@@ -50,6 +51,7 @@ function extractPreview(content: string, maxLength = 200): string {
 export function NoteCard({ note }: NoteCardProps) {
   const { token } = theme.useToken();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const preview = extractPreview(note.content);
 
@@ -68,7 +70,7 @@ export function NoteCard({ note }: NoteCardProps) {
       }}
       styles={{
         body: {
-          padding: '20px 24px',
+          padding: isMobile ? '14px 16px' : '20px 24px',
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -84,7 +86,7 @@ export function NoteCard({ note }: NoteCardProps) {
             fontWeight: 500,
             flex: 1,
           }}
-          ellipsis={{ rows: 2 }}
+          ellipsis={{ rows: isMobile ? 1 : 2 }}
         >
           {note.title}
         </Title>
@@ -111,7 +113,7 @@ export function NoteCard({ note }: NoteCardProps) {
           margin: 0,
           flex: 1,
         }}
-        ellipsis={{ rows: 8 }}
+        ellipsis={{ rows: isMobile ? 5 : 8 }}
       >
         {preview}
       </Paragraph>

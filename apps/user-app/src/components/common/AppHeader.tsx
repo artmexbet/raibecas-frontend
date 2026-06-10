@@ -1,31 +1,24 @@
 import React from 'react';
 import {Button, Input, Space, theme} from 'antd';
 import {
+    ArrowLeftOutlined,
     ArrowRightOutlined,
     BookOutlined,
     EditOutlined,
     FolderOutlined,
-    MoonOutlined,
+    MenuOutlined,
     QuestionCircleOutlined,
     SearchOutlined,
     SettingOutlined,
-    SunOutlined,
 } from '@ant-design/icons';
-import {useNavigate, useRouterState} from '@tanstack/react-router';
-import {useTheme} from '@/theme/ThemeContext';
+import {useNavigate, useRouter, useRouterState} from '@tanstack/react-router';
 import {NavBar} from './NavBar';
 import type {NavItem} from './NavBar';
+import {ThemeToggleButton} from './ThemeToggleButton';
+import {NAV_ROUTES} from '@/constants/navigation';
+import {useIsMobile} from '@/hooks/useIsMobile';
 import raibLogo from '../../raib_logo.svg';
-
-// Маппинг ключ навбара → путь
-const NAV_ROUTES: Record<string, string> = {
-    catalog: '/catalog',
-    search: '/search',
-    bookmarks: '/bookmarks',
-    notes: '/notes',
-    settings: '/settings',
-    help: '/chat',
-};
+import loginLogoSvg from '../../login_logo.svg';
 
 const defaultNavItems: NavItem[] = [
     {key: 'catalog', icon: FolderOutlined, label: 'Каталог'},
@@ -42,11 +35,15 @@ export interface AppHeaderProps {
     onSearchSubmit?: () => void;
     navItems?: NavItem[];
     showSearch?: boolean;
+    /** Мобильный хедер без поиска: показать кнопку-гамбургер справа (например, список чатов) */
+    onMobileMenuClick?: () => void;
 }
 
 /**
  * Общий хедер для страниц приложения.
  * Активная вкладка определяется автоматически по текущему пути роутера.
+ * На мобильных экранах хедер сворачивается до строки поиска
+ * либо до «назад + логотип + меню» (если showSearch=false).
  */
 export function AppHeader({
                               search = '',
@@ -54,11 +51,13 @@ export function AppHeader({
                               onSearchSubmit,
                               navItems = defaultNavItems,
                               showSearch = true,
+                              onMobileMenuClick,
                           }: AppHeaderProps) {
     const {token} = theme.useToken();
-    const {mode, toggleTheme} = useTheme();
     const navigate = useNavigate();
+    const router = useRouter();
     const routerState = useRouterState();
+    const isMobile = useIsMobile();
 
     // Определяем активный ключ по текущему пути
     const currentPath = routerState.location.pathname;
@@ -71,6 +70,79 @@ export function AppHeader({
         if (path) navigate({to: path});
     };
 
+    if (isMobile) {
+        if (showSearch) {
+            return (
+                <header
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '12px 16px',
+                        background: token.colorBgContainer,
+                        position: 'sticky',
+                        top: 0,
+                        zIndex: 100,
+                    }}
+                >
+                    <Input
+                        placeholder="Введите для поиска"
+                        allowClear
+                        value={search}
+                        onChange={(e) => onSearchChange?.(e.target.value)}
+                        suffix={
+                            <Button
+                                type="text"
+                                icon={<ArrowRightOutlined/>}
+                                onClick={onSearchSubmit}
+                                style={{padding: '0 6px'}}
+                            />
+                        }
+                        style={{width: '100%', borderRadius: 20}}
+                    />
+                </header>
+            );
+        }
+
+        return (
+            <header
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0 8px',
+                    height: 64,
+                    background: token.colorBgContainer,
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 100,
+                }}
+            >
+                <Button
+                    type="text"
+                    icon={<ArrowLeftOutlined/>}
+                    shape="circle"
+                    size="large"
+                    onClick={() => router.history.back()}
+                    aria-label="Назад"
+                />
+
+                <img src={loginLogoSvg} alt="Райбекас" style={{height: 28, width: 'auto'}}/>
+
+                {onMobileMenuClick ? (
+                    <Button
+                        type="text"
+                        icon={<MenuOutlined/>}
+                        shape="circle"
+                        size="large"
+                        onClick={onMobileMenuClick}
+                        aria-label="Меню"
+                    />
+                ) : (
+                    <div style={{width: 40}}/>
+                )}
+            </header>
+        );
+    }
 
     return (
         <header
@@ -115,13 +187,7 @@ export function AppHeader({
                 )}
 
                 {/* Переключатель темы */}
-                <Button
-                    type="text"
-                    icon={mode === 'dark' ? <SunOutlined/> : <MoonOutlined/>}
-                    onClick={toggleTheme}
-                    shape="circle"
-                    size="large"
-                />
+                <ThemeToggleButton/>
             </Space>
         </header>
     );
