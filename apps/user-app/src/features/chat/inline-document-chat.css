@@ -1,0 +1,113 @@
+.doc-chat {
+  position: sticky;
+  top: 96px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 120px);
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--chat-sidebar-bg, transparent);
+  border: 1px solid var(--chat-border, transparent);
+  box-shadow: var(--chat-shadow-soft, none);
+  backdrop-filter: blur(18px);
+  color: var(--chat-text-primary, inherit);
+}
+
+.doc-chat__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doc-chat__header-btn.ant-btn {
+  padding: 0 6px;
+  height: auto;
+  box-shadow: none;
+  color: var(--chat-text-secondary, inherit);
+}
+
+.doc-chat__header-btn.ant-btn:not(:disabled):hover {
+  color: var(--chat-text-primary, inherit) !important;
+  background: transparent !important;
+}
+
+.doc-chat__messages {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px;
+}
+
+.doc-chat__empty {
+  margin: auto;
+  text-align: center;
+  padding: 24px 12px;
+  line-height: 1.6;
+}
+
+.doc-chat__composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 14px;
+  background: var(--chat-composer-bg, transparent);
+  border: 1px solid var(--chat-border, transparent);
+  box-shadow: var(--chat-shadow-soft, none);
+}
+
+.doc-chat__composer-input.ant-input,
+.doc-chat__composer-input.ant-input:focus,
+.doc-chat__composer-input.ant-input-focused {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: var(--chat-text-primary, inherit);
+  resize: none;
+}
+
+.doc-chat__composer-input.ant-input::placeholder {
+  color: var(--chat-placeholder, inherit);
+}
+
+.doc-chat__send.ant-btn {
+  flex-shrink: 0;
+  box-shadow: none;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.doc-chat__send.ant-btn:not(:disabled):hover {
+  background: var(--chat-chip-bg-hover, transparent) !important;
+  color: var(--chat-text-primary, inherit) !important;
+}
+
+.doc-chat__send.ant-btn:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 1080px) {
+  .doc-chat {
+    position: static;
+    max-height: none;
+  }
+}
+
+/* Внутри выезжающей снизу панели чат занимает всю высоту панели */
+.ant-drawer-body .doc-chat {
+  position: static;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 12px 16px 16px;
+}

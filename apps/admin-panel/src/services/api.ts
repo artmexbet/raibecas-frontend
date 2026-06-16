@@ -75,9 +75,14 @@ apiClient.interceptors.response.use(
         // Пытаемся обновить токен
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          { device_id: deviceId },
+          { deviceId },
           {
             withCredentials: true, // Отправляем fingerprint cookie
+            headers: deviceId
+              ? {
+                  'X-Device-ID': deviceId,
+                }
+              : undefined,
           }
         );
 

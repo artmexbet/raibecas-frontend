@@ -4,9 +4,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from 'react';
-import { Alert, Button, theme } from 'antd';
+import { Alert, Button, Drawer, theme } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { AppLayout } from '@/layouts/AppLayout';
 import { authService } from '@/services/auth.service';
@@ -23,26 +22,9 @@ import { ChatLaunchContextAlert } from '@/features/chat/components/ChatLaunchCon
 import { ChatComposer } from '@/features/chat/components/ChatComposer';
 import { MessageBubble } from '@/features/chat/components/MessageBubble';
 import { ChatEmptyState } from '@/features/chat/components/ChatEmptyState';
+import { getChatThemeVars } from '@/features/chat/lib/chat-theme';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import '@/features/chat/chat-page.css';
-
-function getChatPageStyles(token: ReturnType<typeof theme.useToken>['token']): CSSProperties {
-  return {
-    ['--chat-text-primary' as string]: token.colorText,
-    ['--chat-text-secondary' as string]: token.colorTextSecondary,
-    ['--chat-placeholder' as string]: token.colorTextTertiary,
-    ['--chat-border' as string]: token.colorBorderSecondary,
-    ['--chat-divider' as string]: token.colorSplit,
-    ['--chat-sidebar-bg' as string]: token.colorBgChatSidebar,
-    ['--chat-surface-strong' as string]: token.colorBgChatSurface,
-    ['--chat-composer-bg' as string]: token.colorBgChatComposer,
-    ['--chat-chip-bg' as string]: token.colorBgChatChip,
-    ['--chat-chip-bg-hover' as string]: token.colorBgChatChipHover,
-    ['--chat-bubble-user' as string]: token.colorBgChatBubbleUser,
-    ['--chat-bubble-user-border' as string]: token.colorBorderChatBubbleUser,
-    ['--chat-bubble-assistant' as string]: token.colorBgChatBubbleAssistant,
-    ['--chat-shadow-soft' as string]: token.boxShadowChatSoft,
-  };
-}
 
 export function ChatPage() {
   const storedUser = authService.getStoredUser();
@@ -60,9 +42,11 @@ export function ChatPage() {
   const [streamingContent, setStreamingContent] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
+  const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
   const {
     sessions,
     activeSessionId,
@@ -78,7 +62,7 @@ export function ChatPage() {
   } = useChatSessions({ userID, initialRouteState });
   const { isConnected, isStreaming, sendMessage, reconnect } = useChatWebSocket(userID);
 
-  const chatPageStyles = useMemo(() => getChatPageStyles(token), [token]);
+  const chatPageStyles = useMemo(() => getChatThemeVars(token), [token]);
   const allMessages = streamingContent
     ? [...messages, { role: 'assistant', content: streamingContent } satisfies ChatMessage]
     : messages;
@@ -203,7 +187,7 @@ export function ChatPage() {
       hideFooter
       contentMaxWidth={1680}
       contentPadding="20px 24px 24px"
-      headerProps={{ showSearch: false }}
+      headerProps={{ showSearch: false, onMobileMenuClick: () => setMobileSessionsOpen(true) }}
     >
       <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
 
@@ -243,8 +227,8 @@ export function ChatPage() {
           ) : null}
         </div>
 
-        <div className={`chat-page__layout${showSidebar ? ' chat-page__layout--with-sidebar' : ''}`}>
-          {showSidebar ? (
+        <div className={`chat-page__layout${showSidebar && !isMobile ? ' chat-page__layout--with-sidebar' : ''}`}>
+          {showSidebar && !isMobile ? (
             <div className="chat-page__sidebar-shell">
               <ChatSessionsSidebar
                 sessions={sessions}
@@ -319,6 +303,35 @@ export function ChatPage() {
           </section>
         </div>
       </div>
+
+      {isMobile ? (
+        <Drawer
+          placement="left"
+          open={mobileSessionsOpen}
+          onClose={() => setMobileSessionsOpen(false)}
+          closable={false}
+          size={300}
+          styles={{ body: { padding: 0 } }}
+        >
+          <ChatSessionsSidebar
+            sessions={sessions}
+            activeSessionId={activeSessionId}
+            loadingSessions={loadingSessions}
+            creatingSession={creatingSession}
+            canManageSessions={canManageSessions}
+            canCreateSessions={canCreateSessions}
+            hasLaunchContext={hasLaunchContext}
+            onCreateSession={() => {
+              void handleCreateSession();
+              setMobileSessionsOpen(false);
+            }}
+            onSelectSession={(sessionId) => {
+              handleSelectSession(sessionId);
+              setMobileSessionsOpen(false);
+            }}
+          />
+        </Drawer>
+      ) : null}
     </AppLayout>
   );
 }

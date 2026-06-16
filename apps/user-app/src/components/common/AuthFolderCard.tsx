@@ -1,6 +1,7 @@
 import React from 'react';
 import { Typography, theme } from 'antd';
 import { Link } from '@tanstack/react-router';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Text } = Typography;
 
@@ -22,6 +23,7 @@ interface AuthFolderCardProps {
  */
 export function AuthFolderCard({ tabs, children }: AuthFolderCardProps) {
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   return (
     <div style={{ width: '100%', maxWidth: 420 }}>
@@ -39,7 +41,7 @@ export function AuthFolderCard({ tabs, children }: AuthFolderCardProps) {
                 zIndex: 2,
                 border: `1px solid ${token.colorBorderSecondary}`,
                 borderBottom: `1px solid ${token.colorBgContainer}`,
-                  width: '40%',
+                  width: isMobile ? '50%' : '40%',
               }}
             >
               <Text strong style={{ fontSize: 14, color: token.colorText }}>
@@ -47,7 +49,7 @@ export function AuthFolderCard({ tabs, children }: AuthFolderCardProps) {
               </Text>
             </div>
           ) : (
-            <Link key={tab.key} to={tab.to} style={{ textDecoration: 'none', width: '60%' }}>
+            <Link key={tab.key} to={tab.to} style={{ textDecoration: 'none', width: isMobile ? '50%' : '60%' }}>
               <div
                 style={{
                   background: token.colorFillQuaternary,

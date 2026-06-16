@@ -401,12 +401,12 @@
   }
 
   .chat-composer__footer {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 
-  .chat-composer__send.ant-btn {
-    align-self: flex-end;
+  .chat-composer__hint {
+    display: none;
   }
 
   .chat-message__bubble,

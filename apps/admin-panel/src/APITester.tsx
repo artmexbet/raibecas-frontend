@@ -12,7 +12,18 @@ export function APITester() {
       const endpoint = formData.get("endpoint") as string;
       const url = new URL(endpoint, location.href);
       const method = formData.get("method") as string;
-      const res = await fetch(url, { method });
+      const accessToken = localStorage.getItem("access_token");
+      const headers: Record<string, string> = {};
+
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`;
+      }
+
+      const res = await fetch(url, {
+        method,
+        credentials: "include",
+        headers,
+      });
 
       const data = await res.json();
       responseInputRef.current!.value = JSON.stringify(data, null, 2);

@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Card, Form, Input, Result, Spin, Typography, message, theme } from 'antd';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { PageBackground } from '@/components/common/PageBackground';
 import { noteService } from '@/services/note.service';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { NoteItem } from '@/types/note';
 
 const { Title, Text } = Typography;
@@ -40,6 +42,7 @@ export function NoteEditPage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const fetchNote = useCallback(async () => {
     setLoading(true);
@@ -81,7 +84,7 @@ export function NoteEditPage() {
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: token.colorBgLayout }}>
-        <AppHeader showSearch={false} />
+        <AppHeader showSearch={isMobile} />
         <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
           <Spin size="large" />
         </div>
@@ -92,7 +95,7 @@ export function NoteEditPage() {
   if (error || !note) {
     return (
       <div style={{ minHeight: '100vh', background: token.colorBgLayout }}>
-        <AppHeader showSearch={false} />
+        <AppHeader showSearch={isMobile} />
         <Result
           status="error"
           title="Ошибка"
@@ -111,19 +114,19 @@ export function NoteEditPage() {
     <div style={{ minHeight: '100vh', background: token.colorBgLayout, position: 'relative' }}>
       <PageBackground opacity={0.04} />
 
-      <AppHeader showSearch={false} />
+      <AppHeader showSearch={isMobile} />
 
       <div
         style={{
           maxWidth: 1600,
           margin: '0 auto',
-          padding: '28px 32px 48px',
+          padding: isMobile ? '12px 16px 100px' : '28px 32px 48px',
           position: 'relative',
           zIndex: 1,
         }}
       >
         {/* Breadcrumb */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: isMobile ? 12 : 24 }}>
           <Text
             style={{ color: token.colorTextSecondary, fontSize: 14, cursor: 'pointer' }}
             onClick={() => navigate({ to: '/notes' })}
@@ -143,10 +146,10 @@ export function NoteEditPage() {
             margin: '0 auto',
           }}
           styles={{
-            body: { padding: '40px 48px' },
+            body: { padding: isMobile ? '24px 20px' : '40px 48px' },
           }}
         >
-          <Title level={3} style={{ marginBottom: 32 }}>
+          <Title level={isMobile ? 4 : 3} style={{ marginBottom: 32 }}>
             Редактирование заметки
           </Title>
 
@@ -197,12 +200,13 @@ export function NoteEditPage() {
             </Form.Item>
 
             <Form.Item style={{ marginTop: 32, marginBottom: 0 }}>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, flexDirection: isMobile ? 'column' : 'row' }}>
                 <Button
                   type="primary"
                   htmlType="submit"
                   loading={submitting}
                   size="large"
+                  block={isMobile}
                   style={{
                     borderRadius: 8,
                     background: token.colorFillSecondary,
@@ -215,6 +219,7 @@ export function NoteEditPage() {
                 </Button>
                 <Button
                   size="large"
+                  block={isMobile}
                   onClick={() => navigate({ to: '/notes/$id', params: { id } })}
                   style={{ borderRadius: 8 }}
                 >
@@ -225,6 +230,8 @@ export function NoteEditPage() {
           </Form>
         </Card>
       </div>
+
+      <BottomNavBar />
     </div>
   );
 }

@@ -23,11 +23,12 @@ export const authService = {
    */
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     let response: { data: LoginResponse };
+    const deviceId = getDeviceId();
 
     // Добавляем device_id к credentials
     const loginData = {
       ...credentials,
-      device_id: getDeviceId(),
+      deviceId,
     };
 
     // Используем моки если они включены
@@ -49,6 +50,9 @@ export const authService = {
         loginData,
         {
           withCredentials: true, // ВАЖНО: для получения fingerprint cookie
+          headers: {
+            'X-Device-ID': deviceId,
+          },
         }
       );
     }
@@ -138,9 +142,12 @@ export const authService = {
       // Пытаемся обновить токен через refresh
       const response = await apiClient.post<RefreshResponse>(
         API_ENDPOINTS.AUTH.REFRESH,
-        { device_id: getDeviceId() },
+        { deviceId: getDeviceId() },
         {
           withCredentials: true, // Отправляем fingerprint cookie
+          headers: {
+            'X-Device-ID': getDeviceId(),
+          },
         }
       );
 

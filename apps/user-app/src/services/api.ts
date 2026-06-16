@@ -55,8 +55,15 @@ apiClient.interceptors.response.use(
         const deviceId = localStorage.getItem('device_id') || '';
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh`,
-          { device_id: deviceId },
-          { withCredentials: true }
+          { deviceId },
+          {
+            withCredentials: true,
+            headers: deviceId
+              ? {
+                  'X-Device-ID': deviceId,
+                }
+              : undefined,
+          }
         );
 
         const { access_token } = response.data as { access_token: string };
