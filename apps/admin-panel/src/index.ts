@@ -1,8 +1,7 @@
 import { serve } from "bun";
 import index from "./index.html";
-import { API_TARGET_BASE_URL } from "./constants/api";
 
-const upstreamBaseUrl = new URL(process.env.API_URL || API_TARGET_BASE_URL);
+const upstreamBaseUrl = new URL(process.env.BUN_PUBLIC_API_URL || process.env.API_URL || "http://82.146.19.6:8080");
 
 async function proxyApi(request: Request): Promise<Response> {
   const upstreamUrl = new URL(request.url);

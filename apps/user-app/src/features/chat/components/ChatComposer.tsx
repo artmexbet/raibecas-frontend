@@ -1,5 +1,5 @@
 import { Button, Input, theme } from 'antd';
-import { ArrowRightOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
+import { ArrowRightOutlined, LoadingOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;
 
@@ -62,35 +62,6 @@ export function ChatComposer({
 
       <div className="chat-composer__footer">
         <div className="chat-composer__meta">
-          <div className="chat-composer__chips" aria-hidden="true">
-            <span
-              className="chat-composer__chip"
-              style={{
-                minHeight: token.controlHeight - 2,
-                padding: `0 ${token.paddingSM + 8}px`,
-                borderRadius: token.borderRadiusLG - 2,
-                background: token.colorBgChatChip,
-                color: token.colorText,
-                fontSize: token.fontSize,
-              }}
-            >
-              Период <DownOutlined />
-            </span>
-            <span
-              className="chat-composer__chip"
-              style={{
-                minHeight: token.controlHeight - 2,
-                padding: `0 ${token.paddingSM + 8}px`,
-                borderRadius: token.borderRadiusLG - 2,
-                background: token.colorBgChatChip,
-                color: token.colorText,
-                fontSize: token.fontSize,
-              }}
-            >
-              Темы <DownOutlined />
-            </span>
-          </div>
-
           <span className="chat-composer__hint" style={{ color: token.colorTextSecondary }}>
             {hint}
           </span>

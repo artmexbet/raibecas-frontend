@@ -9,6 +9,7 @@ import { DocumentCard } from '@/components/common/DocumentCard';
 import { MobileFilterTabs } from '@/components/common/MobileFilterTabs';
 import { PageBackground } from '@/components/common/PageBackground';
 import { QuoteBookmarkCard } from '@/components/common/QuoteBookmarkCard';
+import { useNavigate } from '@tanstack/react-router';
 import { bookmarkService } from '@/services/bookmark.service';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import type { BookmarkItem, BookmarkKind, QuoteBookmark } from '@/types/bookmark';
@@ -97,6 +98,7 @@ export function BookmarksPage() {
 
   const { token } = theme.useToken();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   const fetchBookmarks = useCallback(async () => {
     const requestId = ++requestIdRef.current;
@@ -391,6 +393,7 @@ export function BookmarksPage() {
           shape="circle"
           icon={<MessageOutlined />}
           size="large"
+          onClick={() => navigate({ to: '/chat' })}
           style={{
             position: 'fixed',
             bottom: 24,

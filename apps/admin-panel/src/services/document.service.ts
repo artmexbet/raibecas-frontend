@@ -97,8 +97,7 @@ export const documentService = {
         formData.append('cover', file);
         const response = await apiClient.post<{ cover_url: string }>(
             API_ENDPOINTS.DOCUMENTS.COVER(id),
-            formData,
-            { headers: { 'Content-Type': 'multipart/form-data' } }
+            formData
         );
         return response.data.cover_url;
     },
