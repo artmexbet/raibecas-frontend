@@ -97,6 +97,38 @@
   gap: 12px;
 }
 
+/* Ползунок (скроллбар) чата — подстраивается под цвета темы */
+.chat-page__messages,
+.chat-sessions-sidebar__content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-chip-bg, rgba(0, 0, 0, 0.2)) transparent;
+}
+
+.chat-page__messages::-webkit-scrollbar,
+.chat-sessions-sidebar__content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.chat-page__messages::-webkit-scrollbar-track,
+.chat-sessions-sidebar__content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-page__messages::-webkit-scrollbar-thumb,
+.chat-sessions-sidebar__content::-webkit-scrollbar-thumb {
+  background: var(--chat-chip-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.chat-page__messages::-webkit-scrollbar-thumb:hover,
+.chat-sessions-sidebar__content::-webkit-scrollbar-thumb:hover {
+  background: var(--chat-chip-bg-hover, rgba(0, 0, 0, 0.3));
+  background-clip: padding-box;
+}
+
 .chat-page__welcome {
   flex: 1;
   width: min(100%, 900px);

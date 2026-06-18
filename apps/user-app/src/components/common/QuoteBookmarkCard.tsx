@@ -4,7 +4,7 @@ import { CalendarOutlined, FileTextOutlined, UserOutlined } from '@ant-design/ic
 import { Link } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import type { QuoteBookmark } from '@/types/bookmark';
-import { BookmarkRibbon } from './BookmarkRibbon';
+import { BookmarkToggleIcon } from './BookmarkToggleIcon';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -17,8 +17,8 @@ export function QuoteBookmarkCard({ bookmark }: QuoteBookmarkCardProps) {
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ position: 'absolute', top: -8, right: 18, zIndex: 2, pointerEvents: 'none' }}>
-        <BookmarkRibbon />
+      <div style={{ position: 'absolute', top: -10, right: 14, zIndex: 2, pointerEvents: 'none' }}>
+        <BookmarkToggleIcon bookmarked size={46} style={{ filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.18))' }} />
       </div>
 
       <Link
@@ -67,6 +67,7 @@ export function QuoteBookmarkCard({ bookmark }: QuoteBookmarkCardProps) {
             </span>
 
             <Paragraph
+              ellipsis={{ rows: 5, tooltip: bookmark.quote_text }}
               style={{
                 margin: 0,
                 fontSize: 16,

@@ -4,6 +4,10 @@ import { theme } from 'antd';
 // Расширяем стандартные токены Ant Design собственным токеном
 declare module 'antd/es/theme/interface' {
   interface AliasToken {
+    /** Фон навигационной «таблетки» в хедере */
+    colorBgNav: string;
+    /** Фон выбранного пункта навигации в хедере */
+    colorBgNavActive: string;
     /** Фон боковой панели (aside) с прозрачностью — меняется с темой */
     colorBgSidebar: string;
     /** Полупрозрачный фон sidebar чата */
@@ -146,6 +150,8 @@ export const lightTheme: ThemeConfig = {
     colorFillQuaternary: '#DDD8D4',
 
     // Custom tokens
+    colorBgNav: '#FFFFFF',
+    colorBgNavActive: '#DCD3D0',
     colorBgSidebar: palette.sidebarBgLight,
     colorBgChatSidebar: 'rgba(255, 255, 255, 0.42)',
     colorBgChatSurface: 'rgba(255, 255, 255, 0.7)',
@@ -244,6 +250,8 @@ export const darkTheme: ThemeConfig = {
     colorPrimaryHover: palette.accentHover,
 
     // Custom tokens
+    colorBgNav: palette.cardDark,
+    colorBgNavActive: '#4A2A2E',
     colorBgSidebar: palette.sidebarBgDark,
     colorBgChatSidebar: 'rgba(42, 21, 24, 0.66)',
     colorBgChatSurface: 'rgba(50, 26, 29, 0.82)',

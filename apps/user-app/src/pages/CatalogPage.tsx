@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Button, Empty, FloatButton, Flex, Masonry, message, Pagination, Spin, theme, Typography} from 'antd';
-import {FileTextOutlined, MessageOutlined,} from '@ant-design/icons';
+import {Button, Empty, FloatButton, Masonry, message, Pagination, Spin, theme, Typography} from 'antd';
+import {MessageOutlined} from '@ant-design/icons';
 import {useNavigate} from '@tanstack/react-router';
 import {documentService} from '@/services/document.service';
 import {bookmarkService} from '@/services/bookmark.service';
@@ -26,12 +26,10 @@ function estimateCardHeight(doc: Document): number {
 
 /** Высота компактной горизонтальной карточки (мобильная вёрстка) */
 function estimateMobileCardHeight(doc: Document): number {
-    const headerH = 28 + 8;
-    const titleLines = Math.min(4, Math.max(1, Math.ceil((doc.title?.length ?? 0) / 18)));
-    const contentH = Math.max(titleLines * 21, doc.cover_url ? 130 : 0);
-    const tagsH = doc.tags.length > 0 ? 12 + 24 : 0;
-    const bodyPadding = 28;
-    return headerH + contentH + tagsH + bodyPadding;
+    const titleLines = Math.min(3, Math.max(1, Math.ceil((doc.title?.length ?? 0) / 16)));
+    const textH = 24 + titleLines * 21 + (doc.tags.length > 0 ? 32 : 0);
+    const contentH = doc.cover_url ? Math.max(170, textH) : textH;
+    return contentH + 24;
 }
 
 export function CatalogPage() {
@@ -182,93 +180,14 @@ export function CatalogPage() {
 
             {/* Main Content */}
             <div style={{display: 'flex', maxWidth: 1600, margin: '0 auto', position: 'relative', zIndex: 1}}>
-                {/* Sidebar */}
-                {!isMobile && (
-                    <aside
-                        style={{
-                            width: 240,
-                            padding: '32px 16px',
-                        }}
-                    >
-                        <div
-                            style={{
-                                background: token.colorBgSidebar,
-                                borderRadius: 20,
-                                padding: '8px 8px 8px',
-                            }}
-                        >
-                            <div style={{padding: '12px 8px 8px'}}>
-                                <Text
-                                    style={{
-                                        display: 'block',
-                                        fontSize: 26,
-                                        fontWeight: 400,
-                                        color: token.colorText,
-                                        marginBottom: 12,
-                                        lineHeight: 1.3,
-                                    }}
-                                >
-                                    Каталог работ
-                                </Text>
-                            </div>
-
-                            <Flex vertical gap={4} style={{width: '100%'}}>
-                                {/* «Все» */}
-                                <Button
-                                    type="text"
-                                    onClick={() => handleFilterClick(null)}
-                                    style={{
-                                        width: '100%',
-                                        justifyContent: 'flex-start',
-                                        textAlign: 'left',
-                                        borderRadius: 8,
-                                        padding: '8px 12px',
-                                        background: 'transparent',
-                                        color: activeDocumentTypeId === null ? token.colorPrimary : token.colorText,
-                                        fontWeight: activeDocumentTypeId === null ? 700 : 400,
-                                    }}
-                                >
-                                    <FileTextOutlined style={{marginRight: 10, fontSize: 16}}/>
-                                    Все
-                                </Button>
-
-                                {documentTypes.map((dt) => {
-                                    const isActive = activeDocumentTypeId === dt.id;
-                                    return (
-                                        <Button
-                                            key={dt.id}
-                                            type="text"
-                                            onClick={() => handleFilterClick(dt.id)}
-                                            style={{
-                                                width: '100%',
-                                                justifyContent: 'flex-start',
-                                                textAlign: 'left',
-                                                borderRadius: 8,
-                                                padding: '8px 12px',
-                                                background: 'transparent',
-                                                color: isActive ? token.colorPrimary : token.colorText,
-                                                fontWeight: isActive ? 700 : 400,
-                                            }}
-                                        >
-                                            <FileTextOutlined style={{marginRight: 10, fontSize: 16}}/>
-                                            {dt.name}
-                                        </Button>
-                                    );
-                                })}
-                            </Flex>
-                        </div>
-                    </aside>
-                )}
-
                 {/* Content */}
-                <main style={{flex: 1, padding: isMobile ? '8px 16px 100px' : '32px'}}>
-                    {isMobile && (
-                        <MobileFilterTabs
-                            tabs={mobileFilterTabs}
-                            activeKey={mobileActiveKey}
-                            onChange={handleMobileFilterChange}
-                        />
-                    )}
+                <main style={{flex: 1, padding: isMobile ? '8px 16px 100px' : '24px 32px 32px'}}>
+                    {/* Фильтры «Каталог работ» — строкой по центру (как в мобильной версии) */}
+                    <MobileFilterTabs
+                        tabs={mobileFilterTabs}
+                        activeKey={mobileActiveKey}
+                        onChange={handleMobileFilterChange}
+                    />
 
                     {loading ? (
                         <div style={{display: 'flex', justifyContent: 'center', paddingTop: 100}}>

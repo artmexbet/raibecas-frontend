@@ -5,6 +5,7 @@ import type { Document } from '@/types/document';
 import { bookmarkService } from '@/services/bookmark.service';
 import { getParticipantsLabel } from '@/utils/participants';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { BookmarkToggleIcon } from './BookmarkToggleIcon';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -97,23 +98,19 @@ export function DocumentBriefCard({ doc, onRead }: DocumentBriefCardProps) {
         </div>
 
         {/* Закладка-лента */}
-        <button
-          type="button"
-          className="doc-brief__ribbon"
-          aria-label={isBookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
-          aria-pressed={isBookmarked}
-          disabled={bookmarkLoading}
-          onClick={() => void handleBookmarkToggle()}
-          style={{ cursor: bookmarkLoading ? 'wait' : 'pointer', opacity: bookmarkLoading ? 0.6 : 1 }}
-        >
-          <span
-            aria-hidden
-            className="doc-brief__ribbon-shape"
-            style={{
-              background: isBookmarked ? token.colorPrimary : token.colorTextQuaternary,
-            }}
-          />
-        </button>
+        <BookmarkToggleIcon
+          bookmarked={isBookmarked}
+          onToggle={() => void handleBookmarkToggle()}
+          loading={bookmarkLoading}
+          size={58}
+          style={{
+            position: 'absolute',
+            top: -2,
+            right: 18,
+            zIndex: 2,
+            filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.18))',
+          }}
+        />
       </div>
 
       {/* Контент справа */}

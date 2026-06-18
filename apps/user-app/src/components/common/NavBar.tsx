@@ -27,7 +27,8 @@ export function NavBar({items, activeKey, onChange}: NavBarProps) {
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                background: token.colorFillQuaternary,
+                background: token.colorBgNav,
+                border: `1px solid ${token.colorBorderSecondary}`,
                 borderRadius: 32,
                 padding: '4px',
                 gap: 2,
@@ -49,9 +50,9 @@ export function NavBar({items, activeKey, onChange}: NavBarProps) {
                             flexDirection: 'column',
                             height: 'auto',
                             padding: '6px 18px',
-                            background: isActive ? token.colorBgContainer : 'transparent',
+                            background: isActive ? token.colorBgNavActive : 'transparent',
                             color: isActive ? token.colorPrimary : token.colorTextSecondary,
-                            boxShadow: isActive ? token.boxShadowSecondary : 'none',
+                            boxShadow: 'none',
                             transition: 'all 0.2s',
                         }}
                     >

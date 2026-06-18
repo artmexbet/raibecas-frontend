@@ -126,7 +126,7 @@ export function AppHeader({
                     aria-label="Назад"
                 />
 
-                <img src={loginLogoSvg} alt="Райбекас" style={{height: 28, width: 'auto'}}/>
+                <img src={loginLogoSvg} alt="Райбекас" className="themed-logo" style={{height: 28, width: 'auto'}}/>
 
                 {onMobileMenuClick ? (
                     <Button
@@ -160,7 +160,7 @@ export function AppHeader({
         >
             {/* Логотип */}
             <div style={{display: 'flex', alignItems: 'center', flexShrink: 0}}>
-                <img src={raibLogo} alt="Райбекас" style={{height: 32, width: 'auto'}}/>
+                <img src={raibLogo} alt="Райбекас" className="themed-logo" style={{height: 32, width: 'auto'}}/>
             </div>
 
             {/* Навигация */}
@@ -170,6 +170,7 @@ export function AppHeader({
             <Space style={{marginLeft: 'auto'}} align="center">
                 {showSearch && (
                     <Input
+                        size="small"
                         placeholder="Введите для поиска"
                         allowClear
                         value={search}
@@ -182,7 +183,7 @@ export function AppHeader({
                                 style={{padding: '0 6px'}}
                             />
                         }
-                        style={{width: 280, borderRadius: 20}}
+                        style={{width: 280, height: 40, borderRadius: 20}}
                     />
                 )}
 

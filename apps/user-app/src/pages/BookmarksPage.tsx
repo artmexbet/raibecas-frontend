@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Button, Card, Empty, FloatButton, Flex, Masonry, Pagination, Result, Spin, Typography, theme } from 'antd';
 import { BookOutlined, FileTextOutlined, MessageOutlined, ReadOutlined } from '@ant-design/icons';
 import { AppHeader } from '@/components/common/AppHeader';
-import { BookmarkRibbon } from '@/components/common/BookmarkRibbon';
+import { BookmarkToggleIcon } from '@/components/common/BookmarkToggleIcon';
 import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { DocumentCard } from '@/components/common/DocumentCard';
 import { MobileFilterTabs } from '@/components/common/MobileFilterTabs';
@@ -51,12 +51,10 @@ function estimatePublicationCardHeight(doc: Document): number {
 
 /** Высота компактной горизонтальной карточки публикации (мобильная вёрстка) */
 function estimateMobilePublicationCardHeight(doc: Document): number {
-  const headerH = 28 + 8;
-  const titleLines = Math.min(4, Math.max(1, Math.ceil((doc.title?.length ?? 0) / 18)));
-  const contentH = Math.max(titleLines * 21, doc.cover_url ? 130 : 0);
-  const tagsH = doc.tags.length > 0 ? 12 + 24 : 0;
-  const bodyPadding = 28;
-  return headerH + contentH + tagsH + bodyPadding;
+  const titleLines = Math.min(3, Math.max(1, Math.ceil((doc.title?.length ?? 0) / 16)));
+  const textH = 24 + titleLines * 21 + (doc.tags.length > 0 ? 32 : 0);
+  const contentH = doc.cover_url ? Math.max(170, textH) : textH;
+  return contentH + 24;
 }
 
 function estimateQuoteCardHeight(bookmark: QuoteBookmark): number {
@@ -168,13 +166,13 @@ export function BookmarksPage() {
                 <div
                   style={{
                     position: 'absolute',
-                    top: -8,
-                    right: 18,
+                    top: -10,
+                    right: 14,
                     zIndex: 2,
                     pointerEvents: 'none',
                   }}
                 >
-                  <BookmarkRibbon />
+                  <BookmarkToggleIcon bookmarked size={46} style={{ filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.18))' }} />
                 </div>
                 <DocumentCard doc={bookmark.document} />
               </div>

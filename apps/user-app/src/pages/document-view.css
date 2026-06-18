@@ -96,9 +96,17 @@
   }
 }
 
-/* ── State 2: reading view (text + inline chat) ────────────────────── */
+/* ── State 2: reading view (TOC rail + text + inline chat) ─────────── */
+
+.doc-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
 
 .doc-reading {
+  flex: 1;
+  min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
   gap: 28px;
@@ -111,6 +119,23 @@
 
 .doc-reading__text {
   min-width: 0;
+}
+
+/* Выезжающая левая колонка со структурой документа (десктоп) */
+.doc-toc-rail {
+  position: sticky;
+  top: 96px;
+  flex-shrink: 0;
+  width: 264px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+/* Заголовки получают отступ сверху, чтобы не уезжать под липкий хедер при переходе */
+.document-content :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 88px;
 }
 
 @media (max-width: 1080px) {

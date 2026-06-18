@@ -44,6 +44,33 @@
   padding: 2px;
 }
 
+/* Ползунок (скроллбар) встроенного чата — под цвета темы */
+.doc-chat__messages {
+  scrollbar-width: thin;
+  scrollbar-color: var(--chat-chip-bg, rgba(0, 0, 0, 0.2)) transparent;
+}
+
+.doc-chat__messages::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.doc-chat__messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.doc-chat__messages::-webkit-scrollbar-thumb {
+  background: var(--chat-chip-bg, rgba(0, 0, 0, 0.2));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.doc-chat__messages::-webkit-scrollbar-thumb:hover {
+  background: var(--chat-chip-bg-hover, rgba(0, 0, 0, 0.3));
+  background-clip: padding-box;
+}
+
 .doc-chat__empty {
   margin: auto;
   text-align: center;

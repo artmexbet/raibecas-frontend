@@ -1,13 +1,14 @@
 import React from 'react';
 import { Card, Tag, Typography, theme } from 'antd';
-import { BookFilled, BookOutlined, CalendarOutlined, UserOutlined } from '@ant-design/icons';
+import { CalendarOutlined, UserOutlined } from '@ant-design/icons';
 import { Link } from '@tanstack/react-router';
 import dayjs from 'dayjs';
 import type { Document } from '@/types/document';
 import { getParticipantsLabel } from '@/utils/participants';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { BookmarkToggleIcon } from './BookmarkToggleIcon';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface DocumentCardProps {
   doc: Document;
@@ -25,53 +26,26 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
   const showBookmarkIcon = onBookmarkToggle !== undefined;
 
   const bookmarkToggle = showBookmarkIcon && (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={isBookmarked ? 'Убрать из закладок' : 'Добавить в закладки'}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!bookmarkLoading) {
-          onBookmarkToggle(doc.id);
-        }
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!bookmarkLoading) {
-            onBookmarkToggle(doc.id);
-          }
-        }
-      }}
+    <BookmarkToggleIcon
+      bookmarked={Boolean(isBookmarked)}
+      onToggle={() => onBookmarkToggle(doc.id)}
+      loading={bookmarkLoading}
+      size={42}
       style={{
         position: 'absolute',
-        top: 10,
-        right: 10,
+        top: -6,
+        right: 16,
         zIndex: 3,
-        width: 32,
-        height: 32,
-        display: 'grid',
-        placeItems: 'center',
-        borderRadius: 8,
-        background: isBookmarked ? `${token.colorPrimary}18` : `${token.colorBgContainer}cc`,
-        backdropFilter: 'blur(4px)',
-        cursor: bookmarkLoading ? 'wait' : 'pointer',
-        transition: 'background 0.2s ease, transform 0.15s ease, opacity 0.2s ease',
-        opacity: bookmarkLoading ? 0.6 : 1,
-        fontSize: 16,
-        color: isBookmarked ? token.colorPrimary : token.colorTextTertiary,
-        border: `1px solid ${isBookmarked ? `${token.colorPrimary}30` : token.colorBorderSecondary}`,
+        filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.18))',
       }}
-    >
-      {isBookmarked ? <BookFilled /> : <BookOutlined />}
-    </div>
+    />
   );
 
   if (isMobile) {
     return (
       <Link to="/documents/$id" params={{ id: doc.id }} style={{ display: 'block' }}>
+        <div style={{ position: 'relative' }}>
+        {bookmarkToggle}
         <Card
           hoverable
           size="small"
@@ -82,48 +56,85 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
             border: `1px solid ${token.colorBorder}`,
             position: 'relative',
           }}
-          styles={{ body: { padding: '14px 16px' } }}
+          styles={{ body: { padding: 12 } }}
         >
-          {bookmarkToggle}
+          <div style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+            {/* Левая колонка: категория, заголовок, теги */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Tag
+                style={{
+                  margin: 0,
+                  alignSelf: 'flex-start',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 500,
+                  background: `${token.colorPrimary}14`,
+                  color: token.colorPrimary,
+                  border: `1px solid ${token.colorPrimary}30`,
+                }}
+              >
+                {doc.category.title}
+              </Tag>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-            <Tag
-              style={{
-                margin: 0,
-                borderRadius: 6,
-                fontSize: 11,
-                fontWeight: 500,
-                background: `${token.colorPrimary}14`,
-                color: token.colorPrimary,
-                border: `1px solid ${token.colorPrimary}30`,
-              }}
-            >
-              {doc.category.title}
-            </Tag>
-            <Text strong style={{ fontSize: 16, color: token.colorTextSecondary, flexShrink: 0 }}>
-              {dayjs(doc.publication_date).format("'YY")}
-            </Text>
-          </div>
+              <Title
+                level={5}
+                style={{
+                  margin: 0,
+                  lineHeight: 1.4,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: token.colorText,
+                }}
+                ellipsis={{ rows: 3 }}
+              >
+                {doc.title}
+              </Title>
 
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Title
-              level={5}
-              style={{
-                flex: 1,
-                minWidth: 0,
-                margin: 0,
-                lineHeight: 1.4,
-                fontSize: 15,
-                fontWeight: 600,
-                color: token.colorText,
-              }}
-              ellipsis={{ rows: 4 }}
-            >
-              {doc.title}
-            </Title>
+              {doc.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 'auto' }}>
+                  {doc.tags.slice(0, 3).map((tag) => (
+                    <Tag
+                      key={tag.id}
+                      style={{
+                        margin: 0,
+                        fontSize: 11,
+                        borderRadius: 6,
+                        background: token.colorFill,
+                        border: `1px solid ${token.colorBorderSecondary}`,
+                        color: token.colorTextSecondary,
+                      }}
+                    >
+                      {tag.title}
+                    </Tag>
+                  ))}
+                  {doc.tags.length > 3 && (
+                    <Tag
+                      style={{
+                        margin: 0,
+                        fontSize: 11,
+                        borderRadius: 6,
+                        color: token.colorTextTertiary,
+                        background: 'transparent',
+                        border: 'none',
+                      }}
+                    >
+                      +{doc.tags.length - 3}
+                    </Tag>
+                  )}
+                </div>
+              )}
+            </div>
 
+            {/* Год — слева от обложки */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', flexShrink: 0 }}>
+              <Text strong style={{ fontSize: 22, lineHeight: 1, color: token.colorTextSecondary }}>
+                {dayjs(doc.publication_date).format("'YY")}
+              </Text>
+            </div>
+
+            {/* Обложка — почти во всю высоту карточки */}
             {doc.cover_url ? (
-              <div style={{ width: 92, height: 130, flexShrink: 0, borderRadius: 10, overflow: 'hidden' }}>
+              <div style={{ width: 104, minHeight: 170, alignSelf: 'stretch', flexShrink: 0, borderRadius: 10, overflow: 'hidden' }}>
                 <img
                   src={doc.cover_url}
                   alt={doc.title}
@@ -132,47 +143,16 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
               </div>
             ) : null}
           </div>
-
-          {doc.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-              {doc.tags.slice(0, 4).map((tag) => (
-                <Tag
-                  key={tag.id}
-                  style={{
-                    margin: 0,
-                    fontSize: 11,
-                    borderRadius: 6,
-                    background: token.colorFill,
-                    border: `1px solid ${token.colorBorderSecondary}`,
-                    color: token.colorTextSecondary,
-                  }}
-                >
-                  {tag.title}
-                </Tag>
-              ))}
-              {doc.tags.length > 4 && (
-                <Tag
-                  style={{
-                    margin: 0,
-                    fontSize: 11,
-                    borderRadius: 6,
-                    color: token.colorTextTertiary,
-                    background: 'transparent',
-                    border: 'none',
-                  }}
-                >
-                  +{doc.tags.length - 4}
-                </Tag>
-              )}
-            </div>
-          )}
         </Card>
+        </div>
       </Link>
     );
   }
 
   return (
     <Link to="/documents/$id" params={{ id: doc.id }} style={{ display: 'block' }}>
+      <div style={{ position: 'relative' }}>
+      {bookmarkToggle}
       <Card
         hoverable
         size="small"
@@ -186,9 +166,6 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
         }}
         styles={{ body: { padding: '18px 20px' } }}
       >
-        {/* Bookmark toggle icon */}
-        {bookmarkToggle}
-
         {/* Обложка */}
         {doc.cover_url ? (
           <div
@@ -206,27 +183,32 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
             />
           </div>
         ) : null}
-        {/* Категория */}
-        <Tag
-          style={{
-            marginBottom: 12,
-            borderRadius: 6,
-            fontSize: 11,
-            fontWeight: 500,
-            background: `${token.colorPrimary}14`,
-            color: token.colorPrimary,
-            border: `1px solid ${token.colorPrimary}30`,
-          }}
-        >
-          {doc.category.title}
-        </Tag>
+        {/* Категория + год (в правом верхнем углу) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 12, paddingRight: showBookmarkIcon && !doc.cover_url ? 44 : 0 }}>
+          <Tag
+            style={{
+              margin: 0,
+              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              background: `${token.colorPrimary}14`,
+              color: token.colorPrimary,
+              border: `1px solid ${token.colorPrimary}30`,
+            }}
+          >
+            {doc.category.title}
+          </Tag>
+          <Text strong style={{ fontSize: 22, lineHeight: 1, color: token.colorTextSecondary, flexShrink: 0 }}>
+            {dayjs(doc.publication_date).format("'YY")}
+          </Text>
+        </div>
 
         {/* Заголовок */}
         <Title
           level={5}
           style={{
             marginTop: 0,
-            marginBottom: 8,
+            marginBottom: 14,
             lineHeight: 1.4,
             fontSize: 15,
             fontWeight: 600,
@@ -236,17 +218,6 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
         >
           {doc.title}
         </Title>
-
-        {/* Описание */}
-        {doc.description && (
-          <Paragraph
-            type="secondary"
-            ellipsis={{ rows: 3 }}
-            style={{ fontSize: 13, marginBottom: 14, lineHeight: 1.6 }}
-          >
-            {doc.description}
-          </Paragraph>
-        )}
 
         {/* Теги */}
         {doc.tags.length > 0 && (
@@ -304,6 +275,7 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
           </Text>
         </div>
       </Card>
+      </div>
     </Link>
   );
 }

@@ -1,25 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Drawer, Flex, message, theme } from 'antd';
+import { Typography, Tag, Breadcrumb, Spin, Button, Divider, Drawer, Dropdown, Flex, message, theme } from 'antd';
 import {
   ArrowLeftOutlined,
-  BookOutlined,
   EditOutlined,
+  ExportOutlined,
   MessageOutlined,
+  MoreOutlined,
   ReadOutlined,
+  UnorderedListOutlined,
 } from '@ant-design/icons';
 import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { bookmarkService } from '@/services/bookmark.service';
 import { documentService } from '@/services/document.service';
 import type { Document } from '@/types/document';
 import { AppLayout } from '@/layouts/AppLayout';
+import { BookmarkToggleIcon } from '@/components/common/BookmarkToggleIcon';
 import { DocumentBriefCard } from '@/components/common/DocumentBriefCard';
 import { DocumentNoteSidebar } from '@/components/common/DocumentNoteSidebar';
+import { DocumentStructure } from '@/components/common/DocumentStructure';
 import { InlineDocumentChat } from '@/features/chat/components/InlineDocumentChat';
 import type { InlineDocumentChatHandle } from '@/features/chat/components/InlineDocumentChat';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { extractToc, headingId, type TocEntry } from '../utils/markdownToc';
 import './document-view.css';
 
 const { Title, Text } = Typography;
@@ -280,11 +286,82 @@ export function DocumentViewPage() {
   const [selectionDraft, setSelectionDraft] = useState<SelectionDraft | null>(null);
   const [savingSelection, setSavingSelection] = useState(false);
   const [savingNote, setSavingNote] = useState(false);
+  // Структура документа: на десктопе — выезжающая левая колонка, на мобильном — нижний drawer.
+  const [structureOpen, setStructureOpen] = useState(false);
+  const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const cleanupHighlightRef = useRef<(() => void) | null>(null);
   const inlineChatRef = useRef<InlineDocumentChatHandle>(null);
   const { token } = theme.useToken();
   const isMobile = useIsMobile();
+
+  // Оглавление строим из markdown один раз на документ — контент уже загружен,
+  // парсинг дешёвый, бэкенд не задействуем.
+  const toc = useMemo(() => extractToc(currentDocument?.content ?? ''), [currentDocument?.content]);
+
+  // Проставляем id отрендеренным заголовкам по номеру строки исходника, чтобы
+  // переход из оглавления был устойчив к повторяющимся заголовкам.
+  const markdownComponents = useMemo<Components>(() => {
+    const makeHeading = (Tag: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'): Components['h1'] =>
+      function Heading({ node, children, ...props }) {
+        const line = node?.position?.start?.line;
+        return React.createElement(Tag, { ...props, id: line ? headingId(line) : undefined }, children);
+      };
+
+    return {
+      h1: makeHeading('h1'),
+      h2: makeHeading('h2'),
+      h3: makeHeading('h3'),
+      h4: makeHeading('h4'),
+      h5: makeHeading('h5'),
+      h6: makeHeading('h6'),
+    };
+  }, []);
+
+  const handleNavigateToHeading = useCallback(
+    (entry: TocEntry) => {
+      const element = globalThis.document.getElementById(entry.id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setActiveHeadingId(entry.id);
+      }
+
+      if (isMobile) {
+        setStructureOpen(false);
+      }
+    },
+    [isMobile],
+  );
+
+  const handleExportMarkdown = useCallback(() => {
+    if (!currentDocument?.content) {
+      message.info('Текст работы недоступен для экспорта');
+      return;
+    }
+
+    const blob = new Blob([currentDocument.content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = globalThis.document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${currentDocument.title || 'document'}.md`;
+    globalThis.document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, [currentDocument]);
+
+  const handleDocumentMenuClick = useCallback(
+    ({ key }: { key: string }) => {
+      if (key === 'card') {
+        setViewMode('card');
+      } else if (key === 'export') {
+        handleExportMarkdown();
+      } else if (key === 'structure') {
+        setStructureOpen((open) => !open);
+      }
+    },
+    [handleExportMarkdown],
+  );
 
   const clearSelectionDraft = useCallback((clearNativeSelection = false) => {
     setSelectionDraft(null);
@@ -389,6 +466,8 @@ export function DocumentViewPage() {
     setLoading(true);
     setCurrentDocument(null);
     setViewMode(highlight ? 'reading' : 'card');
+    setStructureOpen(false);
+    setActiveHeadingId(null);
     documentService
       .getById(id)
       .then(setCurrentDocument)
@@ -432,6 +511,44 @@ export function DocumentViewPage() {
       cleanupHighlightRef.current = null;
     };
   }, [highlight, currentDocument?.content]);
+
+  // Scroll-spy: подсвечиваем в оглавлении заголовок, который сейчас вверху экрана.
+  useEffect(() => {
+    if (viewMode !== 'reading' || toc.length === 0 || !currentDocument?.content) {
+      return undefined;
+    }
+
+    const elements = toc
+      .map((entry) => globalThis.document.getElementById(entry.id))
+      .filter((element): element is HTMLElement => element !== null);
+
+    if (elements.length === 0) {
+      return undefined;
+    }
+
+    const visibleTops = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            visibleTops.set(entry.target.id, entry.boundingClientRect.top);
+          } else {
+            visibleTops.delete(entry.target.id);
+          }
+        }
+
+        if (visibleTops.size > 0) {
+          const [topId] = [...visibleTops.entries()].sort((a, b) => a[1] - b[1])[0]!;
+          setActiveHeadingId(topId);
+        }
+      },
+      { rootMargin: '-88px 0px -65% 0px', threshold: 0 },
+    );
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
+  }, [toc, viewMode, currentDocument?.content]);
 
   useEffect(() => {
     if (!currentDocument?.content) {
@@ -515,10 +632,34 @@ export function DocumentViewPage() {
           <ReadOutlined style={{ fontSize: 22, color: token.colorPrimary, flexShrink: 0 }} />
           <Title
             level={isMobile ? 4 : 3}
-            style={{ margin: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
+            style={{ margin: 0, flex: 1, minWidth: 0, textTransform: 'uppercase', letterSpacing: 0.4, lineHeight: 1.3 }}
           >
             {currentDocument.title}
           </Title>
+          {viewMode === 'reading' ? (
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                onClick: handleDocumentMenuClick,
+                items: [
+                  { key: 'card', icon: <ArrowLeftOutlined />, label: 'Вернуться в карточку' },
+                  { key: 'export', icon: <ExportOutlined />, label: 'Экспортировать' },
+                  {
+                    key: 'structure',
+                    icon: <UnorderedListOutlined />,
+                    label: !isMobile && structureOpen ? 'Скрыть структуру' : 'Просмотр структуры',
+                  },
+                ],
+              }}
+            >
+              <Button
+                type="text"
+                icon={<MoreOutlined style={{ fontSize: 20 }} />}
+                aria-label="Меню документа"
+                style={{ flexShrink: 0 }}
+              />
+            </Dropdown>
+          ) : null}
         </div>
       ) : null}
 
@@ -528,17 +669,25 @@ export function DocumentViewPage() {
       ) : (
         /* ── Состояние 2: чтение текста + встроенный чат ── */
         <>
-          <div style={{ marginBottom: isMobile ? 12 : 20 }}>
-            <Button
-              icon={<ArrowLeftOutlined />}
-              size={isMobile ? 'small' : 'middle'}
-              onClick={() => setViewMode('card')}
-            >
-              Вернуться в карточку
-            </Button>
-          </div>
+          <div className="doc-layout">
+            {/* Выезжающая левая колонка со структурой документа (десктоп) */}
+            {!isMobile && structureOpen ? (
+              <aside
+                className="doc-toc-rail"
+                style={{
+                  background: token.colorBgContainer,
+                  border: `1px solid ${token.colorBorderSecondary}`,
+                }}
+              >
+                <DocumentStructure
+                  toc={toc}
+                  activeId={activeHeadingId}
+                  onNavigate={handleNavigateToHeading}
+                />
+              </aside>
+            ) : null}
 
-          <div className={`doc-reading${chatVisible && !isMobile ? '' : ' doc-reading--full'}`}>
+            <div className={`doc-reading${chatVisible && !isMobile ? '' : ' doc-reading--full'}`}>
             <div className="doc-reading__text" style={{ position: 'relative', overflow: 'visible' }}>
               {/* Стикеры-заметки сбоку */}
               <DocumentNoteSidebar documentId={currentDocument.id} contentRef={contentRef} />
@@ -579,7 +728,7 @@ export function DocumentViewPage() {
                   ) : null}
 
                   <div ref={contentRef} className="document-content">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                       {currentDocument.content}
                     </ReactMarkdown>
                   </div>
@@ -625,7 +774,7 @@ export function DocumentViewPage() {
                       <Flex gap={8} wrap>
                         <Button
                           type="primary"
-                          icon={<BookOutlined />}
+                          icon={<BookmarkToggleIcon bookmarked size={20} />}
                           loading={savingSelection}
                           disabled={selectionDraft.isTooLong || savingNote}
                           onClick={() => void handleSaveSelection()}
@@ -699,7 +848,7 @@ export function DocumentViewPage() {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        <BookOutlined /> добавить в закладки
+                        <BookmarkToggleIcon bookmarked={false} size={18} /> добавить в закладки
                       </button>
                     </div>
                   ) : null}
@@ -725,7 +874,29 @@ export function DocumentViewPage() {
                 onHide={() => setChatVisible(false)}
               />
             ) : null}
+            </div>
           </div>
+
+          {/* На мобильных структура открывается выезжающей снизу панелью */}
+          {isMobile ? (
+            <Drawer
+              placement="bottom"
+              open={structureOpen}
+              onClose={() => setStructureOpen(false)}
+              title="Структура документа"
+              height="62vh"
+              styles={{
+                section: { borderTopLeftRadius: 18, borderTopRightRadius: 18, overflow: 'hidden' },
+              }}
+            >
+              <DocumentStructure
+                toc={toc}
+                activeId={activeHeadingId}
+                onNavigate={handleNavigateToHeading}
+                showHeading={false}
+              />
+            </Drawer>
+          ) : null}
 
           {/* На мобильных чат открывается выезжающей снизу панелью */}
           {isMobile ? (

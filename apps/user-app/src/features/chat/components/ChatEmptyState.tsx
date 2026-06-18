@@ -8,7 +8,7 @@ export function ChatEmptyState() {
 
   return (
     <div className="chat-page__welcome">
-      <img src={chatLogo} alt="Райбекас цифровой" className="chat-page__welcome-logo" />
+      <img src={chatLogo} alt="Райбекас цифровой" className="chat-page__welcome-logo themed-logo" />
 
       <Title
         level={1}

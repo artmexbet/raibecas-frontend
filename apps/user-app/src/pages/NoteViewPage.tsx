@@ -3,8 +3,10 @@ import { Button, Col, Result, Row, Spin, Typography, message, theme } from 'antd
 import { EditOutlined, ExportOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { AppHeader } from '@/components/common/AppHeader';
+import { BottomNavBar } from '@/components/common/BottomNavBar';
 import { PageBackground } from '@/components/common/PageBackground';
 import { noteService } from '@/services/note.service';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import type { NoteItem } from '@/types/note';
 
 const { Title, Text, Paragraph } = Typography;
@@ -95,6 +97,7 @@ export function NoteViewPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { token } = theme.useToken();
+  const isMobile = useIsMobile();
 
   const fetchNote = useCallback(async () => {
     setLoading(true);
@@ -123,6 +126,7 @@ export function NoteViewPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
           <Spin size="large" />
         </div>
+        <BottomNavBar />
       </div>
     );
   }
@@ -141,6 +145,7 @@ export function NoteViewPage() {
             </Button>
           }
         />
+        <BottomNavBar />
       </div>
     );
   }
@@ -155,7 +160,7 @@ export function NoteViewPage() {
         style={{
           maxWidth: 1600,
           margin: '0 auto',
-          padding: '28px 32px 48px',
+          padding: isMobile ? '16px 16px 100px' : '28px 32px 48px',
           position: 'relative',
           zIndex: 1,
         }}
@@ -270,6 +275,8 @@ export function NoteViewPage() {
           </Col>
         </Row>
       </div>
+
+      <BottomNavBar />
     </div>
   );
 }
