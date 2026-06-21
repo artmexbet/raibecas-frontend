@@ -85,7 +85,7 @@ export function RegisterPage() {
                 <AuthFolderCard tabs={folderTabs}>
                     <Form form={form} layout="vertical" onFinish={handleRegister}>
                         <Form.Item
-                            label={<Text style={{fontSize: 15}}>* Логин</Text>}
+                            label={<Text style={{fontSize: 15}}>Логин</Text>}
                             name="login"
                             rules={[{required: true, message: 'Введите логин'}]}
                             style={{marginBottom: 20}}
@@ -103,7 +103,7 @@ export function RegisterPage() {
                         </Form.Item>
 
                         <Form.Item
-                            label={<Text style={{fontSize: 15}}>* Пароль</Text>}
+                            label={<Text style={{fontSize: 15}}>Пароль</Text>}
                             name="password"
                             rules={[{required: true, message: 'Введите пароль'}]}
                             style={{marginBottom: 20}}
@@ -130,7 +130,7 @@ export function RegisterPage() {
                         </Form.Item>
 
                         <Form.Item
-                            label={<Text style={{fontSize: 15}}>* Повторите пароль</Text>}
+                            label={<Text style={{fontSize: 15}}>Повторите пароль</Text>}
                             name="confirmPassword"
                             dependencies={['password']}
                             rules={[

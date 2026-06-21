@@ -74,6 +74,14 @@ export const palette = {
   sidebarBgLight: '#FFFFFF80',
   /** Тёмно-бордовый 50% прозрачности — фон aside-панелей в тёмной теме */
   sidebarBgDark: '#2A151880',
+
+  // Navigation (навигационная «таблетка» в хедере + поле поиска)
+  navBgLight: '#FFFFFF',
+  navBgDark: '#1E1012',
+  navActiveLight: '#DCD3D0',
+  navActiveDark: '#4D3B3D80',
+  navTextLight: '#6B5B5D',
+  navTextDark: '#FFFFFF',
 } as const;
 
 /**
@@ -152,9 +160,9 @@ export const lightTheme: ThemeConfig = {
     colorFillQuaternary: '#DDD8D4',
 
     // Custom tokens
-    colorBgNav: '#FFFFFF',
-    colorBgNavActive: '#DCD3D0',
-    colorTextNav: '#6B5B5D',
+    colorBgNav: palette.navBgLight,
+    colorBgNavActive: palette.navActiveLight,
+    colorTextNav: palette.navTextLight,
     colorBgSidebar: palette.sidebarBgLight,
     colorBgChatSidebar: 'rgba(255, 255, 255, 0.42)',
     colorBgChatSurface: 'rgba(255, 255, 255, 0.7)',
@@ -248,14 +256,10 @@ export const darkTheme: ThemeConfig = {
     colorFillTertiary: '#5A3A3E',
     colorFillQuaternary: '#6A4A4E',
 
-    // Primary overrides for dark
-    colorPrimary: palette.accent,
-    colorPrimaryHover: palette.accentHover,
-
     // Custom tokens
-    colorBgNav: '#1E1012',
-    colorBgNavActive: '#4D3B3D80',
-    colorTextNav: '#FFFFFF',
+    colorBgNav: palette.navBgDark,
+    colorBgNavActive: palette.navActiveDark,
+    colorTextNav: palette.navTextDark,
     colorBgSidebar: palette.sidebarBgDark,
     colorBgChatSidebar: 'rgba(42, 21, 24, 0.66)',
     colorBgChatSurface: 'rgba(50, 26, 29, 0.82)',
