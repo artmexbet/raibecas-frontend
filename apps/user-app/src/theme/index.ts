@@ -8,6 +8,8 @@ declare module 'antd/es/theme/interface' {
     colorBgNav: string;
     /** Фон выбранного пункта навигации в хедере */
     colorBgNavActive: string;
+    /** Цвет текста/иконок навигации в хедере */
+    colorTextNav: string;
     /** Фон боковой панели (aside) с прозрачностью — меняется с темой */
     colorBgSidebar: string;
     /** Полупрозрачный фон sidebar чата */
@@ -152,6 +154,7 @@ export const lightTheme: ThemeConfig = {
     // Custom tokens
     colorBgNav: '#FFFFFF',
     colorBgNavActive: '#DCD3D0',
+    colorTextNav: '#6B5B5D',
     colorBgSidebar: palette.sidebarBgLight,
     colorBgChatSidebar: 'rgba(255, 255, 255, 0.42)',
     colorBgChatSurface: 'rgba(255, 255, 255, 0.7)',
@@ -250,8 +253,9 @@ export const darkTheme: ThemeConfig = {
     colorPrimaryHover: palette.accentHover,
 
     // Custom tokens
-    colorBgNav: palette.cardDark,
-    colorBgNavActive: '#4A2A2E',
+    colorBgNav: '#1E1012',
+    colorBgNavActive: '#4D3B3D80',
+    colorTextNav: '#FFFFFF',
     colorBgSidebar: palette.sidebarBgDark,
     colorBgChatSidebar: 'rgba(42, 21, 24, 0.66)',
     colorBgChatSurface: 'rgba(50, 26, 29, 0.82)',

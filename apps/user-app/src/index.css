@@ -189,6 +189,29 @@ body {
 }
 
 /* ============================================
+   Header search field (dark theme)
+   Те же цвета, что и у навигационной «таблетки».
+   ============================================ */
+[data-theme='dark'] .app-header-search.ant-input-affix-wrapper {
+  background-color: #1E1012;
+  border-color: #4D3B3D80;
+}
+
+[data-theme='dark'] .app-header-search .ant-input {
+  background-color: transparent;
+  color: #FFFFFF;
+}
+
+[data-theme='dark'] .app-header-search .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+[data-theme='dark'] .app-header-search .ant-input-clear-icon,
+[data-theme='dark'] .app-header-search .anticon {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ============================================
    Logo theming
    ============================================ */
 /* Логотипы нарисованы тёмным цветом. В тёмной теме перекрашиваем сам логотип

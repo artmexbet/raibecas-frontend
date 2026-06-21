@@ -65,7 +65,7 @@ export function NavBar({items, activeKey, onChange}: NavBarProps) {
                             height: 'auto',
                             padding: '6px 18px',
                             background,
-                            color: token.colorTextSecondary,
+                            color: token.colorTextNav,
                             boxShadow: 'none',
                             transition: 'background 0.2s',
                         }}

@@ -85,6 +85,7 @@ export function AppHeader({
                     }}
                 >
                     <Input
+                        className="app-header-search"
                         placeholder="Введите для поиска"
                         allowClear
                         value={search}
@@ -170,6 +171,7 @@ export function AppHeader({
             <Space style={{marginLeft: 'auto'}} align="center">
                 {showSearch && (
                     <Input
+                        className="app-header-search"
                         size="small"
                         placeholder="Введите для поиска"
                         allowClear
