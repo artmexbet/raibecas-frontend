@@ -143,13 +143,14 @@ export function CatalogPage() {
         }
     }, [bookmarkMap, bookmarkToggling]);
 
-    const masonryItems = documents.map((doc) => ({
+    const masonryItems = documents.map((doc, index) => ({
         key: doc.id,
         height: isMobile ? estimateMobileCardHeight(doc) : estimateCardHeight(doc),
         data: doc,
         children: (
             <DocumentCard
                 doc={doc}
+                index={index}
                 isBookmarked={bookmarkMap.has(doc.id)}
                 onBookmarkToggle={handleBookmarkToggle}
                 bookmarkLoading={bookmarkToggling.has(doc.id)}
@@ -199,7 +200,7 @@ export function CatalogPage() {
                         <>
                             <Masonry
                                 items={masonryItems}
-                                columns={{xs: 1, sm: 2, md: 3, lg: 4}}
+                                columns={{xs: 1, sm: 2, md: 3, lg: 4, xl: 5, xxl: 6}}
                                 gutter={16}
                                 fresh
                             />

@@ -147,7 +147,7 @@ export function BookmarksPage() {
 
   const masonryItems = useMemo<Array<{ key: string; height: number; data: BookmarkItem; children: React.ReactNode }>>(
     () =>
-      items.map((bookmark) => {
+      items.map((bookmark, index) => {
         if (bookmark.kind === 'publication') {
           return {
             key: bookmark.id,
@@ -174,7 +174,7 @@ export function BookmarksPage() {
                 >
                   <BookmarkToggleIcon bookmarked size={46} style={{ filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.18))' }} />
                 </div>
-                <DocumentCard doc={bookmark.document} />
+                <DocumentCard doc={bookmark.document} index={index} />
               </div>
             ),
           };

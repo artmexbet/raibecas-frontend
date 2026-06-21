@@ -6,9 +6,16 @@ import dayjs from 'dayjs';
 import type { Document } from '@/types/document';
 import { getParticipantsLabel } from '@/utils/participants';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { useTheme } from '@/theme/ThemeContext';
 import { BookmarkToggleIcon } from './BookmarkToggleIcon';
 
 const { Title, Text } = Typography;
+
+/** Чередующиеся фоны карточек (каталог, закладки). Индекс позиции → цвет. */
+const CARD_BG_PAIR: Record<'light' | 'dark', [string, string]> = {
+  light: ['#EEEAE7', '#DCD3D0'],
+  dark: ['#2A1518', '#3D2226'],
+};
 
 interface DocumentCardProps {
   doc: Document;
@@ -18,12 +25,17 @@ interface DocumentCardProps {
   onBookmarkToggle?: (docId: string) => void;
   /** Whether a bookmark toggle operation is in progress. */
   bookmarkLoading?: boolean;
+  /** Позиция карточки в списке — для чередования фона. Без неё используется стандартный фон. */
+  index?: number;
 }
 
-export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoading }: DocumentCardProps) {
+export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoading, index }: DocumentCardProps) {
   const { token } = theme.useToken();
+  const { mode } = useTheme();
   const isMobile = useIsMobile();
   const showBookmarkIcon = onBookmarkToggle !== undefined;
+  const cardBackground =
+    index === undefined ? token.colorBgContainer : CARD_BG_PAIR[mode][index % 2];
 
   const bookmarkToggle = showBookmarkIcon && (
     <BookmarkToggleIcon
@@ -52,7 +64,7 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
           style={{
             borderRadius: 16,
             overflow: 'hidden',
-            background: token.colorBgContainer,
+            background: cardBackground,
             border: `1px solid ${token.colorBorder}`,
             position: 'relative',
           }}
@@ -159,7 +171,7 @@ export function DocumentCard({ doc, isBookmarked, onBookmarkToggle, bookmarkLoad
         style={{
           borderRadius: 16,
           overflow: 'hidden',
-          background: token.colorBgContainer,
+          background: cardBackground,
           border: `1px solid ${token.colorBorder}`,
           transition: 'box-shadow 0.2s ease, transform 0.15s ease',
           position: 'relative',

@@ -97,7 +97,7 @@ export function AppHeader({
                                 style={{padding: '0 6px'}}
                             />
                         }
-                        style={{width: '100%', borderRadius: 20}}
+                        style={{width: '100%'}}
                     />
                 </header>
             );
@@ -183,7 +183,7 @@ export function AppHeader({
                                 style={{padding: '0 6px'}}
                             />
                         }
-                        style={{width: 280, height: 40, borderRadius: 20}}
+                        style={{width: 280, height: 40}}
                     />
                 )}
 
