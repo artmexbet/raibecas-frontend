@@ -10,6 +10,8 @@ declare module 'antd/es/theme/interface' {
     colorBgNavActive: string;
     /** Цвет текста/иконок навигации в хедере */
     colorTextNav: string;
+    /** Фон плавающей кнопки чата */
+    colorBgChatButton: string;
     /** Фон боковой панели (aside) с прозрачностью — меняется с темой */
     colorBgSidebar: string;
     /** Полупрозрачный фон sidebar чата */
@@ -82,6 +84,10 @@ export const palette = {
   navActiveDark: '#4D3B3D80',
   navTextLight: '#6B5B5D',
   navTextDark: '#FFFFFF',
+
+  // Плавающая кнопка чата
+  chatButtonLight: '#DCD3D0',
+  chatButtonDark: '#352527',
 } as const;
 
 /**
@@ -163,6 +169,7 @@ export const lightTheme: ThemeConfig = {
     colorBgNav: palette.navBgLight,
     colorBgNavActive: palette.navActiveLight,
     colorTextNav: palette.navTextLight,
+    colorBgChatButton: palette.chatButtonLight,
     colorBgSidebar: palette.sidebarBgLight,
     colorBgChatSidebar: 'rgba(255, 255, 255, 0.42)',
     colorBgChatSurface: 'rgba(255, 255, 255, 0.7)',
@@ -260,6 +267,7 @@ export const darkTheme: ThemeConfig = {
     colorBgNav: palette.navBgDark,
     colorBgNavActive: palette.navActiveDark,
     colorTextNav: palette.navTextDark,
+    colorBgChatButton: palette.chatButtonDark,
     colorBgSidebar: palette.sidebarBgDark,
     colorBgChatSidebar: 'rgba(42, 21, 24, 0.66)',
     colorBgChatSurface: 'rgba(50, 26, 29, 0.82)',

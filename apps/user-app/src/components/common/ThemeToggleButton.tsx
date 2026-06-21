@@ -18,7 +18,6 @@ export function ThemeToggleButton({ size = 'large' }: ThemeToggleButtonProps) {
       type="text"
       icon={mode === 'dark' ? <SunOutlined /> : <MoonOutlined />}
       onClick={toggleTheme}
-      shape="circle"
       size={size}
       aria-label="Переключить тему"
     />

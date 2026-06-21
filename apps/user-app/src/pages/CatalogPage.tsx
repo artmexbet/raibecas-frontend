@@ -229,7 +229,6 @@ export function CatalogPage() {
             {/* Chat button */}
             {!isMobile && (
                 <Button
-                    type="primary"
                     shape="circle"
                     icon={<MessageOutlined/>}
                     size="large"
@@ -240,6 +239,9 @@ export function CatalogPage() {
                         right: 24,
                         width: 56,
                         height: 56,
+                        background: token.colorBgChatButton,
+                        borderColor: token.colorBgChatButton,
+                        color: token.colorText,
                         boxShadow: token.boxShadowSecondary,
                         zIndex: 200,
                     }}

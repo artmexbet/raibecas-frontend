@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Avatar, Button, Divider, message, Modal, Typography, theme } from 'antd';
-import { LogoutOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
+import { Avatar, Button, Divider, message, Modal, Segmented, Typography, theme } from 'antd';
+import { LogoutOutlined, MoonOutlined, SunOutlined, UserOutlined, WarningOutlined } from '@ant-design/icons';
 import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/layouts/AppLayout';
+import { useTheme } from '@/theme/ThemeContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const { Title, Text } = Typography;
 
@@ -11,6 +13,8 @@ export function SettingsPage() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const { token } = theme.useToken();
+    const { mode, setTheme } = useTheme();
+    const isMobile = useIsMobile();
     const [logoutLoading, setLogoutLoading] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -66,6 +70,34 @@ export function SettingsPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Блок внешнего вида — переключение темы (на мобильных, где в хедере тумблера нет) */}
+                {isMobile && (
+                    <div
+                        style={{
+                            background: token.colorBgContainer,
+                            borderRadius: 16,
+                            padding: '24px 28px',
+                            marginBottom: 16,
+                            border: `1px solid ${token.colorBorderSecondary}`,
+                        }}
+                    >
+                        <Text type="secondary" style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                            Внешний вид
+                        </Text>
+                        <div style={{ marginTop: 16 }}>
+                            <Segmented
+                                block
+                                value={mode}
+                                onChange={(value) => setTheme(value as 'light' | 'dark')}
+                                options={[
+                                    { label: 'Светлая', value: 'light', icon: <SunOutlined /> },
+                                    { label: 'Тёмная', value: 'dark', icon: <MoonOutlined /> },
+                                ]}
+                            />
+                        </div>
+                    </div>
+                )}
 
                 {/* Блок аккаунта */}
                 <div

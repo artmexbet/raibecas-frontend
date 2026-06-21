@@ -925,7 +925,6 @@ export function DocumentViewPage() {
       {/* Плавающая кнопка чата: в карточке или когда чат скрыт */}
       {viewMode === 'card' || !chatVisible ? (
         <Button
-          type="primary"
           shape="circle"
           icon={<MessageOutlined />}
           size="large"
@@ -940,6 +939,9 @@ export function DocumentViewPage() {
             right: 24,
             width: 56,
             height: 56,
+            background: token.colorBgChatButton,
+            borderColor: token.colorBgChatButton,
+            color: token.colorText,
             boxShadow: token.boxShadowSecondary,
             zIndex: 200,
           }}
